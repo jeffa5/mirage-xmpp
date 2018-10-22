@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# build
+mirage configure -t unix --dhcp false --net direct
+
+# setup a trap for SIGINT to clean up the directory after building
+trap "make clean; exit 0" 2
+
+# continue building
+OPAMVAR_os_family=arch make depend
+make
+
+# run
+sudo ./sendrcv -l "*:debug"
