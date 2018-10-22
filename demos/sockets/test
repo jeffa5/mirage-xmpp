@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# setup the network tunnel to allow communication
+sudo ifconfig tap0 10.0.0.1 up
+
+# example command to send ping messages to the unikernel (by default gets the 10.0.0.2 address)
+ping -c 3 10.0.0.2
+
+sleep 1
+# send some simple data to the unikernel
+echo "hello tcp world" | nc -nw1 10.0.0.2 8080
