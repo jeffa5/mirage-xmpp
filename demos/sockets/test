@@ -8,4 +8,4 @@ ping -c 3 10.0.0.2
 
 sleep 1
 # send some simple data to the unikernel
-echo "hello tcp world" | nc -nw1 10.0.0.2 8080
+echo "Hello TCP world!" | nc -nw1 10.0.0.2 8080
