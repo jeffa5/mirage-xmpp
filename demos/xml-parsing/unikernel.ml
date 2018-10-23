@@ -7,12 +7,13 @@ module Main (S: Mirage_stack_lwt.V4) = struct
     | Ok () -> Lwt.return_unit
     | Error e -> Logs.warn (fun f -> f "Error occurred from writing to connection: %a" S.TCPV4.pp_write_error e); Lwt.return_unit
 
+
   let parse_xml i =
     (* Need to catch errors thrown when invalid xml is received *)
     let rec pull i depth =
       match Xmlm.input i with
-      | `El_start ((_, local), _) ->
-        Logs.debug (fun f -> f "Found the start of an element with tag: %s" local);
+      | `El_start ((uri, local), attr_list) ->
+        Logs.debug (fun f -> f "Found the start of an element: %s:%s" uri local);
         pull i (depth + 1)
       | `El_end -> Logs.debug (fun f -> f "Found an end of an element at depth %d" depth);
         if depth = 1 then Lwt.return_unit else pull i (depth - 1)
@@ -24,9 +25,11 @@ module Main (S: Mirage_stack_lwt.V4) = struct
           pull i depth
         | None -> Logs.debug (fun f -> f "Skipping Dtd");
           pull i depth
-    in pull i 0
+    in pull i 0 >>= fun () ->
+    if not (Xmlm.eoi i) then Logs.warn (fun f -> f "Invalid xml received");
+    Lwt.return_unit
 
-  let rec read_and_respond flow =
+  let rec read_xml flow =
     S.TCPV4.read flow >>= function
     | Ok `Eof -> Logs.info (fun f -> f "Closing connection due to Eof!"); Lwt.return_unit
     | Error e ->
@@ -37,12 +40,12 @@ module Main (S: Mirage_stack_lwt.V4) = struct
       (* Need to create a channel which we can use to write the given string into *)
       let i = Xmlm.make_input (`String (0, Cstruct.to_string b)) in
       parse_xml i >>= fun () ->
-      read_and_respond flow
+      read_xml flow
 
   let on_connect flow =
     let dst, dst_port = S.TCPV4.dst flow in
     Logs.info (fun f -> f "new tcp connection from IP %s on port %d" (Ipaddr.V4.to_string dst) dst_port);
-    read_and_respond flow >>= fun () ->
+    read_xml flow >>= fun () ->
     S.TCPV4.close flow
 
   let start s =
