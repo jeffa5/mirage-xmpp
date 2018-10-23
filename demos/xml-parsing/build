@@ -9,6 +9,3 @@ trap "make clean; exit 0" 2
 # continue building
 OPAMVAR_os_family=arch make depend
 make
-
-# run
-sudo ./network -l "*:debug"

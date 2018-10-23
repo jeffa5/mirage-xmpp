@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# setup a trap for SIGINT to clean up the directory after building
+# trap "make clean; exit 0" 2
+
+sudo ./sendrcv -l "*:debug" > log 2>&1
