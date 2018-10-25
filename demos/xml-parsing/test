@@ -3,13 +3,38 @@
 # setup the network tunnel to allow communication
 sudo ifconfig tap0 10.0.0.1 up
 
-# example command to send ping messages to the unikernel (by default gets the 10.0.0.2 address)
-ping -c 3 10.0.0.2
-
 sleep 1
 # send some simple data to the unikernel
+# this should generate a warning in the unikernel logs
+echo "<stream>" | nc -nw1 10.0.0.2 8080
+
+# this should be accepted
 echo "<stream></stream>" | nc -nw1 10.0.0.2 8080
 
-printf "\n\nOpening a netcat connection\n"
+# try sending some xmpp stanzas its way
+echo "<stream>
+<presence>
+<show/>
+</presence>
+<message to='foo'>
+<body>
+hi
+</body>
+</message>
+<iq to='bar' type='get'>
+<query/>
+</iq>
+</stream>" | nc -nw1 10.0.0.2 8080
+
+echo "<?xml version='1.0'?>
+      <stream:stream
+          from='juliet@im.example.com'
+          to='im.example.com'
+          version='1.0'
+          xml:lang='en'
+          xmlns='jabber:client'
+          xmlns:stream='http://etherx.jabber.org/streams'>" | nc -nw1 10.0.0.2 8080
+
+# printf "\n\nOpening a netcat connection\n"
 # open a netcat session to the server
-nc 10.0.0.2 8080
+# nc 10.0.0.2 8080
