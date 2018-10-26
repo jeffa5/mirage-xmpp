@@ -5,8 +5,14 @@ sudo ifconfig tap0 10.0.0.1 up
 
 sleep 1
 # send some simple data to the unikernel
-# this should generate a warning in the unikernel logs
-echo "<stream>" | nc -nw1 10.0.0.2 8080
+# this should generate a warning in the unikernel logs due to bad document
+echo "</error>" | nc -nw1 10.0.0.2 8080
+
+# this should cause an unmatched end tag
+echo "<start></a></start>" | nc -nw1 10.0.0.2 8080
+
+# this should cause an unmatched start tag
+echo "<start><a></start>" | nc -nw1 10.0.0.2 8080
 
 # this should be accepted
 echo "<stream></stream>" | nc -nw1 10.0.0.2 8080
