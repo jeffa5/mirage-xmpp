@@ -29,12 +29,6 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     aux ()
   ;;
 
-  let to_string attributes =
-    List.map
-      ~f:(fun ((prefix, key), value) -> prefix ^ ":" ^ key ^ "=" ^ value)
-      attributes
-  ;;
-
   let parse_xml flow stream =
     let stream = Markup_lwt.lwt_stream stream in
     let parser_report = ref (Ok ()) in
@@ -66,14 +60,9 @@ module Main (S : Mirage_stack_lwt.V4) = struct
         (match signal with
         | Some signal ->
           (match signal with
-          | `Start_element ((uri, local), attrs) ->
-            let attr_string = to_string attrs |> String.concat ~sep:", " in
+          | `Start_element _ ->
             Logs.debug (fun f ->
-                f
-                  "Start element received: %s:%s with attributes: %s"
-                  uri
-                  local
-                  attr_string );
+                f "Start element received: %s" (Markup.signal_to_string signal) );
             pull_signal (depth + 1)
           | `End_element ->
             Logs.debug (fun f -> f "End element received");
@@ -82,14 +71,10 @@ module Main (S : Mirage_stack_lwt.V4) = struct
               Logs.info (fun f -> f "Accepting the parsed XML and notifying user");
               write_string flow "XML accepted." )
             else pull_signal (depth - 1)
-          | `Text strings ->
-            let stripped_strings = List.map ~f:(fun s -> String.strip s) strings in
-            let non_empty_strings =
-              List.filter ~f:(fun s -> String.strip s <> "") stripped_strings
-            in
-            List.iter
-              ~f:(fun s -> Logs.debug (fun f -> f "Found text: %s" s))
-              non_empty_strings;
+          | `Text _ ->
+            let signal_string = String.strip (Markup.signal_to_string signal) in
+            if signal_string <> ""
+            then Logs.debug (fun f -> f "Text received: %s" signal_string);
             pull_signal depth
           | _ ->
             Logs.debug (fun f -> f "Signal received! %s" (Markup.signal_to_string signal));
