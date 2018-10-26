@@ -27,6 +27,12 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     aux ()
   ;;
 
+  let to_string attributes =
+    List.map
+      ~f:(fun ((prefix, key), value) -> prefix ^ ":" ^ key ^ "=" ^ value)
+      attributes
+  ;;
+
   exception Bad_document of string
   exception Unmatched_tag of string
 
@@ -52,7 +58,13 @@ module Main (S : Mirage_stack_lwt.V4) = struct
         | Some signal ->
           (match signal with
           | `Start_element ((uri, local), attrs) ->
-            Logs.debug (fun f -> f "Start element received: %s:%s" uri local);
+            let attr_string = to_string attrs |> String.concat ~sep:", " in
+            Logs.debug (fun f ->
+                f
+                  "Start element received: %s:%s with attributes: %s"
+                  uri
+                  local
+                  attr_string );
             pull_signal (depth + 1)
           | `End_element ->
             Logs.debug (fun f -> f "End element received");
