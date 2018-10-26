@@ -1,11 +1,10 @@
-open Lwt.Infix
 open Core_kernel
 
 module Main (S : Mirage_stack_lwt.V4) = struct
   let write_string flow s =
+    let s = String.strip s ^ "\n" in
     let b = Cstruct.of_string s in
-    S.TCPV4.write flow b
-    >>= function
+    match%lwt S.TCPV4.write flow b with
     | Ok () -> Lwt.return_unit
     | Error e ->
       Logs.warn (fun f ->
@@ -13,12 +12,15 @@ module Main (S : Mirage_stack_lwt.V4) = struct
       Lwt.return_unit
   ;;
 
+  let write_error_string flow s =
+    let s = "Error: " ^ String.strip s in
+    write_string flow s
+  ;;
+
   let read flow pushf =
     let rec aux () =
-      S.TCPV4.read flow
-      >>= function
-      | Ok `Eof -> Lwt.return_unit
-      | Error _ -> Lwt.return_unit
+      match%lwt S.TCPV4.read flow with
+      | Ok `Eof | Error _ -> Lwt.return_unit
       | Ok (`Data b) ->
         let s = Cstruct.to_string b in
         String.iter ~f:(fun c -> pushf (Some c)) s;
@@ -33,28 +35,35 @@ module Main (S : Mirage_stack_lwt.V4) = struct
       attributes
   ;;
 
-  exception Bad_document of string
-  exception Unmatched_tag of string
-
   let parse_xml flow stream =
     let stream = Markup_lwt.lwt_stream stream in
+    let parser_report = ref (Ok ()) in
     let parser =
       Markup_lwt.parse_xml
         ~report:(fun _ e ->
-          Logs.warn (fun f ->
-              f "Error occurred during parsing: %s" (Markup.Error.to_string e) );
+          let error_string = Markup.Error.to_string e in
+          Logs.warn (fun f -> f "Error occurred during parsing: %s" error_string);
           match e with
-          | `Bad_document reason -> raise (Bad_document reason)
-          | `Unmatched_end_tag tag | `Unmatched_start_tag tag ->
-            raise (Unmatched_tag tag)
+          | `Bad_document _ ->
+            parser_report := Error error_string;
+            Lwt.return_unit
+          | `Unmatched_end_tag _ | `Unmatched_start_tag _ ->
+            parser_report := Error error_string;
+            Lwt.return_unit
           | _ -> Lwt.return_unit )
         stream
     in
     let signals = Markup.signals parser in
+    Logs.info (fun f -> f "Setup parser and signals, beginning to pull signals.");
     let rec pull_signal depth =
-      try
-        Markup_lwt.next signals
-        >>= function
+      let%lwt signal = Markup_lwt.next signals in
+      match !parser_report with
+      | Error s ->
+        Logs.warn (fun f ->
+            f "Parser report generated an error. Notifying user and exiting parsing." );
+        write_error_string flow s
+      | Ok _ ->
+        (match signal with
         | Some signal ->
           (match signal with
           | `Start_element ((uri, local), attrs) ->
@@ -68,7 +77,11 @@ module Main (S : Mirage_stack_lwt.V4) = struct
             pull_signal (depth + 1)
           | `End_element ->
             Logs.debug (fun f -> f "End element received");
-            if depth = 1 then Lwt.return_unit else pull_signal (depth - 1)
+            if depth = 1
+            then (
+              Logs.info (fun f -> f "Accepting the parsed XML and notifying user");
+              write_string flow "XML accepted." )
+            else pull_signal (depth - 1)
           | `Text strings ->
             let stripped_strings = List.map ~f:(fun s -> String.strip s) strings in
             let non_empty_strings =
@@ -79,14 +92,11 @@ module Main (S : Mirage_stack_lwt.V4) = struct
               non_empty_strings;
             pull_signal depth
           | _ ->
-            Logs.debug (fun f -> f "signal received! %s" (Markup.signal_to_string signal));
+            Logs.debug (fun f -> f "Signal received! %s" (Markup.signal_to_string signal));
             pull_signal depth)
         | None ->
           Logs.debug (fun f -> f "None signal received");
-          Lwt.return_unit
-      with
-      | Bad_document reason -> write_string flow ("Bad XML given: " ^ reason)
-      | Unmatched_tag tag -> write_string flow ("Unmatched tag found: " ^ tag)
+          Lwt.return_unit)
     in
     pull_signal 0
   ;;
@@ -94,9 +104,8 @@ module Main (S : Mirage_stack_lwt.V4) = struct
   let on_connect flow =
     let stream, pushf = Lwt_stream.create () in
     Lwt.async (fun () -> read flow pushf);
-    parse_xml flow stream
-    >>= fun () ->
-    Logs.debug (fun f -> f "Closing the connection");
+    let%lwt () = parse_xml flow stream in
+    Logs.info (fun f -> f "Closing the connection");
     S.TCPV4.close flow
   ;;
 

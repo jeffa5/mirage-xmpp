@@ -4,6 +4,7 @@ PKG tcpip.ethif tcpip.arpv4 tls logs mirage-logs
 PKG magic-mime mirage-types-lwt duration
 PKG markup markup-lwt
 PKG core
+PKG lwt_ppx
 
 S **/
 B **/_build/**
