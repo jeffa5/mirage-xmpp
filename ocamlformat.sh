@@ -2,5 +2,5 @@
 
 FILES=$(find . -name "*.ml" -type f)
 for f in $FILES; do
-    ocamlformat --inplace --profile=janestreet $f
+    ocamlformat --ocp-indent-compat --inplace --profile=janestreet $f
 done
