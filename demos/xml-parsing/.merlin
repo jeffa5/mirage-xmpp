@@ -6,5 +6,5 @@ PKG markup markup-lwt
 PKG core
 PKG lwt_ppx
 
-S **/
-B **/_build/**
+S src/**
+B _build/**
