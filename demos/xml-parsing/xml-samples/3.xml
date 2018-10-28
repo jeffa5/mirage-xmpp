@@ -1,0 +1,5 @@
+<stream:error>
+        <not-well-formed
+            xmlns='urn:ietf:params:xml:ns:xmpp-streams'/>
+      </stream:error>
+      </stream:stream>

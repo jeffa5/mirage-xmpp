@@ -18,28 +18,10 @@ echo "<start><a></start>" | nc -nw1 10.0.0.2 8080
 echo "<stream></stream>" | nc -nw1 10.0.0.2 8080
 
 # try sending some xmpp stanzas its way
-echo "<stream>
-<presence>
-<show/>
-</presence>
-<message to='foo'>
-<body>
-hi
-</body>
-</message>
-<iq to='bar' type='get'>
-<query/>
-</iq>
-</stream>" | nc -nw1 10.0.0.2 8080
-
-echo "<?xml version='1.0'?>
-      <stream:stream
-          from='juliet@im.example.com'
-          to='im.example.com'
-          version='1.0'
-          xml:lang='en'
-          xmlns='jabber:client'
-          xmlns:stream='http://etherx.jabber.org/streams'>" | nc -nw1 10.0.0.2 8080
+cat xml-samples/1.xml | nc -nw1 10.0.0.2 8080
+cat xml-samples/2.xml | nc -nw1 10.0.0.2 8080
+cat xml-samples/3.xml | nc -nw1 10.0.0.2 8080
+cat xml-samples/4.xml | nc -nw1 10.0.0.2 8080
 
 # printf "\n\nOpening a netcat connection\n"
 # open a netcat session to the server
