@@ -2,8 +2,8 @@ BUILDDIR = _build
 SCRIPTSDIR = scripts
 SRCDIR = src
 
-.PHONY: all build run clean
-all: run
+.PHONY: all build run test promote clean
+all: build run
 
 build: clean
 	mkdir -p $(BUILDDIR)
@@ -11,11 +11,16 @@ build: clean
 	cp $(SRCDIR)/* $(BUILDDIR)
 	cd $(BUILDDIR) && ./build
 
-run: build
+run:
 	cd $(BUILDDIR) && ./run
 
 test:
-	$(SCRIPTSDIR)/test
+	# Ensure you are running the unikernel!
+	sudo ifconfig tap0 10.0.0.1 up
+	dune runtest
+
+promote:
+	dune promote
 
 clean:
 	rm -rf $(BUILDDIR)
