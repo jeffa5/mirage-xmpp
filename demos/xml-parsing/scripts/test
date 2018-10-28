@@ -18,9 +18,13 @@ echo "<start><a></start>" | nc -nw1 10.0.0.2 8080
 echo "<stream></stream>" | nc -nw1 10.0.0.2 8080
 
 # try sending some xmpp stanzas its way
+# accepted
 cat xml-samples/1.xml | nc -nw1 10.0.0.2 8080
+# rejected
 cat xml-samples/2.xml | nc -nw1 10.0.0.2 8080
+# accepted
 cat xml-samples/3.xml | nc -nw1 10.0.0.2 8080
+# accepted
 cat xml-samples/4.xml | nc -nw1 10.0.0.2 8080
 
 # printf "\n\nOpening a netcat connection\n"
