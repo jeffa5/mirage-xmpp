@@ -1,4 +1,4 @@
-open Core
+open Core_kernel
 
 module type Main = sig
   type flow_type
