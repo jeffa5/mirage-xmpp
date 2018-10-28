@@ -15,7 +15,7 @@ run: build
 	cd $(BUILDDIR) && ./run
 
 test:
-	cd $(BUILDDIR) && ./test
+	$(SCRIPTSDIR)/test
 
 clean:
 	rm -rf $(BUILDDIR)
