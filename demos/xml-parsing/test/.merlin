@@ -1,3 +1,8 @@
+B /home/andrew/.opam/4.05.0/lib/async
+B /home/andrew/.opam/4.05.0/lib/async_extra
+B /home/andrew/.opam/4.05.0/lib/async_kernel
+B /home/andrew/.opam/4.05.0/lib/async_rpc_kernel
+B /home/andrew/.opam/4.05.0/lib/async_unix
 B /home/andrew/.opam/4.05.0/lib/base
 B /home/andrew/.opam/4.05.0/lib/base/caml
 B /home/andrew/.opam/4.05.0/lib/base/md5
@@ -22,6 +27,7 @@ B /home/andrew/.opam/4.05.0/lib/ppx_hash/runtime-lib
 B /home/andrew/.opam/4.05.0/lib/ppx_inline_test/config
 B /home/andrew/.opam/4.05.0/lib/ppx_inline_test/runtime-lib
 B /home/andrew/.opam/4.05.0/lib/ppx_sexp_conv/runtime-lib
+B /home/andrew/.opam/4.05.0/lib/protocol_version_header
 B /home/andrew/.opam/4.05.0/lib/sexplib
 B /home/andrew/.opam/4.05.0/lib/sexplib/unix
 B /home/andrew/.opam/4.05.0/lib/sexplib0
@@ -31,6 +37,11 @@ B /home/andrew/.opam/4.05.0/lib/stdio
 B /home/andrew/.opam/4.05.0/lib/typerep
 B /home/andrew/.opam/4.05.0/lib/variantslib
 B ../_build/default/test/.test.objs
+S /home/andrew/.opam/4.05.0/lib/async
+S /home/andrew/.opam/4.05.0/lib/async_extra
+S /home/andrew/.opam/4.05.0/lib/async_kernel
+S /home/andrew/.opam/4.05.0/lib/async_rpc_kernel
+S /home/andrew/.opam/4.05.0/lib/async_unix
 S /home/andrew/.opam/4.05.0/lib/base
 S /home/andrew/.opam/4.05.0/lib/base/caml
 S /home/andrew/.opam/4.05.0/lib/base/md5
@@ -55,6 +66,7 @@ S /home/andrew/.opam/4.05.0/lib/ppx_hash/runtime-lib
 S /home/andrew/.opam/4.05.0/lib/ppx_inline_test/config
 S /home/andrew/.opam/4.05.0/lib/ppx_inline_test/runtime-lib
 S /home/andrew/.opam/4.05.0/lib/ppx_sexp_conv/runtime-lib
+S /home/andrew/.opam/4.05.0/lib/protocol_version_header
 S /home/andrew/.opam/4.05.0/lib/sexplib
 S /home/andrew/.opam/4.05.0/lib/sexplib/unix
 S /home/andrew/.opam/4.05.0/lib/sexplib0
@@ -64,5 +76,5 @@ S /home/andrew/.opam/4.05.0/lib/stdio
 S /home/andrew/.opam/4.05.0/lib/typerep
 S /home/andrew/.opam/4.05.0/lib/variantslib
 S .
-FLG -ppx '/home/andrew/Documents/cambridge/computer-science/part-ii/project/mirage-xmpp/demos/xml-parsing/_build/default/.ppx/ppx_expect/ppx.exe --as-ppx --cookie '\''library-name="test"'\'''
+FLG -ppx '/home/andrew/Documents/cambridge/computer-science/part-ii/project/mirage-xmpp/demos/xml-parsing/_build/default/.ppx/ppx_expect+ppx_let/ppx.exe --as-ppx --cookie '\''library-name="test"'\'''
 FLG -w @a-4-29-40-41-42-44-45-48-58-59-60-40 -strict-sequence -strict-formats -short-paths -keep-locs

@@ -1,5 +1,5 @@
 (library
  (name test)
- (libraries core)
+ (libraries async)
  (inline_tests)
- (preprocess (pps ppx_expect)))
+ (preprocess (pps ppx_expect ppx_let)))
