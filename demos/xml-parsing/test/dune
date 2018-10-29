@@ -1,5 +1,5 @@
 (library
  (name test)
- (libraries async)
+ (libraries core_kernel lwt lwt.unix)
  (inline_tests)
- (preprocess (pps ppx_expect ppx_let)))
+ (preprocess (pps ppx_expect lwt_ppx)))
