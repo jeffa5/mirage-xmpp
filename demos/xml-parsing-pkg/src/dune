@@ -1,0 +1,6 @@
+(library
+ (name xmlparser)
+ (public_name xmlparser)
+ (libraries lwt lwt.unix core_kernel mirage markup-lwt lwt_ppx)
+ (inline_tests (flags -show-counts))
+ (preprocess (pps ppx_expect lwt_ppx bisect_ppx -conditional)))

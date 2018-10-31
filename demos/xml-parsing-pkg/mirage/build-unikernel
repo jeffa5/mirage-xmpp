@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# build
+mirage configure -t unix --dhcp false --net direct
+
+# continue building
+OPAMVAR_os_family=arch make depend
+make

@@ -1,0 +1,4 @@
+(alias
+ (name mirage)
+ (deps (source_tree .) (package xmlparser))
+ (action (system "./build-unikernel")))

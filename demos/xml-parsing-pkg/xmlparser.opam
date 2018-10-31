@@ -1,0 +1,11 @@
+opam-version: "2.0"
+name: "xmlparser"
+version: "dev"
+synopsis: "XML parser for XMPP"
+maintainer: "Andrew J <apj39@cam.ac.uk>"
+authors: "Andrew J"
+license: "MIT"
+homepage: "https://github.com/jeffa5/mirage-xmpp"
+bug-reports: "https://github.com/jeffa5/mirage-xmpp/issues"
+depends: [ "ocaml" "ocamlfind" ]
+build: ["dune" "build" "-p" name "-j" jobs]
