@@ -50,20 +50,22 @@ promote:
 .PHONY: clean
 clean:
 	dune clean
+	rm -rf coverage
+	rm -rf doc
 
 .PHONY: coverage
-coverage:
+coverage: clean
 	rm -rf coverage
 	BISECT_ENABLE=YES dune build @src/runtest --force
 	bisect-ppx-report -I _build/default/src -html coverage/ `find . -name 'bisect*.out'`
 
 .PHONY: doc
-doc:
+doc: clean
 	rm -rf doc
 	dune build @doc
 	cp -r _build/default/_doc/_html doc
 
 .PHONY: format
-format:
-	dune build @fmt
+format: clean
+	dune build @{src,mirage,test}/fmt
 	# --auto-promote
