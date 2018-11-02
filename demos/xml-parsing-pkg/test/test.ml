@@ -1,5 +1,3 @@
-open Core_kernel
-
 exception Timeout
 
 let send ?(timeout = 5.) ?(host = "10.0.0.2") ?(port = 8080) str =

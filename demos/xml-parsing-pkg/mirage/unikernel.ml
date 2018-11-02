@@ -1,8 +1,6 @@
-open Core_kernel
-
 module Main (S : Mirage_stack_lwt.V4) = struct
   let write_string flow s =
-    let s = String.strip s ^ "\n" in
+    let s = String.trim s ^ "\n" in
     let b = Cstruct.of_string s in
     match%lwt S.TCPV4.write flow b with
     | Ok () -> Lwt.return_unit
@@ -13,7 +11,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
   ;;
 
   let write_error_string flow s =
-    let s = "Error: " ^ String.strip s in
+    let s = "Error: " ^ String.trim s in
     write_string flow s
   ;;
 
@@ -24,7 +22,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
       | Ok (`Data b) ->
         let s = Cstruct.to_string b in
         Logs.info (fun f -> f "Data read from connection: %s" s);
-        String.iter ~f:(fun c -> pushf (Some c)) s;
+        String.iter (fun c -> pushf (Some c)) s;
         aux ()
     in
     aux ()
