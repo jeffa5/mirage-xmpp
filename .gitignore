@@ -1,2 +1,7 @@
 _build
 .vscode
+
+.merlin
+*.install
+coverage
+doc
