@@ -7,7 +7,15 @@ authors: "Andrew J"
 license: "MIT"
 homepage: "https://github.com/jeffa5/mirage-xmpp"
 bug-reports: "https://github.com/jeffa5/mirage-xmpp/issues"
-depends: [ "ocaml" "dune" ]
+depends: [
+  "ocaml"
+  "dune"
+  "lwt"
+  "markup-lwt"
+  "ppx_expect"
+  "lwt_ppx"
+  "bisect_ppx"
+]
 build: [
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
