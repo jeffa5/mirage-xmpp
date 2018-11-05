@@ -1,8 +1,7 @@
 language: c
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script:
-  - bash -ex .travis-opam.sh
-  - dune build @src/runtest
+  - bash .travis-ci.sh
 sudo: required
 env:
   global:
