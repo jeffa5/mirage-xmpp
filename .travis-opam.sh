@@ -30,5 +30,9 @@ mv ~/ci-opam ~/.opam/$(opam switch show)/bin/ci-opam
 echo -en "travis_fold:end:prepare.ci\r"
 opam config exec -- ci-opam
 
-ls -la
+# custom commands
 dune build @src/runtest
+dune clean
+dune build @doc
+cp -r _build/default/_doc/_html docs
+ls -l
