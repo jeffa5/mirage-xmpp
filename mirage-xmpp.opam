@@ -1,0 +1,15 @@
+opam-version: "2.0"
+name: "mirage-xmpp"
+version: "dev"
+synopsis: "XMPP implementation for Ocaml"
+maintainer: "Andrew J <apj39@cam.ac.uk>"
+authors: "Andrew J"
+license: "MIT"
+homepage: "https://github.com/jeffa5/mirage-xmpp"
+bug-reports: "https://github.com/jeffa5/mirage-xmpp/issues"
+depends: [ "ocaml" "dune" ]
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+build-test: [["dune" "runtest" "-p" name "-j" jobs]]
