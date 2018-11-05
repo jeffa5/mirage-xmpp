@@ -1,7 +1,7 @@
 language: c
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script:
-  - bash .travis-ci.sh
+  - bash -ex .travis-ci.sh
 sudo: required
 env:
   global:
