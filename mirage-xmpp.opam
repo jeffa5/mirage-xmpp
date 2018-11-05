@@ -20,4 +20,6 @@ build: [
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
 ]
-build-test: [["dune" "runtest" "-p" name "-j" jobs]]
+build-test: [
+  ["dune" "build" "@runtest"]
+]
