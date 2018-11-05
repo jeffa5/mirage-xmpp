@@ -1,0 +1,6 @@
+(library
+ (name xmpp)
+ (public_name mirage-xmpp)
+ (libraries lwt lwt.unix markup-lwt)
+ (inline_tests (flags -show-counts))
+ (preprocess (pps ppx_expect lwt_ppx bisect_ppx -conditional)))
