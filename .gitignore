@@ -5,3 +5,4 @@ _build
 *.install
 coverage
 doc
+docs
