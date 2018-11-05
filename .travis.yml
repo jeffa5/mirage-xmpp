@@ -1,6 +1,9 @@
 language: c
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-ocaml.sh
-script: bash -ex .travis-ocaml.sh
+script:
+  - bash -ex .travis-ocaml.sh
+  - opam install dune
+  - ls -la
 sudo: required
 env:
   matrix:
