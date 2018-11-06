@@ -33,6 +33,7 @@ opam config exec -- ci-opam
 # custom commands
 dune build @src/runtest
 dune clean
+opam install odoc
 dune build @doc
 cp -r _build/default/_doc/_html docs
 ls -l
