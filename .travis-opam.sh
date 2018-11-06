@@ -37,5 +37,6 @@ dune build @src/runtest
 dune clean
 opam install odoc
 dune build @doc
+mkdir -p pages
 cp -r _build/default/_doc/_html pages/docs
 ls -l
