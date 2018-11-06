@@ -15,6 +15,7 @@ depends: [
   "ppx_expect"
   "lwt_ppx"
   "bisect_ppx"
+  "str"
 ]
 build: [
   ["dune" "subst"] {pinned}
