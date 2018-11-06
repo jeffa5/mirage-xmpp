@@ -1,3 +1,5 @@
+open Astring
+
 (* a JID is of the form user@domain/resource *)
 type t = string * string * string
 
@@ -8,15 +10,12 @@ let to_string (user, domain, resource) =
 ;;
 
 let of_string string =
-  let regex_at = Str.regexp_string "@" in
-  let regex_slash = Str.regexp_string "/" in
-  match Str.split regex_at string with
-  | [user; domres] ->
-    (match Str.split regex_slash domres with
-    | [domain; resource] -> user, domain, resource
-    | [domain] -> user, domain, ""
-    | _ -> assert false)
-  | _ -> assert false
+  match String.cut ~sep:"@" string with
+  | Some (user, domres) ->
+    (match String.cut ~sep:"/" domres with
+    | Some (domain, resource) -> user, domain, resource
+    | None -> user, domres, "")
+  | None -> assert false
 ;;
 
 let%expect_test "make jid" =
