@@ -30,13 +30,16 @@ mv ~/ci-opam ~/.opam/$(opam switch show)/bin/ci-opam
 echo -en "travis_fold:end:prepare.ci\r"
 opam config exec -- ci-opam
 
+echo -en "travis_fold:start:runtest\r"
 # custom commands
 # run unit tests
 dune build @src/runtest
+echo -en "travis_fold:end:runtest\r"
+echo -en "travis_fold:start:makedocs\r"
 # make docs
 dune clean
 opam install odoc
 dune build @doc
 mkdir -p pages
 cp -r _build/default/_doc/_html pages/docs
-ls -l
+echo -en "travis_fold:end:makedocs\r"
