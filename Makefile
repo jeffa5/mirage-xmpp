@@ -59,11 +59,10 @@ coverage: clean
 
 .PHONY: doc
 doc: clean
-	rm -rf docs
+	rm -rf pages/docs
 	dune build @doc
-	cp -r _build/default/_doc/_html docs
+	cp -r _build/default/_doc/_html pages/docs
 
 .PHONY: format
 format: clean
-	dune build @{src,mirage}/fmt
-	# --auto-promote
+	dune build @{src,mirage}/fmt --auto-promote
