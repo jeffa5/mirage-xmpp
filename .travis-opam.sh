@@ -31,9 +31,11 @@ echo -en "travis_fold:end:prepare.ci\r"
 opam config exec -- ci-opam
 
 # custom commands
+# run unit tests
 dune build @src/runtest
+# make docs
 dune clean
 opam install odoc
 dune build @doc
-cp -r _build/default/_doc/_html docs
+cp -r _build/default/_doc/_html pages/docs
 ls -l
