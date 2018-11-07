@@ -1,0 +1,96 @@
+<html>
+  <head>
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="../coverage.css" />
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">src/</span>parser.ml
+        </a>
+      </h1>
+      <h2>0.00%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:31.58%"></span>
+      <span class="unvisited" style="top:42.11%"></span>
+      <span class="unvisited" style="top:47.37%"></span>
+      <span class="unvisited" style="top:73.68%"></span>
+      <span class="unvisited" style="top:78.95%"></span>
+      <span class="unvisited" style="top:100.00%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span class="unvisited"> </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span class="unvisited"> </span>
+<a id="L9"></a><span class="unvisited"> </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span class="unvisited"> </span>
+<a id="L16"></a><span > </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span class="unvisited"> </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+</pre>
+        <pre id="code">
+type t = (Markup.signal, Markup.async) Markup.stream
+
+exception ParsingError of string
+
+let make_parser stream =
+  <span data-count="0">M</span>arkup_lwt.parse_xml
+    ~report:(fun _ e -&gt;
+        <span data-count="0">l</span>et error_string = <span data-count="0">M</span>arkup.Error.to_string e in
+        <span data-count="0">L</span>wt.fail (ParsingError error_string) )
+    stream
+;;
+
+let create stream =
+  <span data-count="0">l</span>et signals = <span data-count="0">M</span>arkup_lwt.lwt_stream stream |&gt; <span data-count="0">m</span>ake_parser |&gt; <span data-count="0">M</span>arkup.signals in
+  <span data-count="0">s</span>ignals
+;;
+
+let parse_stanza _ =
+  <span data-count="0">S</span>tanza.create (("", "name"), [])
+</pre>
+      </div>
+    </div>
+    <div id="footer">Generated on 2018-11-07 15:50:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>

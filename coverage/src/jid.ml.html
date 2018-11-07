@@ -1,0 +1,127 @@
+<html>
+  <head>
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="../coverage.css" />
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">src/</span>jid.ml
+        </a>
+      </h1>
+      <h2>87.50%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:19.35%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span class="unvisited"> </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span class="visited"> </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span class="visited"> </span>
+<a id="L14"></a><span class="visited"> </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span class="visited"> </span>
+<a id="L17"></a><span class="visited"> </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span > </span>
+<a id="L25"></a><span > </span>
+<a id="L26"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+</pre>
+        <pre id="code">
+open Astring
+
+(* a JID is of the form user@domain/resource *)
+type t = string * string * string
+
+let full _ = <span data-count="0">f</span>alse
+
+let to_string (user, domain, resource) =
+  <span data-count="2">u</span>ser ^ "@" ^ domain ^ if resource &lt;&gt; "" then <span data-count="1">"</span>/" ^ resource else <span data-count="1">"</span>"
+;;
+
+let of_string string =
+  <span data-count="2">m</span>atch String.cut ~sep:"@" string with
+  | <span data-count="2">S</span>ome (user, domres) -&gt;
+    (match String.cut ~sep:"/" domres with
+    | <span data-count="1">S</span>ome (domain, resource) -&gt; user, domain, resource
+    | <span data-count="1">N</span>one -&gt; user, domres, "")
+  | None -&gt; assert false
+;;
+
+let%expect_test "make jid" =
+  let jid = of_string "user@domain/resource" in
+  print_endline (to_string jid);
+  [%expect {| user@domain/resource |}]
+;;
+
+let%expect_test "no resource in jid" =
+  let jid = of_string "user@domain" in
+  print_endline (to_string jid);
+  [%expect {| user@domain |}]
+;;
+</pre>
+      </div>
+    </div>
+    <div id="footer">Generated on 2018-11-07 15:50:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>
