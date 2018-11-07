@@ -3,12 +3,13 @@ type t
 
 type name = string * string
 type attribute = name * string
-
-(** [create t] creates a new stanza with the given tag type *)
 type tag = name * attribute list
 
+(** [create ~children t] creates a new stanza with the given tag type and any children of the tag, defaults to empty list *)
 val create : ?children:t list -> tag -> t
-(* functions to create a stanza? *)
+
+(** Make a stanza containing only text *)
+val text : string list -> t
 
 (** [add_attr t a] updates the stanza [t] to include the attribute [a] *)
 val add_attr : tag -> attribute -> tag

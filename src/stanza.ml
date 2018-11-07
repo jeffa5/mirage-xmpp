@@ -1,12 +1,15 @@
+open Astring
+
 type name = string * string
 type attribute = name * string
 type tag = name * attribute list
 
 type t =
   | Stanza of tag * t list
-  | Text of string
+  | Text of string list
 
 let create ?(children = []) tag = Stanza (tag, children)
+let text s = Text s
 
 let add_attrs (name, l) attrs =
   let new_attrs = l @ attrs in
@@ -32,23 +35,33 @@ let attribute_to_string (name, attribute) =
 
 let tag_to_string (name, attributes) =
   let attr_string =
-    Astring.String.concat ~sep:" " (List.map (fun a -> attribute_to_string a) attributes)
+    String.concat ~sep:" " (List.map (fun a -> attribute_to_string a) attributes)
   in
   let name_string = name_to_string name in
   name_string ^ if attr_string <> "" then " " ^ attr_string else ""
 ;;
 
-let rec to_string = function
-  | Stanza ((name, attrs), l) ->
-    let tag_string = tag_to_string (name, attrs) in
-    (match l with
-    | [] -> "<" ^ tag_string ^ " />"
-    | ss ->
-      let stanzas =
-        Astring.String.concat ~sep:"\n" (List.map (fun s -> to_string s) ss)
-      in
-      "<" ^ tag_string ^ ">" ^ stanzas ^ "</" ^ name_to_string name ^ ">")
-  | Text s -> s
+let to_string s =
+  let rec aux s depth =
+    let indent =
+      String.v ~len:(depth * 2) (fun _ ->
+          match String.to_char " " with Some c -> c | None -> assert false )
+    in
+    match s with
+    | Stanza ((name, attrs), l) ->
+      let tag_string = tag_to_string (name, attrs) in
+      (match l with
+      | [] -> indent ^ "<" ^ tag_string ^ " />"
+      | ss ->
+        let stanzas =
+          String.concat ~sep:"\n" (List.map (fun s -> aux s (depth + 1)) ss)
+        in
+        let start_tag = indent ^ "<" ^ tag_string ^ ">" in
+        let end_tag = indent ^ "</" ^ name_to_string name ^ ">" in
+        start_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
+    | Text ss -> String.concat ~sep:"\n" (List.map (fun s -> indent ^ s) ss)
+  in
+  aux s 0
 ;;
 
 let%expect_test "empty tag prefix" =
@@ -104,11 +117,23 @@ let%expect_test "create stanza with children" =
   let stanza = create ~children (("prefix", "name"), [("prefix", "attr1"), "val1"]) in
   print_endline (to_string stanza);
   [%expect
-    {| <prefix:name prefix:attr1=val1><prefix:name prefix:attr1=val1 /></prefix:name> |}]
+    {|
+      <prefix:name prefix:attr1=val1>
+        <prefix:name prefix:attr1=val1 />
+      </prefix:name> |}]
 ;;
 
 let%expect_test "text stanza" =
-  let text = Text "text stanza" in
+  let text = Text ["text stanza"] in
   print_endline (to_string text);
   [%expect {| text stanza |}]
+;;
+
+let%expect_test "multi-line text stanza" =
+  let text = Text ["text stanza"; "line 2"; "line 3"] in
+  print_endline (to_string text);
+  [%expect {|
+    text stanza
+    line 2
+    line 3 |}]
 ;;
