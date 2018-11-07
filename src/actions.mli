@@ -2,6 +2,10 @@
 
 (** The type of actions, examples for now *)
 type t =
-  | SEND_XML
+  | SEND_STANZA of Stanza.t
   | ROSTER_UPDATE
   | ROSTER_GET
+  | PASS_STANZA
+
+(** [to_string t] takes an action and returns its string representation *)
+val to_string : t -> string

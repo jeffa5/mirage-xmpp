@@ -1,20 +1,19 @@
 (** The type of a Stanza *)
 type t
 
-type tag =
-  | Message
-  | Presence
-  | IQ
-
 type name = string * string
 type attribute = name * string
 
 (** [create t] creates a new stanza with the given tag type *)
-val create : tag -> t
+type tag = Tag of name * attribute list
+
+val create : ?children:t list -> tag -> t
 (* functions to create a stanza? *)
 
 (** [add_attr t a] updates the stanza [t] to include the attribute [a] *)
-val add_attr : t -> attribute -> t
+val add_attr : tag -> attribute -> tag
+
+val add_attrs : tag -> attribute list -> tag
 
 (** [add_content t t'] takes the initial stanza [t] and updates the content of it to include [t'] *)
 val add_content : t -> t -> t
