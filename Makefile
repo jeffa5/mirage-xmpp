@@ -66,3 +66,7 @@ doc: clean
 .PHONY: format
 format: clean
 	dune build @{src,mirage}/fmt --auto-promote
+
+.PHONY: check
+check:
+	dune build @check
