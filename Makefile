@@ -53,9 +53,9 @@ clean:
 
 .PHONY: coverage
 coverage: clean
-	rm -rf coverage
+	rm -rf pages/coverage
 	BISECT_ENABLE=YES dune build @src/runtest --force
-	bisect-ppx-report -I _build/default/src -html coverage/ `find . -name 'bisect*.out'`
+	bisect-ppx-report -I _build/default/src -html pages/coverage `find . -name 'bisect*.out'`
 
 .PHONY: doc
 doc: clean

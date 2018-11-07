@@ -1,6 +1,7 @@
 type name = string * string
 type attribute = name * string
 type tag = name * attribute list
+
 type t =
   | Stanza of tag * t list
   | Text of string
@@ -41,12 +42,12 @@ let rec to_string = function
   | Stanza ((name, attrs), l) ->
     let tag_string = tag_to_string (name, attrs) in
     (match l with
-     | [] -> "<" ^ tag_string ^ " />"
-     | ss ->
-       let stanzas =
-         Astring.String.concat ~sep:"\n" (List.map (fun s -> to_string s) ss)
-       in
-       "<" ^ tag_string ^ ">" ^ stanzas ^ "</" ^ name_to_string name ^ ">")
+    | [] -> "<" ^ tag_string ^ " />"
+    | ss ->
+      let stanzas =
+        Astring.String.concat ~sep:"\n" (List.map (fun s -> to_string s) ss)
+      in
+      "<" ^ tag_string ^ ">" ^ stanzas ^ "</" ^ name_to_string name ^ ">")
   | Text s -> s
 ;;
 

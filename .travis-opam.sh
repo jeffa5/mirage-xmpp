@@ -35,6 +35,7 @@ echo -en "travis_fold:start:runtest\r"
 # run unit tests
 dune build @src/runtest
 echo -en "travis_fold:end:runtest\r"
+
 echo -en "travis_fold:start:makedocs\r"
 # make docs
 dune clean
@@ -43,3 +44,11 @@ dune build @doc
 mkdir -p pages
 cp -r _build/default/_doc/_html pages/docs
 echo -en "travis_fold:end:makedocs\r"
+
+echo -en "travis_fold:start:coverage\r"
+# make coverage
+dune clean
+mkdir -p pages
+BISECT_ENABLE=YES dune build @src/runtest
+bisect-ppx-report -I _build/default/src -html pages/coverage `find . -name 'bisect*.out'`
+echo -en "travis_fold:end:coverage\r"
