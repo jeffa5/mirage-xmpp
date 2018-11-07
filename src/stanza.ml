@@ -1,16 +1,15 @@
 type name = string * string
 type attribute = name * string
-type tag = Tag of name * attribute list
-
+type tag = name * attribute list
 type t =
   | Stanza of tag * t list
   | Text of string
 
 let create ?(children = []) tag = Stanza (tag, children)
 
-let add_attrs (Tag (name, l)) attrs =
+let add_attrs (name, l) attrs =
   let new_attrs = l @ attrs in
-  Tag (name, new_attrs)
+  name, new_attrs
 ;;
 
 let add_attr tag attr = add_attrs tag [attr]
@@ -30,7 +29,7 @@ let attribute_to_string (name, attribute) =
   name_string ^ "=" ^ attribute
 ;;
 
-let tag_to_string (Tag (name, attributes)) =
+let tag_to_string (name, attributes) =
   let attr_string =
     Astring.String.concat ~sep:" " (List.map (fun a -> attribute_to_string a) attributes)
   in
@@ -39,71 +38,69 @@ let tag_to_string (Tag (name, attributes)) =
 ;;
 
 let rec to_string = function
-  | Stanza (Tag (name, attrs), l) ->
-    let tag_string = tag_to_string (Tag (name, attrs)) in
+  | Stanza ((name, attrs), l) ->
+    let tag_string = tag_to_string (name, attrs) in
     (match l with
-    | [] -> "<" ^ tag_string ^ " />"
-    | ss ->
-      let stanzas =
-        Astring.String.concat ~sep:"\n" (List.map (fun s -> to_string s) ss)
-      in
-      "<" ^ tag_string ^ ">" ^ stanzas ^ "</" ^ name_to_string name ^ ">")
+     | [] -> "<" ^ tag_string ^ " />"
+     | ss ->
+       let stanzas =
+         Astring.String.concat ~sep:"\n" (List.map (fun s -> to_string s) ss)
+       in
+       "<" ^ tag_string ^ ">" ^ stanzas ^ "</" ^ name_to_string name ^ ">")
   | Text s -> s
 ;;
 
 let%expect_test "empty tag prefix" =
-  let tag = Tag (("", "name"), []) in
+  let tag = ("", "name"), [] in
   print_endline (tag_to_string tag);
   [%expect {| name |}]
 ;;
 
 let%expect_test "empty prefix in stanza" =
-  let stanza = Stanza (Tag (("", "name"), []), []) in
+  let stanza = Stanza ((("", "name"), []), []) in
   print_endline (to_string stanza);
   [%expect {| <name /> |}]
 ;;
 
 let%expect_test "create" =
-  let stanza = create (Tag (("prefix", "name"), [])) in
+  let stanza = create (("prefix", "name"), []) in
   print_endline (to_string stanza);
   [%expect {| <prefix:name /> |}]
 ;;
 
 let%expect_test "create tag" =
-  let tag = Tag (("prefix", "name"), []) in
+  let tag = ("prefix", "name"), [] in
   print_endline (tag_to_string tag);
   [%expect {| prefix:name |}]
 ;;
 
 let%expect_test "empty tag prefix with attrs" =
-  let tag = Tag (("", "name"), [("", "attr1"), "val1"]) in
+  let tag = ("", "name"), [("", "attr1"), "val1"] in
   print_endline (tag_to_string tag);
   [%expect {| name attr1=val1 |}]
 ;;
 
 let%expect_test "empty prefix in stanza with attrs" =
-  let stanza = Stanza (Tag (("", "name"), [("", "attr1"), "val1"]), []) in
+  let stanza = Stanza ((("", "name"), [("", "attr1"), "val1"]), []) in
   print_endline (to_string stanza);
   [%expect {| <name attr1=val1 /> |}]
 ;;
 
 let%expect_test "create stanza with attrs" =
-  let stanza = create (Tag (("prefix", "name"), [("prefix", "attr1"), "val1"])) in
+  let stanza = create (("prefix", "name"), [("prefix", "attr1"), "val1"]) in
   print_endline (to_string stanza);
   [%expect {| <prefix:name prefix:attr1=val1 /> |}]
 ;;
 
 let%expect_test "create tag with attrs" =
-  let tag = Tag (("prefix", "name"), [("prefix", "attr1"), "val1"]) in
+  let tag = ("prefix", "name"), [("prefix", "attr1"), "val1"] in
   print_endline (tag_to_string tag);
   [%expect {| prefix:name prefix:attr1=val1 |}]
 ;;
 
 let%expect_test "create stanza with children" =
-  let children = [create (Tag (("prefix", "name"), [("prefix", "attr1"), "val1"]))] in
-  let stanza =
-    create ~children (Tag (("prefix", "name"), [("prefix", "attr1"), "val1"]))
-  in
+  let children = [create (("prefix", "name"), [("prefix", "attr1"), "val1"])] in
+  let stanza = create ~children (("prefix", "name"), [("prefix", "attr1"), "val1"]) in
   print_endline (to_string stanza);
   [%expect
     {| <prefix:name prefix:attr1=val1><prefix:name prefix:attr1=val1 /></prefix:name> |}]

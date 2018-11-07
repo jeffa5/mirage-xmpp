@@ -31,7 +31,7 @@ let%expect_test "create" =
 
 let%expect_test "idle to opening" =
   let fsm = create () in
-  let stanza = Stanza.create (Stanza.Tag (("", "test"), [])) in
+  let stanza = Stanza.create (("", "test"), []) in
   let fsm, actions = update fsm (Events.INITIAL stanza) in
   print_endline (to_string fsm);
   [%expect {| opening |}];

@@ -5,7 +5,7 @@ type name = string * string
 type attribute = name * string
 
 (** [create t] creates a new stanza with the given tag type *)
-type tag = Tag of name * attribute list
+type tag = name * attribute list
 
 val create : ?children:t list -> tag -> t
 (* functions to create a stanza? *)
