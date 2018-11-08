@@ -9,7 +9,7 @@ type t = {state : state}
 
 let state_to_string = function IDLE -> "idle" | OPENING -> "opening"
 let create () = {state = IDLE}
-let to_string {state} = state_to_string state
+let to_string t = "{state: " ^ state_to_string t.state ^ "}"
 
 let update t event =
   let open Events in
@@ -30,7 +30,7 @@ let update t event =
 let%expect_test "create" =
   let fsm = create () in
   print_endline (to_string fsm);
-  [%expect {| idle |}]
+  [%expect {| {state: idle} |}]
 ;;
 
 let%expect_test "idle to opening" =
@@ -42,7 +42,7 @@ let%expect_test "idle to opening" =
   in
   let fsm, actions = update fsm (Events.STANZA stanza) in
   print_endline (to_string fsm);
-  [%expect {| opening |}];
+  [%expect {| {state: opening} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect

@@ -46,7 +46,7 @@ let pp_attribute_to_string (name, attribute) =
 ;;
 
 let pp_tag_to_string (name, attributes) =
-  let sep = if List.length attributes > 3 then "\n  " else " " in
+  let sep =  "\n  " in
   let attr_string =
     String.concat ~sep (List.map (fun a -> pp_attribute_to_string a) attributes)
   in
@@ -64,17 +64,17 @@ let pp_to_string ?(auto_close = true) s =
     | Stanza ((name, attrs), l) ->
       let tag_string = pp_tag_to_string (name, attrs) in
       (match l with
-      | [] ->
-        if auto_close
-        then indent ^ "<" ^ tag_string ^ " />"
-        else indent ^ "<" ^ tag_string ^ ">"
-      | ss ->
-        let stanzas =
-          String.concat ~sep:"\n" (List.map (fun s -> aux s (depth + 1)) ss)
-        in
-        let start_tag = indent ^ "<" ^ tag_string ^ ">" in
-        let end_tag = indent ^ "</" ^ name_to_string name ^ ">" in
-        start_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
+       | [] ->
+         if auto_close
+         then indent ^ "<" ^ tag_string ^ " />"
+         else indent ^ "<" ^ tag_string ^ ">"
+       | ss ->
+         let stanzas =
+           String.concat ~sep:"\n" (List.map (fun s -> aux s (depth + 1)) ss)
+         in
+         let start_tag = indent ^ "<" ^ tag_string ^ ">" in
+         let end_tag = indent ^ "</" ^ name_to_string name ^ ">" in
+         start_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
     | Text ss -> String.concat ~sep:"\n" (List.map (fun s -> indent ^ s) ss)
   in
   aux s 0
@@ -98,12 +98,12 @@ let to_string ?(auto_close = true) s =
     | Stanza ((name, attrs), l) ->
       let tag_string = tag_to_string (name, attrs) in
       (match l with
-      | [] -> if auto_close then "<" ^ tag_string ^ " />" else "<" ^ tag_string ^ ">"
-      | ss ->
-        let stanzas = String.concat ~sep:"" (List.map (fun s -> aux s) ss) in
-        let start_tag = "<" ^ tag_string ^ ">" in
-        let end_tag = "</" ^ name_to_string name ^ ">" in
-        start_tag ^ stanzas ^ end_tag)
+       | [] -> if auto_close then "<" ^ tag_string ^ " />" else "<" ^ tag_string ^ ">"
+       | ss ->
+         let stanzas = String.concat ~sep:"" (List.map (fun s -> aux s) ss) in
+         let start_tag = "<" ^ tag_string ^ ">" in
+         let end_tag = "</" ^ name_to_string name ^ ">" in
+         start_tag ^ stanzas ^ end_tag)
     | Text ss -> String.concat ~sep:"\n" ss
   in
   aux s
@@ -158,25 +158,33 @@ let%expect_test "create tag" =
 let%expect_test "empty tag prefix with attrs" =
   let tag = ("", "name"), [("", "attr1"), "val1"] in
   print_endline (pp_tag_to_string tag);
-  [%expect {| name attr1='val1' |}]
+  [%expect {|
+    name
+      attr1='val1' |}]
 ;;
 
 let%expect_test "empty prefix in stanza with attrs" =
   let stanza = Stanza ((("", "name"), [("", "attr1"), "val1"]), []) in
   print_endline (pp_to_string stanza);
-  [%expect {| <name attr1='val1' /> |}]
+  [%expect {|
+    <name
+      attr1='val1' /> |}]
 ;;
 
 let%expect_test "create stanza with attrs" =
   let stanza = create (("prefix", "name"), [("prefix", "attr1"), "val1"]) in
   print_endline (pp_to_string stanza);
-  [%expect {| <prefix:name prefix:attr1='val1' /> |}]
+  [%expect {|
+    <prefix:name
+      prefix:attr1='val1' /> |}]
 ;;
 
 let%expect_test "create tag with attrs" =
   let tag = ("prefix", "name"), [("prefix", "attr1"), "val1"] in
   print_endline (pp_tag_to_string tag);
-  [%expect {| prefix:name prefix:attr1='val1' |}]
+  [%expect {|
+    prefix:name
+      prefix:attr1='val1' |}]
 ;;
 
 let%expect_test "create stanza with children" =
@@ -185,8 +193,10 @@ let%expect_test "create stanza with children" =
   print_endline (pp_to_string stanza);
   [%expect
     {|
-      <prefix:name prefix:attr1='val1'>
-        <prefix:name prefix:attr1='val1' />
+      <prefix:name
+        prefix:attr1='val1'>
+        <prefix:name
+        prefix:attr1='val1' />
       </prefix:name> |}]
 ;;
 

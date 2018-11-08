@@ -25,4 +25,6 @@ val create :
     - take the actions from the fsm and push necessary data to the callback function, handle roster events and perform lookups on the connections in order to send data to other users
     - call parse_stanza again and repeat
 *)
-val handle : t -> unit
+val handle : t -> unit Lwt.t
+
+val to_string : t -> string

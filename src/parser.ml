@@ -51,10 +51,7 @@ let parse_stanza parser =
       | _ -> assert false)
     | None -> assert false
   in
-  match%lwt aux () with
-  | Ok (Some s) -> Lwt.return_ok s
-  | Error e -> Lwt.return_error e
-  | Ok None -> Lwt.return_error "Nothing left to parse"
+  aux ()
 ;;
 
 let parse_string s =
@@ -62,14 +59,21 @@ let parse_string s =
   let out () =
     match%lwt parse_stanza parser with
     | Ok s ->
-      print_endline (Stanza.pp_to_string s);
-      Lwt.return_unit
+      (match s with
+      | Some stanza ->
+        print_endline (Stanza.pp_to_string stanza);
+        Lwt.return_unit
+      | None ->
+        print_endline "End of the stream";
+        Lwt.return_unit)
     | Error e ->
       print_endline e;
       Lwt.return_unit
   in
   fun () -> Lwt_main.run (out ())
 ;;
+
+let to_string _t = "stream and depth"
 
 let%expect_test "initial stanza gets returned" =
   let pf = parse_string "<stream></stream>" in

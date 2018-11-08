@@ -4,8 +4,6 @@
 type t =
   | REPLY_STANZA of bool * Stanza.t
   | SEND_STANZA of Jid.t * Stanza.t
-  | ROSTER_UPDATE
-  | ROSTER_GET
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

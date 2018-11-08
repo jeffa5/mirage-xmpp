@@ -8,3 +8,5 @@ val create : unit -> t
 
 (** [update t e] updates the state machine [t] with the event [e] to give the resulting state machine in a new state and the list of actions to be performed *)
 val update : t -> Events.t -> t * Actions.t list
+
+val to_string : t -> string
