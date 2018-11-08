@@ -14,14 +14,14 @@
       <h2>81.25%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:10.00%"></span>
-      <span class="unvisited" style="top:11.00%"></span>
-      <span class="unvisited" style="top:24.00%"></span>
-      <span class="unvisited" style="top:44.00%"></span>
-      <span class="unvisited" style="top:56.00%"></span>
-      <span class="unvisited" style="top:57.00%"></span>
-      <span class="unvisited" style="top:67.00%"></span>
-      <span class="unvisited" style="top:69.00%"></span>
+      <span class="unvisited" style="top:9.62%"></span>
+      <span class="unvisited" style="top:10.58%"></span>
+      <span class="unvisited" style="top:23.08%"></span>
+      <span class="unvisited" style="top:42.31%"></span>
+      <span class="unvisited" style="top:63.46%"></span>
+      <span class="unvisited" style="top:65.38%"></span>
+      <span class="unvisited" style="top:66.35%"></span>
+      <span class="unvisited" style="top:68.27%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -80,28 +80,28 @@
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span > </span>
 <a id="L54"></a><span class="visited"> </span>
-<a id="L55"></a><span class="visited"> </span>
-<a id="L56"></a><span class="unvisited"> </span>
-<a id="L57"></a><span class="unvisited"> </span>
-<a id="L58"></a><span > </span>
-<a id="L59"></a><span > </span>
-<a id="L60"></a><span > </span>
+<a id="L55"></a><span > </span>
+<a id="L56"></a><span > </span>
+<a id="L57"></a><span > </span>
+<a id="L58"></a><span class="visited"> </span>
+<a id="L59"></a><span class="visited"> </span>
+<a id="L60"></a><span class="visited"> </span>
 <a id="L61"></a><span class="visited"> </span>
-<a id="L62"></a><span class="visited"> </span>
+<a id="L62"></a><span > </span>
 <a id="L63"></a><span class="visited"> </span>
-<a id="L64"></a><span class="visited"> </span>
-<a id="L65"></a><span > </span>
-<a id="L66"></a><span class="visited"> </span>
-<a id="L67"></a><span class="unvisited"> </span>
-<a id="L68"></a><span > </span>
+<a id="L64"></a><span > </span>
+<a id="L65"></a><span class="visited"> </span>
+<a id="L66"></a><span class="unvisited"> </span>
+<a id="L67"></a><span > </span>
+<a id="L68"></a><span class="unvisited"> </span>
 <a id="L69"></a><span class="unvisited"> </span>
 <a id="L70"></a><span > </span>
-<a id="L71"></a><span class="visited"> </span>
+<a id="L71"></a><span class="unvisited"> </span>
 <a id="L72"></a><span > </span>
-<a id="L73"></a><span > </span>
+<a id="L73"></a><span class="visited"> </span>
 <a id="L74"></a><span > </span>
 <a id="L75"></a><span > </span>
-<a id="L76"></a><span > </span>
+<a id="L76"></a><span class="visited"> </span>
 <a id="L77"></a><span > </span>
 <a id="L78"></a><span > </span>
 <a id="L79"></a><span > </span>
@@ -126,6 +126,10 @@
 <a id="L98"></a><span > </span>
 <a id="L99"></a><span > </span>
 <a id="L100"></a><span > </span>
+<a id="L101"></a><span > </span>
+<a id="L102"></a><span > </span>
+<a id="L103"></a><span > </span>
+<a id="L104"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -230,6 +234,10 @@
 <a href="#L98"> 98</a>
 <a href="#L99"> 99</a>
 <a href="#L100">100</a>
+<a href="#L101">101</a>
+<a href="#L102">102</a>
+<a href="#L103">103</a>
+<a href="#L104">104</a>
 </pre>
         <pre id="code">
 type t =
@@ -239,7 +247,7 @@ type t =
 exception ParsingError of string
 
 let make_parser stream =
-  <span data-count="3">M</span>arkup_lwt.parse_xml
+  <span data-count="5">M</span>arkup_lwt.parse_xml
     ~report:(fun _ e -&gt;
       <span data-count="0">l</span>et error_string = <span data-count="0">M</span>arkup.Error.to_string e in
       <span data-count="0">L</span>wt.fail (ParsingError error_string) )
@@ -247,23 +255,23 @@ let make_parser stream =
 ;;
 
 let create stream =
-  <span data-count="3">l</span>et stream = <span data-count="3">M</span>arkup_lwt.lwt_stream stream |&gt; <span data-count="3">m</span>ake_parser |&gt; <span data-count="3">M</span>arkup.signals in
-  <span data-count="3">{</span>stream; depth = 0}
+  <span data-count="5">l</span>et stream = <span data-count="5">M</span>arkup_lwt.lwt_stream stream |&gt; <span data-count="5">m</span>ake_parser |&gt; <span data-count="5">M</span>arkup.signals in
+  <span data-count="5">{</span>stream; depth = 0}
 ;;
 
 let parse_stanza parser =
-  <span data-count="5">l</span>et rec aux () =
-    <span data-count="10">l</span>et stanza = <span data-count="10">r</span>ef None in
-    <span data-count="10">m</span>atch%lwt <span data-count="10">M</span>arkup_lwt.next parser.stream with
+  <span data-count="7">l</span>et rec aux () =
+    <span data-count="12">l</span>et stanza = <span data-count="12">r</span>ef None in
+    <span data-count="12">m</span>atch%lwt <span data-count="12">M</span>arkup_lwt.next parser.stream with
     | exception <span data-count="0">P</span>arsingError e -&gt; Lwt.return_error e
-    | <span data-count="10">S</span>ome signal -&gt;
+    | <span data-count="12">S</span>ome signal -&gt;
       (match signal with
-      | <span data-count="6">`</span>Start_element tag -&gt;
+      | <span data-count="7">`</span>Start_element tag -&gt;
         stanza := Some (Stanza.create tag);
-        <span data-count="6">p</span>arser.depth &lt;- parser.depth + 1;
-        <span data-count="6">i</span>f parser.depth = 1
+        <span data-count="7">p</span>arser.depth &lt;- parser.depth + 1;
+        <span data-count="7">i</span>f parser.depth = 1
         then (* return initial stream stanza *)
-          <span data-count="3">L</span>wt.return_ok !stanza
+          <span data-count="4">L</span>wt.return_ok !stanza
         else
           (* Parse all the children into this stanza *)
           <span data-count="3">l</span>et rec parse_child () =
@@ -278,17 +286,14 @@ let parse_stanza parser =
             | <span data-count="0">E</span>rror e -&gt; Lwt.return_error e
           in
           <span data-count="3">p</span>arse_child ()
-      | <span data-count="3">`</span>End_element -&gt;
+      | <span data-count="4">`</span>End_element -&gt;
         parser.depth &lt;- parser.depth - 1;
-        <span data-count="3">L</span>wt.return_ok !stanza
+        <span data-count="4">L</span>wt.return_ok !stanza
       | <span data-count="1">`</span>Text s -&gt; Lwt.return_ok (Some (Stanza.text s))
       | _ -&gt; assert false)
     | None -&gt; assert false
   in
-  <span data-count="5">m</span>atch%lwt <span data-count="5">a</span>ux () with
-  | <span data-count="5">O</span>k (Some s) -&gt; Lwt.return_ok s
-  | <span data-count="0">E</span>rror e -&gt; Lwt.return_error e
-  | <span data-count="0">O</span>k None -&gt; Lwt.return_error "Nothing left to parse"
+  <span data-count="7">a</span>ux ()
 ;;
 
 let parse_string s =
@@ -296,14 +301,21 @@ let parse_string s =
   <span data-count="3">l</span>et out () =
     <span data-count="5">m</span>atch%lwt <span data-count="5">p</span>arse_stanza parser with
     | <span data-count="5">O</span>k s -&gt;
-      print_endline (Stanza.pp_to_string s);
-      <span data-count="5">L</span>wt.return_unit
+      (match s with
+      | <span data-count="5">S</span>ome stanza -&gt;
+        print_endline (Stanza.pp_to_string stanza);
+        <span data-count="5">L</span>wt.return_unit
+      | <span data-count="0">N</span>one -&gt;
+        print_endline "End of the stream";
+        <span data-count="0">L</span>wt.return_unit)
     | <span data-count="0">E</span>rror e -&gt;
       print_endline e;
       <span data-count="0">L</span>wt.return_unit
   in
   <span data-count="3">f</span>un () -&gt; <span data-count="5">L</span>wt_main.run (out ())
 ;;
+
+let to_string _t = <span data-count="1">"</span>stream and depth"
 
 let%expect_test "initial stanza gets returned" =
   let pf = parse_string "&lt;stream&gt;&lt;/stream&gt;" in
@@ -335,7 +347,7 @@ let%expect_test "nested stanza" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-08 00:38:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-08 18:57:14 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

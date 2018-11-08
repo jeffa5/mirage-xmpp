@@ -11,12 +11,10 @@
           <span class="dirname">src/</span>actions.ml
         </a>
       </h1>
-      <h2>40.00%</h2>
+      <h2>66.67%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:69.23%"></span>
-      <span class="unvisited" style="top:84.62%"></span>
-      <span class="unvisited" style="top:92.31%"></span>
+      <span class="unvisited" style="top:77.78%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -25,51 +23,39 @@
 <a id="L2"></a><span > </span>
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span > </span>
-<a id="L5"></a><span > </span>
-<a id="L6"></a><span > </span>
-<a id="L7"></a><span class="visited"> </span>
-<a id="L8"></a><span class="visited"> </span>
-<a id="L9"></a><span class="unvisited"> </span>
-<a id="L10"></a><span > </span>
-<a id="L11"></a><span class="unvisited"> </span>
-<a id="L12"></a><span class="unvisited"> </span>
-<a id="L13"></a><span > </span>
+<a id="L5"></a><span class="visited"> </span>
+<a id="L6"></a><span class="visited"> </span>
+<a id="L7"></a><span class="unvisited"> </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
         <pre id="line-numbers">
-<a href="#L1"> 1</a>
-<a href="#L2"> 2</a>
-<a href="#L3"> 3</a>
-<a href="#L4"> 4</a>
-<a href="#L5"> 5</a>
-<a href="#L6"> 6</a>
-<a href="#L7"> 7</a>
-<a href="#L8"> 8</a>
-<a href="#L9"> 9</a>
-<a href="#L10">10</a>
-<a href="#L11">11</a>
-<a href="#L12">12</a>
-<a href="#L13">13</a>
+<a href="#L1">1</a>
+<a href="#L2">2</a>
+<a href="#L3">3</a>
+<a href="#L4">4</a>
+<a href="#L5">5</a>
+<a href="#L6">6</a>
+<a href="#L7">7</a>
+<a href="#L8">8</a>
+<a href="#L9">9</a>
 </pre>
         <pre id="code">
 type t =
   | REPLY_STANZA of bool * Stanza.t
   | SEND_STANZA of Jid.t * Stanza.t
-  | ROSTER_UPDATE
-  | ROSTER_GET
 
 let to_string = <span data-count="1">f</span>unction
   | <span data-count="1">R</span>EPLY_STANZA (b, s) -&gt; "reply_stanza:\n" ^ Stanza.pp_to_string ~auto_close:b s
   | <span data-count="0">S</span>END_STANZA (jid, s) -&gt;
     "send_stanza:\n" ^ Jid.to_string jid ^ "\n" ^ Stanza.pp_to_string s
-  | <span data-count="0">R</span>OSTER_GET -&gt; "roster_get"
-  | <span data-count="0">R</span>OSTER_UPDATE -&gt; "roster_update"
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-08 00:38:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-08 18:57:14 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
