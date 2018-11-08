@@ -14,9 +14,9 @@
       <h2>40.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:75.00%"></span>
-      <span class="unvisited" style="top:83.33%"></span>
-      <span class="unvisited" style="top:91.67%"></span>
+      <span class="unvisited" style="top:69.23%"></span>
+      <span class="unvisited" style="top:84.62%"></span>
+      <span class="unvisited" style="top:92.31%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -30,9 +30,10 @@
 <a id="L7"></a><span class="visited"> </span>
 <a id="L8"></a><span class="visited"> </span>
 <a id="L9"></a><span class="unvisited"> </span>
-<a id="L10"></a><span class="unvisited"> </span>
+<a id="L10"></a><span > </span>
 <a id="L11"></a><span class="unvisited"> </span>
-<a id="L12"></a><span > </span>
+<a id="L12"></a><span class="unvisited"> </span>
+<a id="L13"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -49,24 +50,26 @@
 <a href="#L10">10</a>
 <a href="#L11">11</a>
 <a href="#L12">12</a>
+<a href="#L13">13</a>
 </pre>
         <pre id="code">
 type t =
-  | SEND_STANZA of Stanza.t
+  | REPLY_STANZA of bool * Stanza.t
+  | SEND_STANZA of Jid.t * Stanza.t
   | ROSTER_UPDATE
   | ROSTER_GET
-  | PASS_STANZA
 
 let to_string = <span data-count="1">f</span>unction
-  | <span data-count="1">S</span>END_STANZA _ -&gt; "send_xml"
+  | <span data-count="1">R</span>EPLY_STANZA (b, s) -&gt; "reply_stanza:\n" ^ Stanza.pp_to_string ~auto_close:b s
+  | <span data-count="0">S</span>END_STANZA (jid, s) -&gt;
+    "send_stanza:\n" ^ Jid.to_string jid ^ "\n" ^ Stanza.pp_to_string s
   | <span data-count="0">R</span>OSTER_GET -&gt; "roster_get"
   | <span data-count="0">R</span>OSTER_UPDATE -&gt; "roster_update"
-  | <span data-count="0">P</span>ASS_STANZA -&gt; "pass_stanza"
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-07 21:26:20 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-08 00:38:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

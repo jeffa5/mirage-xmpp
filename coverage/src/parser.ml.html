@@ -296,7 +296,7 @@ let parse_string s =
   <span data-count="3">l</span>et out () =
     <span data-count="5">m</span>atch%lwt <span data-count="5">p</span>arse_stanza parser with
     | <span data-count="5">O</span>k s -&gt;
-      print_endline (Stanza.to_string s);
+      print_endline (Stanza.pp_to_string s);
       <span data-count="5">L</span>wt.return_unit
     | <span data-count="0">E</span>rror e -&gt;
       print_endline e;
@@ -335,7 +335,7 @@ let%expect_test "nested stanza" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-07 21:26:20 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-08 00:38:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
