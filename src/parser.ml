@@ -62,7 +62,7 @@ let parse_string s =
   let out () =
     match%lwt parse_stanza parser with
     | Ok s ->
-      print_endline (Stanza.to_string s);
+      print_endline (Stanza.pp_to_string s);
       Lwt.return_unit
     | Error e ->
       print_endline e;
