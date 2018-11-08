@@ -16,6 +16,7 @@ depends: [
   "lwt_ppx"
   "bisect_ppx"
   "astring"
+  "asetmap"
   "uuidm"
 ]
 build: [
