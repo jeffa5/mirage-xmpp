@@ -1,12 +1,3 @@
-type t =
-  | INITIAL of Stanza.t
-  | STARTING
-  | CLOSING
+type t = STANZA of Stanza.t
 
-let lift _ = STARTING
-
-let to_string = function
-  | STARTING -> "starting"
-  | CLOSING -> "closing"
-  | INITIAL s -> "initial" ^ Stanza.to_string s
-;;
+let to_string = function STANZA s -> "stanza" ^ Stanza.to_string s
