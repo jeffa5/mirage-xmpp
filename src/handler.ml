@@ -12,12 +12,12 @@ let handle_action t stream =
   | Some action ->
     let open Actions in
     (match action with
-     | REPLY_STANZA (b, s) ->
-       t.callback (Some (Stanza.to_string ~auto_close:b s));
-       Lwt.return_unit
-     | SEND_STANZA (_jid, s) ->
-       t.callback (Some (Stanza.to_string s));
-       Lwt.return_unit)
+    | REPLY_STANZA (b, s) ->
+      t.callback (Some (Stanza.to_string ~auto_close:b s));
+      Lwt.return_unit
+    | SEND_STANZA (_jid, s) ->
+      t.callback (Some (Stanza.to_string s));
+      Lwt.return_unit)
   | None -> assert false
 ;;
 
@@ -73,12 +73,14 @@ let to_string t =
 let make_test_handler s =
   let mask_id s =
     match Astring.String.find_sub ~sub:"id='" s with
-    | Some i -> (match Astring.String.find_sub ~start:(i+4) ~sub:"'" s with
-        |Some j -> Astring.String.with_index_range ~first:0 ~last:(i +3) s ^ Astring.String.with_index_range ~first:j s
-        | None -> "")
-    |None -> ""
+    | Some i ->
+      (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
+      | Some j ->
+        Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+        ^ Astring.String.with_index_range ~first:j s
+      | None -> "")
+    | None -> ""
   in
-
   let connections = ref Connections.empty in
   let roster = Roster.empty in
   let stream = Lwt_stream.of_string s in

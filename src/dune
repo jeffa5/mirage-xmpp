@@ -1,5 +1,5 @@
 (library
- (name xmpp)
+ (name mirage_xmpp)
  (public_name mirage-xmpp)
  (libraries lwt lwt.unix markup-lwt astring asetmap uuidm)
  (inline_tests (flags -show-counts))
