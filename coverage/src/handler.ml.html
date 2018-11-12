@@ -14,12 +14,12 @@
       <h2>89.09%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:15.13%"></span>
-      <span class="unvisited" style="top:16.81%"></span>
-      <span class="unvisited" style="top:36.13%"></span>
-      <span class="unvisited" style="top:65.55%"></span>
-      <span class="unvisited" style="top:66.39%"></span>
-      <span class="some-visited" style="top:71.43%"></span>
+      <span class="unvisited" style="top:14.88%"></span>
+      <span class="unvisited" style="top:16.53%"></span>
+      <span class="unvisited" style="top:35.54%"></span>
+      <span class="unvisited" style="top:66.94%"></span>
+      <span class="unvisited" style="top:67.77%"></span>
+      <span class="some-visited" style="top:71.90%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -100,18 +100,18 @@
 <a id="L74"></a><span class="visited"> </span>
 <a id="L75"></a><span class="visited"> </span>
 <a id="L76"></a><span class="visited"> </span>
-<a id="L77"></a><span class="visited"> </span>
-<a id="L78"></a><span class="unvisited"> </span>
-<a id="L79"></a><span class="unvisited"> </span>
+<a id="L77"></a><span > </span>
+<a id="L78"></a><span class="visited"> </span>
+<a id="L79"></a><span > </span>
 <a id="L80"></a><span > </span>
-<a id="L81"></a><span > </span>
-<a id="L82"></a><span class="visited"> </span>
-<a id="L83"></a><span class="visited"> </span>
+<a id="L81"></a><span class="unvisited"> </span>
+<a id="L82"></a><span class="unvisited"> </span>
+<a id="L83"></a><span > </span>
 <a id="L84"></a><span class="visited"> </span>
-<a id="L85"></a><span class="some-visited"> </span>
+<a id="L85"></a><span class="visited"> </span>
 <a id="L86"></a><span class="visited"> </span>
-<a id="L87"></a><span > </span>
-<a id="L88"></a><span > </span>
+<a id="L87"></a><span class="some-visited"> </span>
+<a id="L88"></a><span class="visited"> </span>
 <a id="L89"></a><span > </span>
 <a id="L90"></a><span > </span>
 <a id="L91"></a><span > </span>
@@ -143,6 +143,8 @@
 <a id="L117"></a><span > </span>
 <a id="L118"></a><span > </span>
 <a id="L119"></a><span > </span>
+<a id="L120"></a><span > </span>
+<a id="L121"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -266,6 +268,8 @@
 <a href="#L117">117</a>
 <a href="#L118">118</a>
 <a href="#L119">119</a>
+<a href="#L120">120</a>
+<a href="#L121">121</a>
 </pre>
         <pre id="code">
 type t =
@@ -282,12 +286,12 @@ let handle_action t stream =
   | <span data-count="1">S</span>ome action -&gt;
     let open Actions in
     (match action with
-     | <span data-count="1">R</span>EPLY_STANZA (b, s) -&gt;
-       t.callback (Some (Stanza.to_string ~auto_close:b s));
-       <span data-count="1">L</span>wt.return_unit
-     | <span data-count="0">S</span>END_STANZA (_jid, s) -&gt;
-       t.callback (Some (Stanza.to_string s));
-       <span data-count="0">L</span>wt.return_unit)
+    | <span data-count="1">R</span>EPLY_STANZA (b, s) -&gt;
+      t.callback (Some (Stanza.to_string ~auto_close:b s));
+      <span data-count="1">L</span>wt.return_unit
+    | <span data-count="0">S</span>END_STANZA (_jid, s) -&gt;
+      t.callback (Some (Stanza.to_string s));
+      <span data-count="0">L</span>wt.return_unit)
   | None -&gt; assert false
 ;;
 
@@ -343,12 +347,14 @@ let to_string t =
 let make_test_handler s =
   <span data-count="2">l</span>et mask_id s =
     <span data-count="1">m</span>atch Astring.String.find_sub ~sub:"id='" s with
-    | <span data-count="1">S</span>ome i -&gt; (match Astring.String.find_sub ~start:(i+4) ~sub:"'" s with
-        |<span data-count="1">S</span>ome j -&gt; Astring.String.with_index_range ~first:0 ~last:(i +3) s ^ Astring.String.with_index_range ~first:j s
-        | <span data-count="0">N</span>one -&gt; "")
-    |<span data-count="0">N</span>one -&gt; ""
+    | <span data-count="1">S</span>ome i -&gt;
+      (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
+      | <span data-count="1">S</span>ome j -&gt;
+        Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+        ^ Astring.String.with_index_range ~first:j s
+      | <span data-count="0">N</span>one -&gt; "")
+    | <span data-count="0">N</span>one -&gt; ""
   in
-
   <span data-count="2">l</span>et connections = <span data-count="2">r</span>ef Connections.empty in
   <span data-count="2">l</span>et roster = <span data-count="2">R</span>oster.empty in
   <span data-count="2">l</span>et stream = <span data-count="2">L</span>wt_stream.of_string s in
@@ -390,7 +396,7 @@ let%expect_test "initial stanza event" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-08 18:57:14 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-12 17:02:14 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
