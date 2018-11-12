@@ -7,10 +7,6 @@ env:
     - PACKAGE=mirage-xmpp
   matrix:
     - OCAML_VERSION=4.05
-notifications:
-  email:
-    on_success: always
-    on_failure: always
 
 deploy:
   provider: pages
