@@ -562,17 +562,17 @@ let pp_to_string ?(auto_close = <span data-count="12">t</span>rue) s =
     | <span data-count="17">S</span>tanza ((name, attrs), l) -&gt;
       let tag_string = <span data-count="17">p</span>p_tag_to_string (name, attrs) in
       <span data-count="17">(</span>match l with
-      | <span data-count="14">[</span>] -&gt;
-        if auto_close
-        then <span data-count="11">i</span>ndent ^ "&lt;" ^ tag_string ^ " /&gt;"
-        else <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;"
-      | <span data-count="3">s</span>s -&gt;
-        let stanzas =
-          <span data-count="3">S</span>tring.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="3">a</span>ux s (depth + 1)) ss)
-        in
-        <span data-count="3">l</span>et start_tag = <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;" in
-        <span data-count="3">l</span>et end_tag = <span data-count="3">i</span>ndent ^ "&lt;/" ^ name_to_string name ^ "&gt;" in
-        <span data-count="3">s</span>tart_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
+       | <span data-count="14">[</span>] -&gt;
+         if auto_close
+         then <span data-count="11">i</span>ndent ^ "&lt;" ^ tag_string ^ " /&gt;"
+         else <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;"
+       | <span data-count="3">s</span>s -&gt;
+         let stanzas =
+           <span data-count="3">S</span>tring.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="3">a</span>ux s (depth + 1)) ss)
+         in
+         <span data-count="3">l</span>et start_tag = <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;" in
+         <span data-count="3">l</span>et end_tag = <span data-count="3">i</span>ndent ^ "&lt;/" ^ name_to_string name ^ "&gt;" in
+         <span data-count="3">s</span>tart_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
     | <span data-count="3">T</span>ext ss -&gt; String.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="5">i</span>ndent ^ s) ss)
   in
   <span data-count="17">a</span>ux s 0
@@ -596,12 +596,12 @@ let to_string ?(auto_close = <span data-count="0">t</span>rue) s =
     | <span data-count="5">S</span>tanza ((name, attrs), l) -&gt;
       let tag_string = <span data-count="5">t</span>ag_to_string (name, attrs) in
       <span data-count="5">(</span>match l with
-      | <span data-count="5">[</span>] -&gt; if auto_close then <span data-count="1">"</span>&lt;" ^ tag_string ^ " /&gt;" else <span data-count="4">"</span>&lt;" ^ tag_string ^ "&gt;"
-      | <span data-count="0">s</span>s -&gt;
-        let stanzas = <span data-count="0">S</span>tring.concat ~sep:"" (List.map (fun s -&gt; <span data-count="0">a</span>ux s) ss) in
-        <span data-count="0">l</span>et start_tag = <span data-count="0">"</span>&lt;" ^ tag_string ^ "&gt;" in
-        <span data-count="0">l</span>et end_tag = <span data-count="0">"</span>&lt;/" ^ name_to_string name ^ "&gt;" in
-        <span data-count="0">s</span>tart_tag ^ stanzas ^ end_tag)
+       | <span data-count="5">[</span>] -&gt; if auto_close then <span data-count="1">"</span>&lt;" ^ tag_string ^ "/&gt;" else <span data-count="4">"</span>&lt;" ^ tag_string ^ "&gt;"
+       | <span data-count="0">s</span>s -&gt;
+         let stanzas = <span data-count="0">S</span>tring.concat ~sep:"" (List.map (fun s -&gt; <span data-count="0">a</span>ux s) ss) in
+         <span data-count="0">l</span>et start_tag = <span data-count="0">"</span>&lt;" ^ tag_string ^ "&gt;" in
+         <span data-count="0">l</span>et end_tag = <span data-count="0">"</span>&lt;/" ^ name_to_string name ^ "&gt;" in
+         <span data-count="0">s</span>tart_tag ^ stanzas ^ end_tag)
     | <span data-count="0">T</span>ext ss -&gt; String.concat ~sep:"\n" ss
   in
   <span data-count="5">a</span>ux s
@@ -717,7 +717,7 @@ let%expect_test "multi-line text stanza" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-13 13:56:29 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-13 14:00:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
