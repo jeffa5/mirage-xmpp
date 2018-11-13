@@ -145,6 +145,6 @@ let%expect_test "initial stanza with version" =
   [%expect
     {|
     <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    <stream:features />
+    <stream:features/>
     end_of_stream |}]
 ;;
