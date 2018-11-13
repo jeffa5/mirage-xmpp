@@ -27,10 +27,18 @@ let add_content stanza t =
   | Text _ -> assert false
 ;;
 
-let get_attribute_by_name attributes a =
+let get_attribute_by_name_exn attributes a =
   let rec aux = function
     | [] -> raise Not_found
     | (((_, name), _) as attr) :: attrs -> if name = a then attr else aux attrs
+  in
+  aux attributes
+;;
+
+let get_attribute_by_name attributes a =
+  let rec aux = function
+    | [] -> None
+    | (((_, name), _) as attr) :: attrs -> if name = a then Some attr else aux attrs
   in
   aux attributes
 ;;
@@ -130,6 +138,8 @@ let stream_header
       ; ("xmlns", "stream"), stream_ns ]
       @ attributes )
 ;;
+
+let features () = create (("stream", "features"), [])
 
 let%expect_test "empty tag prefix" =
   let tag = ("", "name"), [] in

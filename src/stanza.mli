@@ -25,6 +25,8 @@ val stream_header :
   -> string
   -> t
 
+val features : unit -> t
+
 (** [add_attr t a] updates the stanza [t] to include the attribute [a] *)
 val add_attr : tag -> attribute -> tag
 
@@ -33,8 +35,11 @@ val add_attrs : tag -> attribute list -> tag
 (** [add_content t t'] takes the initial stanza [t] and updates the content of it to include [t'] *)
 val add_content : t -> t -> t
 
+(** [get_attribute_by_name_exn l a] searches [l] for an attribute with name equal to [a], throwing an exception Not_found if it is not available. *)
+val get_attribute_by_name_exn : attribute list -> string -> attribute
+
 (** [get_attribute_by_name l a] searches [l] for an attribute with name equal to [a] *)
-val get_attribute_by_name : attribute list -> string -> attribute
+val get_attribute_by_name : attribute list -> string -> attribute option
 
 (** [to_string t] takes a stanza [t] and returns the string representation of it *)
 val to_string : ?auto_close:bool -> t -> string
