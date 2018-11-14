@@ -36,6 +36,7 @@ make unit
 echo -en "travis_fold:end:runtest\r"
 
 echo -en "travis_fold:start:integration\r"
+opam install mirage
 # run integration tests
 make integration
 dune clean
