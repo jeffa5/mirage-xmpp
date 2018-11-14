@@ -24,11 +24,11 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
       match Astring.String.find_sub ~sub:"id='" s with
       | Some i ->
         (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-         | Some j ->
-           Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-           ^ "redacted_for_testing"
-           ^ Astring.String.with_index_range ~first:j s
-         | None -> assert false)
+        | Some j ->
+          Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+          ^ "redacted_for_testing"
+          ^ Astring.String.with_index_range ~first:j s
+        | None -> assert false)
       | None -> s
     in
     let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
@@ -47,6 +47,7 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
 
 let send_recv_list ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) l =
   List.iter (fun s -> send_recv ~timeout ~host ~port s) l
+;;
 
 let configure_tap () =
   print_endline "Configuring tap0";
@@ -57,7 +58,8 @@ let configure_tap () =
 let start_unikernel () =
   print_endline "Starting unikernel";
   let command =
-    Lwt_process.shell "cd ../../../; sudo mirage/xmpp -l \"*:debug\" &> unikernel.log"
+    Lwt_process.shell
+      "cd ../../../; sudo mirage/xmpp -l \"*:debug\" > unikernel.log 2>&1"
   in
   let _process = Lwt_process.open_process_none command in
   Unix.sleep 1;
@@ -102,12 +104,13 @@ let%expect_test "initial stanza" =
     Stopping unikernel
     Success |}]
 ;;
+
 let%expect_test "initial stanza in list" =
   test_unikernel (fun () ->
       send_recv_list
-        ["<stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' \
-          xml:lang='en' xmlns='jabber:client' \
-          xmlns:stream='http://etherx.jabber.org/streams'>" ]);
+        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>" ] );
   [%expect
     {|
     Starting unikernel
