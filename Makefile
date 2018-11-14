@@ -33,23 +33,17 @@ mirage: install
 # run the integration tests
 .PHONY: integration
 integration: mirage
-	sudo dune build @integration/runtest
+	dune build @integration/runtest
 
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
 	sudo mirage/xmpp -l "*:debug"
 
+# configure the tap for connecting
 .PHONY: tap
 tap:
 	sudo ifconfig tap0 10.0.0.1 up
-
-.PHONY: demo
-demo: tap
-	echo "<stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>" | nc -nw1 10.0.0.2 8080
-
-.PHONY: test
-test: unit integration
 
 # promote the files, typically for expect tests
 .PHONY: promote
@@ -61,26 +55,31 @@ promote:
 clean:
 	dune clean
 
+# ensure the pages directory is available
 .PHONY: pages
 pages:
 	mkdir -p pages
 
+# build the coverage report
 .PHONY: coverage
 coverage: clean pages
 	rm -rf pages/coverage
 	BISECT_ENABLE=YES dune build @runtest --force
 	bisect-ppx-report -I _build/default/src -html pages/coverage `find . -name 'bisect*.out'`
 
+# build the docs
 .PHONY: doc
 doc: clean pages
 	rm -rf pages/docs
 	dune build @doc
 	cp -r _build/default/_doc/_html pages/docs
 
+# format the files
 .PHONY: format
 format: clean
 	dune build @fmt --auto-promote
 
+# run a dune @check to generate merlin files
 .PHONY: check
 check:
 	dune build @check
