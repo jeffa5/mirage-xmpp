@@ -37,8 +37,8 @@ echo -en "travis_fold:end:runtest\r"
 
 echo -en "travis_fold:start:integration\r"
 # run integration tests
-sudo make integration
-sudo dune clean
+make integration
+dune clean
 echo -en "travis_fold:end:integration\r"
 
 echo -en "travis_fold:start:makedocs\r"
@@ -49,5 +49,5 @@ echo -en "travis_fold:end:makedocs\r"
 
 echo -en "travis_fold:start:coverage\r"
 # make coverage
-sudo make coverage
+make coverage
 echo -en "travis_fold:end:coverage\r"
