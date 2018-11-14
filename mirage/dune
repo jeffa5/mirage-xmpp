@@ -1,0 +1,4 @@
+(alias
+ (name mirage)
+ (deps (source_tree .) (package mirage-xmpp))
+ (action (system "./build-unikernel")))
