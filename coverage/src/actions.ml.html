@@ -47,7 +47,7 @@ type t =
   | REPLY_STANZA of bool * Stanza.t
   | SEND_STANZA of Jid.t * Stanza.t
 
-let to_string = <span data-count="1">f</span>unction
+let to_string = <span data-count="2">f</span>unction
   | <span data-count="5">R</span>EPLY_STANZA (b, s) -&gt; "reply_stanza:\n" ^ Stanza.pp_to_string ~auto_close:b s
   | <span data-count="0">S</span>END_STANZA (jid, s) -&gt;
     "send_stanza:\n" ^ Jid.to_string jid ^ "\n" ^ Stanza.pp_to_string s
@@ -55,7 +55,7 @@ let to_string = <span data-count="1">f</span>unction
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-13 14:00:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-14 18:13:38 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

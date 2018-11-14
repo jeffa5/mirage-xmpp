@@ -62,7 +62,7 @@ module Table = Map.Make (Jid)
 
 type t = (Actions.t option -&gt; unit) Table.t
 
-let empty = <span data-count="1">T</span>able.empty
+let empty = <span data-count="2">T</span>able.empty
 let add jid f t = <span data-count="0">T</span>able.add jid f t
 let find jid t = <span data-count="0">T</span>able.find jid t
 let remove jid t = <span data-count="0">T</span>able.remove jid t
@@ -74,7 +74,7 @@ let to_string t =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-13 14:00:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-14 18:13:38 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
