@@ -10,7 +10,7 @@ fork_branch=${FORK_BRANCH:-master}
 set -uex
 
 get() {
-  wget https://raw.githubusercontent.com/${fork_user}/ocaml-ci-scripts/${fork_branch}/$@
+	wget https://raw.githubusercontent.com/${fork_user}/ocaml-ci-scripts/${fork_branch}/$@
 }
 
 get .travis-ocaml.sh
@@ -31,24 +31,23 @@ echo -en "travis_fold:end:prepare.ci\r"
 opam config exec -- ci-opam
 
 echo -en "travis_fold:start:runtest\r"
-# custom commands
 # run unit tests
-dune build @src/runtest
+make unit
 echo -en "travis_fold:end:runtest\r"
+
+echo -en "travis_fold:start:integration\r"
+# run integration tests
+sudo make integration
+sudo dune clean
+echo -en "travis_fold:end:integration\r"
 
 echo -en "travis_fold:start:makedocs\r"
 # make docs
-dune clean
 opam install odoc
-dune build @doc
-mkdir -p pages
-cp -r _build/default/_doc/_html pages/docs
+make doc
 echo -en "travis_fold:end:makedocs\r"
 
 echo -en "travis_fold:start:coverage\r"
 # make coverage
-dune clean
-mkdir -p pages
-BISECT_ENABLE=YES dune build @src/runtest
-bisect-ppx-report -I _build/default/src -html pages/coverage `find . -name 'bisect*.out'`
+sudo make coverage
 echo -en "travis_fold:end:coverage\r"

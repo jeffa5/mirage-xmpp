@@ -28,18 +28,28 @@ install: build
 .PHONY: mirage
 mirage: install
 	dune build @mirage
+	cp _build/default/mirage/xmpp mirage
 
 # run the integration tests
 .PHONY: integration
-integration:
-	# Ensure you are running the unikernel!
-	sudo ifconfig tap0 10.0.0.1 up
-	dune build @test/runtest
+integration: mirage
+	sudo dune build @integration/runtest
 
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
-	cd _build/default/mirage && sudo ./xmlparse -l "*:debug" &> unikernel-log
+	sudo mirage/xmpp -l "*:debug"
+
+.PHONY: tap
+tap:
+	sudo ifconfig tap0 10.0.0.1 up
+
+.PHONY: demo
+demo: tap
+	echo "<stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>" | nc -nw1 10.0.0.2 8080
+
+.PHONY: test
+test: unit integration
 
 # promote the files, typically for expect tests
 .PHONY: promote
@@ -51,21 +61,25 @@ promote:
 clean:
 	dune clean
 
+.PHONY: pages
+pages:
+	mkdir -p pages
+
 .PHONY: coverage
-coverage: clean
+coverage: clean pages
 	rm -rf pages/coverage
-	BISECT_ENABLE=YES dune build @src/runtest --force
+	BISECT_ENABLE=YES dune build @runtest --force
 	bisect-ppx-report -I _build/default/src -html pages/coverage `find . -name 'bisect*.out'`
 
 .PHONY: doc
-doc: clean
+doc: clean pages
 	rm -rf pages/docs
 	dune build @doc
 	cp -r _build/default/_doc/_html pages/docs
 
 .PHONY: format
 format: clean
-	dune build @{src,mirage}/fmt --auto-promote
+	dune build @fmt --auto-promote
 
 .PHONY: check
 check:
