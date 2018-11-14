@@ -5,6 +5,9 @@ mirage configure -t unix --dhcp false --net direct
 # maybe use --net socket
 
 # continue building
-# OPAMVAR_os_family=arch make depend
-OPAMVAR_os_family=${OPAM_OS_FAMILY:-arch} make depend
+if [ -z ${TRAVIS_BUILD} ]; then
+	OPAMVAR_os_family=arch make depend
+else
+	make depend
+fi
 make
