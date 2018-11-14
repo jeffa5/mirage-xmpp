@@ -38,7 +38,8 @@ echo -en "travis_fold:end:runtest\r"
 echo -en "travis_fold:start:integration\r"
 opam install mirage
 # run integration tests
-TRAVIS_BUILD=yes sudo bash -c "make integration"
+export TRAVIS_BUILD=yes
+make integration
 dune clean
 echo -en "travis_fold:end:integration\r"
 
