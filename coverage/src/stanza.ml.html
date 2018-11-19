@@ -11,7 +11,7 @@
           <span class="dirname">src/</span>stanza.ml
         </a>
       </h1>
-      <h2>84.26%</h2>
+      <h2>83.33%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:5.75%"></span>
@@ -19,6 +19,7 @@
       <span class="unvisited" style="top:7.52%"></span>
       <span class="unvisited" style="top:8.85%"></span>
       <span class="unvisited" style="top:14.16%"></span>
+      <span class="unvisited" style="top:17.70%"></span>
       <span class="unvisited" style="top:46.02%"></span>
       <span class="unvisited" style="top:48.67%"></span>
       <span class="unvisited" style="top:49.12%"></span>
@@ -69,7 +70,7 @@
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
 <a id="L39"></a><span class="visited"> </span>
-<a id="L40"></a><span class="visited"> </span>
+<a id="L40"></a><span class="unvisited"> </span>
 <a id="L41"></a><span class="visited"> </span>
 <a id="L42"></a><span > </span>
 <a id="L43"></a><span class="visited"> </span>
@@ -498,7 +499,7 @@ type t =
   | Stanza of tag * t list
   | Text of string list
 
-let create ?(children = <span data-count="24">[</span>]) tag = <span data-count="25">S</span>tanza (tag, children)
+let create ?(children = <span data-count="22">[</span>]) tag = <span data-count="23">S</span>tanza (tag, children)
 let text s = <span data-count="1">T</span>ext s
 let attribute ?(prefix = <span data-count="0">"</span>") name value = <span data-count="0">(</span>prefix, name), value
 
@@ -518,23 +519,23 @@ let add_content stanza t =
 ;;
 
 let get_attribute_by_name_exn attributes a =
-  <span data-count="10">l</span>et rec aux = <span data-count="10">f</span>unction
+  <span data-count="8">l</span>et rec aux = <span data-count="8">f</span>unction
     | <span data-count="0">[</span>] -&gt; raise Not_found
-    | <span data-count="15">(</span>((_, name), _) as attr) :: attrs -&gt; if name = a then <span data-count="10">a</span>ttr else <span data-count="5">a</span>ux attrs
+    | <span data-count="12">(</span>((_, name), _) as attr) :: attrs -&gt; if name = a then <span data-count="8">a</span>ttr else <span data-count="4">a</span>ux attrs
   in
-  <span data-count="10">a</span>ux attributes
+  <span data-count="8">a</span>ux attributes
 ;;
 
 let get_attribute_by_name attributes a =
-  <span data-count="5">l</span>et rec aux = <span data-count="5">f</span>unction
-    | <span data-count="2">[</span>] -&gt; None
-    | <span data-count="13">(</span>((_, name), _) as attr) :: attrs -&gt; if name = a then <span data-count="3">S</span>ome attr else <span data-count="10">a</span>ux attrs
+  <span data-count="4">l</span>et rec aux = <span data-count="4">f</span>unction
+    | <span data-count="0">[</span>] -&gt; None
+    | <span data-count="12">(</span>((_, name), _) as attr) :: attrs -&gt; if name = a then <span data-count="4">S</span>ome attr else <span data-count="8">a</span>ux attrs
   in
-  <span data-count="5">a</span>ux attributes
+  <span data-count="4">a</span>ux attributes
 ;;
 
-let get_value (_, value) = <span data-count="13">v</span>alue
-let name_to_string (prefix, name) = <span data-count="78">i</span>f prefix &lt;&gt; "" then <span data-count="32">p</span>refix ^ ":" ^ name else <span data-count="46">n</span>ame
+let get_value (_, value) = <span data-count="12">v</span>alue
+let name_to_string (prefix, name) = <span data-count="68">i</span>f prefix &lt;&gt; "" then <span data-count="30">p</span>refix ^ ":" ^ name else <span data-count="38">n</span>ame
 
 let pp_attribute_to_string (name, attribute) =
   <span data-count="27">l</span>et name_string = <span data-count="27">n</span>ame_to_string name in
@@ -544,80 +545,80 @@ let pp_attribute_to_string (name, attribute) =
 ;;
 
 let pp_tag_to_string (name, attributes) =
-  <span data-count="21">l</span>et sep = <span data-count="21">"</span>\n  " in
-  <span data-count="21">l</span>et attr_string =
-    <span data-count="21">S</span>tring.concat ~sep (List.map (fun a -&gt; <span data-count="27">p</span>p_attribute_to_string a) attributes)
+  <span data-count="22">l</span>et sep = <span data-count="22">"</span>\n  " in
+  <span data-count="22">l</span>et attr_string =
+    <span data-count="22">S</span>tring.concat ~sep (List.map (fun a -&gt; <span data-count="27">p</span>p_attribute_to_string a) attributes)
   in
-  <span data-count="21">l</span>et name_string = <span data-count="21">n</span>ame_to_string name in
-  <span data-count="21">n</span>ame_string ^ if attr_string &lt;&gt; "" then <span data-count="9">s</span>ep ^ attr_string else <span data-count="12">"</span>"
+  <span data-count="22">l</span>et name_string = <span data-count="22">n</span>ame_to_string name in
+  <span data-count="22">n</span>ame_string ^ if attr_string &lt;&gt; "" then <span data-count="9">s</span>ep ^ attr_string else <span data-count="13">"</span>"
 ;;
 
 let pp_to_string ?(auto_close = <span data-count="12">t</span>rue) s =
-  <span data-count="17">l</span>et rec aux s depth =
-    <span data-count="20">l</span>et indent =
-      <span data-count="20">S</span>tring.v ~len:(depth * 2) (fun _ -&gt;
+  <span data-count="18">l</span>et rec aux s depth =
+    <span data-count="21">l</span>et indent =
+      <span data-count="21">S</span>tring.v ~len:(depth * 2) (fun _ -&gt;
           <span data-count="8">m</span>atch String.to_char " " with <span data-count="8">S</span>ome c -&gt; c | None -&gt; assert false )
     in
-    <span data-count="20">m</span>atch s with
-    | <span data-count="17">S</span>tanza ((name, attrs), l) -&gt;
-      let tag_string = <span data-count="17">p</span>p_tag_to_string (name, attrs) in
-      <span data-count="17">(</span>match l with
-       | <span data-count="14">[</span>] -&gt;
-         if auto_close
-         then <span data-count="11">i</span>ndent ^ "&lt;" ^ tag_string ^ " /&gt;"
-         else <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;"
-       | <span data-count="3">s</span>s -&gt;
-         let stanzas =
-           <span data-count="3">S</span>tring.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="3">a</span>ux s (depth + 1)) ss)
-         in
-         <span data-count="3">l</span>et start_tag = <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;" in
-         <span data-count="3">l</span>et end_tag = <span data-count="3">i</span>ndent ^ "&lt;/" ^ name_to_string name ^ "&gt;" in
-         <span data-count="3">s</span>tart_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
+    <span data-count="21">m</span>atch s with
+    | <span data-count="18">S</span>tanza ((name, attrs), l) -&gt;
+      let tag_string = <span data-count="18">p</span>p_tag_to_string (name, attrs) in
+      <span data-count="18">(</span>match l with
+      | <span data-count="15">[</span>] -&gt;
+        if auto_close
+        then <span data-count="12">i</span>ndent ^ "&lt;" ^ tag_string ^ " /&gt;"
+        else <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;"
+      | <span data-count="3">s</span>s -&gt;
+        let stanzas =
+          <span data-count="3">S</span>tring.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="3">a</span>ux s (depth + 1)) ss)
+        in
+        <span data-count="3">l</span>et start_tag = <span data-count="3">i</span>ndent ^ "&lt;" ^ tag_string ^ "&gt;" in
+        <span data-count="3">l</span>et end_tag = <span data-count="3">i</span>ndent ^ "&lt;/" ^ name_to_string name ^ "&gt;" in
+        <span data-count="3">s</span>tart_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
     | <span data-count="3">T</span>ext ss -&gt; String.concat ~sep:"\n" (List.map (fun s -&gt; <span data-count="5">i</span>ndent ^ s) ss)
   in
-  <span data-count="17">a</span>ux s 0
+  <span data-count="18">a</span>ux s 0
 ;;
 
 let attribute_to_string (name, attribute) =
-  <span data-count="22">l</span>et name_string = <span data-count="22">n</span>ame_to_string name in
-  <span data-count="22">n</span>ame_string ^ "='" ^ attribute ^ "'"
+  <span data-count="13">l</span>et name_string = <span data-count="13">n</span>ame_to_string name in
+  <span data-count="13">n</span>ame_string ^ "='" ^ attribute ^ "'"
 ;;
 
 let tag_to_string (name, attributes) =
-  <span data-count="5">l</span>et attr_string =
-    <span data-count="5">S</span>tring.concat ~sep:" " (List.map (fun a -&gt; <span data-count="22">a</span>ttribute_to_string a) attributes)
+  <span data-count="3">l</span>et attr_string =
+    <span data-count="3">S</span>tring.concat ~sep:" " (List.map (fun a -&gt; <span data-count="13">a</span>ttribute_to_string a) attributes)
   in
-  <span data-count="5">l</span>et name_string = <span data-count="5">n</span>ame_to_string name in
-  <span data-count="5">n</span>ame_string ^ if attr_string &lt;&gt; "" then <span data-count="4">"</span> " ^ attr_string else <span data-count="1">"</span>"
+  <span data-count="3">l</span>et name_string = <span data-count="3">n</span>ame_to_string name in
+  <span data-count="3">n</span>ame_string ^ if attr_string &lt;&gt; "" then <span data-count="2">"</span> " ^ attr_string else <span data-count="1">"</span>"
 ;;
 
 let to_string ?(auto_close = <span data-count="0">t</span>rue) s =
-  <span data-count="5">l</span>et rec aux = <span data-count="5">f</span>unction
-    | <span data-count="5">S</span>tanza ((name, attrs), l) -&gt;
-      let tag_string = <span data-count="5">t</span>ag_to_string (name, attrs) in
-      <span data-count="5">(</span>match l with
-       | <span data-count="5">[</span>] -&gt; if auto_close then <span data-count="1">"</span>&lt;" ^ tag_string ^ "/&gt;" else <span data-count="4">"</span>&lt;" ^ tag_string ^ "&gt;"
-       | <span data-count="0">s</span>s -&gt;
-         let stanzas = <span data-count="0">S</span>tring.concat ~sep:"" (List.map (fun s -&gt; <span data-count="0">a</span>ux s) ss) in
-         <span data-count="0">l</span>et start_tag = <span data-count="0">"</span>&lt;" ^ tag_string ^ "&gt;" in
-         <span data-count="0">l</span>et end_tag = <span data-count="0">"</span>&lt;/" ^ name_to_string name ^ "&gt;" in
-         <span data-count="0">s</span>tart_tag ^ stanzas ^ end_tag)
+  <span data-count="3">l</span>et rec aux = <span data-count="3">f</span>unction
+    | <span data-count="3">S</span>tanza ((name, attrs), l) -&gt;
+      let tag_string = <span data-count="3">t</span>ag_to_string (name, attrs) in
+      <span data-count="3">(</span>match l with
+      | <span data-count="3">[</span>] -&gt; if auto_close then <span data-count="1">"</span>&lt;" ^ tag_string ^ "/&gt;" else <span data-count="2">"</span>&lt;" ^ tag_string ^ "&gt;"
+      | <span data-count="0">s</span>s -&gt;
+        let stanzas = <span data-count="0">S</span>tring.concat ~sep:"" (List.map (fun s -&gt; <span data-count="0">a</span>ux s) ss) in
+        <span data-count="0">l</span>et start_tag = <span data-count="0">"</span>&lt;" ^ tag_string ^ "&gt;" in
+        <span data-count="0">l</span>et end_tag = <span data-count="0">"</span>&lt;/" ^ name_to_string name ^ "&gt;" in
+        <span data-count="0">s</span>tart_tag ^ stanzas ^ end_tag)
     | <span data-count="0">T</span>ext ss -&gt; String.concat ~sep:"\n" ss
   in
-  <span data-count="5">a</span>ux s
+  <span data-count="3">a</span>ux s
 ;;
 
-let gen_id () = <span data-count="5">U</span>uidm.(to_string (create `V4))
+let gen_id () = <span data-count="4">U</span>uidm.(to_string (create `V4))
 
 let stream_header
-    ?(version = <span data-count="5">"</span>1.0")
-    ?(lang = <span data-count="5">"</span>en")
-    ?(xmlns = <span data-count="5">"</span>jabber:client")
-    ?(stream_ns = <span data-count="5">"</span>http://etherx.jabber.org/streams")
-    ?(attributes = <span data-count="5">[</span>])
+    ?(version = <span data-count="4">"</span>1.0")
+    ?(lang = <span data-count="4">"</span>en")
+    ?(xmlns = <span data-count="4">"</span>jabber:client")
+    ?(stream_ns = <span data-count="4">"</span>http://etherx.jabber.org/streams")
+    ?(attributes = <span data-count="4">[</span>])
     from
     dest =
-  <span data-count="5">c</span>reate
+  <span data-count="4">c</span>reate
     ( ("stream", "stream")
     , [ ("", "from"), from
       ; ("", "id"), gen_id ()
@@ -629,7 +630,7 @@ let stream_header
       @ attributes )
 ;;
 
-let features () = <span data-count="3">c</span>reate (("stream", "features"), [])
+let features () = <span data-count="4">c</span>reate (("stream", "features"), [])
 
 let%expect_test "empty tag prefix" =
   let tag = ("", "name"), [] in
@@ -717,7 +718,7 @@ let%expect_test "multi-line text stanza" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-14 18:13:38 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-19 12:24:58 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

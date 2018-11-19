@@ -11,10 +11,14 @@
           <span class="dirname">src/</span>state.ml
         </a>
       </h1>
-      <h2>95.45%</h2>
+      <h2>80.77%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:28.57%"></span>
+      <span class="unvisited" style="top:25.66%"></span>
+      <span class="unvisited" style="top:26.32%"></span>
+      <span class="unvisited" style="top:26.97%"></span>
+      <span class="unvisited" style="top:27.63%"></span>
+      <span class="unvisited" style="top:28.29%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -29,40 +33,40 @@
 <a id="L8"></a><span > </span>
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span > </span>
-<a id="L11"></a><span class="visited"> </span>
-<a id="L12"></a><span class="visited"> </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
 <a id="L13"></a><span class="visited"> </span>
 <a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span > </span>
+<a id="L15"></a><span class="visited"> </span>
 <a id="L16"></a><span > </span>
-<a id="L17"></a><span class="visited"> </span>
+<a id="L17"></a><span > </span>
 <a id="L18"></a><span class="visited"> </span>
 <a id="L19"></a><span > </span>
-<a id="L20"></a><span > </span>
-<a id="L21"></a><span class="visited"> </span>
+<a id="L20"></a><span class="visited"> </span>
+<a id="L21"></a><span > </span>
 <a id="L22"></a><span class="visited"> </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span class="visited"> </span>
 <a id="L25"></a><span > </span>
 <a id="L26"></a><span class="visited"> </span>
-<a id="L27"></a><span > </span>
+<a id="L27"></a><span class="visited"> </span>
 <a id="L28"></a><span class="visited"> </span>
-<a id="L29"></a><span class="visited"> </span>
+<a id="L29"></a><span > </span>
 <a id="L30"></a><span class="visited"> </span>
-<a id="L31"></a><span > </span>
-<a id="L32"></a><span class="visited"> </span>
-<a id="L33"></a><span class="visited"> </span>
+<a id="L31"></a><span class="visited"> </span>
+<a id="L32"></a><span > </span>
+<a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
-<a id="L35"></a><span > </span>
+<a id="L35"></a><span class="visited"> </span>
 <a id="L36"></a><span class="visited"> </span>
-<a id="L37"></a><span class="visited"> </span>
+<a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
-<a id="L39"></a><span > </span>
+<a id="L39"></a><span class="unvisited"> </span>
 <a id="L40"></a><span class="unvisited"> </span>
-<a id="L41"></a><span class="visited"> </span>
-<a id="L42"></a><span > </span>
-<a id="L43"></a><span > </span>
-<a id="L44"></a><span > </span>
+<a id="L41"></a><span class="unvisited"> </span>
+<a id="L42"></a><span class="unvisited"> </span>
+<a id="L43"></a><span class="unvisited"> </span>
+<a id="L44"></a><span class="visited"> </span>
 <a id="L45"></a><span > </span>
 <a id="L46"></a><span > </span>
 <a id="L47"></a><span > </span>
@@ -159,6 +163,18 @@
 <a id="L138"></a><span > </span>
 <a id="L139"></a><span > </span>
 <a id="L140"></a><span > </span>
+<a id="L141"></a><span > </span>
+<a id="L142"></a><span > </span>
+<a id="L143"></a><span > </span>
+<a id="L144"></a><span > </span>
+<a id="L145"></a><span > </span>
+<a id="L146"></a><span > </span>
+<a id="L147"></a><span > </span>
+<a id="L148"></a><span > </span>
+<a id="L149"></a><span > </span>
+<a id="L150"></a><span > </span>
+<a id="L151"></a><span > </span>
+<a id="L152"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -303,83 +319,70 @@
 <a href="#L138">138</a>
 <a href="#L139">139</a>
 <a href="#L140">140</a>
+<a href="#L141">141</a>
+<a href="#L142">142</a>
+<a href="#L143">143</a>
+<a href="#L144">144</a>
+<a href="#L145">145</a>
+<a href="#L146">146</a>
+<a href="#L147">147</a>
+<a href="#L148">148</a>
+<a href="#L149">149</a>
+<a href="#L150">150</a>
+<a href="#L151">151</a>
+<a href="#L152">152</a>
 </pre>
         <pre id="code">
 (* The state representing the current status of the connection *)
 open Stanza
 
+exception MatchingError
+
 type state =
   | IDLE
-  | OPENING
   | NEGOTIATING
+  | CLOSING
 
 type t = {state : state}
 
-let state_to_string = <span data-count="2">f</span>unction
-  | <span data-count="2">I</span>DLE -&gt; "idle"
-  | <span data-count="1">O</span>PENING -&gt; "opening"
-  | <span data-count="2">N</span>EGOTIATING -&gt; "negotiating"
-;;
-
-let create () = <span data-count="7">{</span>state = IDLE}
-let to_string t = <span data-count="5">"</span>{state: " ^ state_to_string t.state ^ "}"
+let state_to_string = <span data-count="2">f</span>unction <span data-count="2">I</span>DLE -&gt; "idle" | <span data-count="3">N</span>EGOTIATING -&gt; "negotiating" | <span data-count="1">C</span>LOSING -&gt; "closing"
+let create () = <span data-count="6">{</span>state = IDLE}
+let to_string t = <span data-count="6">"</span>{state: " ^ state_to_string t.state ^ "}"
 
 let update t event =
   <span data-count="5">l</span>et open Events in
-  match event with <span data-count="5">S</span>TANZA s -&gt;
+  match event with
+  | <span data-count="4">S</span>TANZA s -&gt;
     (match t.state with
-    | <span data-count="5">I</span>DLE -&gt;
-      (match s with
-      | <span data-count="5">S</span>tanza (((_, "stream"), attrs), []) -&gt;
-        (* stream header stanza received, send own stream header *)
-        let from = <span data-count="5">g</span>et_value (get_attribute_by_name_exn attrs "to") in
-        <span data-count="5">l</span>et dest = <span data-count="5">g</span>et_value (get_attribute_by_name_exn attrs "from") in
-        <span data-count="5">l</span>et header = <span data-count="5">s</span>tream_header from dest in
-        (* If the version attribute is 1.0 then we need to send a features stanza to the client *)
-        <span data-count="5">(</span>match get_attribute_by_name attrs "version" with
-        | <span data-count="3">S</span>ome attr -&gt;
-          if float_of_string (get_value attr) &gt;= 1.0
-          then
-            <span data-count="3">l</span>et features = <span data-count="3">f</span>eatures () in
-            <span data-count="3">(</span> {state = NEGOTIATING}
-            , [ Actions.REPLY_STANZA (false, header)
-              ; Actions.REPLY_STANZA (true, features) ] )
-          else <span data-count="0">{</span>state = OPENING}, [Actions.REPLY_STANZA (false, header)]
-        | <span data-count="2">N</span>one -&gt; {state = OPENING}, [Actions.REPLY_STANZA (false, header)])
-      | _ -&gt; assert false)
-    | OPENING -&gt; assert false
-    | NEGOTIATING -&gt; assert false)
+     | <span data-count="4">I</span>DLE -&gt;
+       (match s with
+        | <span data-count="4">S</span>tanza (((_, "stream"), attrs), []) -&gt;
+          (* stream header stanza received, send own stream header *)
+          let from = <span data-count="4">g</span>et_value (get_attribute_by_name_exn attrs "to") in
+          <span data-count="4">l</span>et dest = <span data-count="4">g</span>et_value (get_attribute_by_name_exn attrs "from") in
+          <span data-count="4">l</span>et header = <span data-count="4">s</span>tream_header from dest in
+          (* If the version attribute is 1.0 then we need to send a features stanza to the client *)
+          <span data-count="4">(</span>match get_attribute_by_name attrs "version" with
+           | <span data-count="4">S</span>ome attr -&gt;
+             if float_of_string (get_value attr) &gt;= 1.0
+             then
+               (* Only allow headers with version &gt;= 1.0 *)
+               <span data-count="4">l</span>et features = <span data-count="4">f</span>eatures () in
+               <span data-count="4">(</span> {state = NEGOTIATING}
+               , [ Actions.REPLY_STANZA (false, header)
+                 ; Actions.REPLY_STANZA (true, features) ] )
+             else <span data-count="0">r</span>aise MatchingError
+           | <span data-count="0">N</span>one -&gt; raise MatchingError)
+        | <span data-count="0">_</span> -&gt; raise MatchingError)
+     | <span data-count="0">N</span>EGOTIATING -&gt; raise MatchingError
+     | <span data-count="0">C</span>LOSING -&gt; { state = CLOSING}, [])
+  | <span data-count="1">C</span>LOSE -&gt; {state = CLOSING}, [Actions.CLOSE]
 ;;
 
 let%expect_test "create" =
   let fsm = create () in
   print_endline (to_string fsm);
   [%expect {| {state: idle} |}]
-;;
-
-let%expect_test "idle to opening" =
-  let fsm = create () in
-  let stanza =
-    Stanza.create
-      ( ("stream", "stream")
-      , [("", "from"), "juliet@im.example.com"; ("", "to"), "im.example.com"] )
-  in
-  let fsm, actions = update fsm (Events.STANZA stanza) in
-  print_endline (to_string fsm);
-  [%expect {| {state: opening} |}];
-  let strings = List.map (fun a -&gt; Actions.to_string a) actions in
-  List.iter (Printf.printf "%s\n") strings;
-  [%expect
-    {|
-    reply_stanza:
-    &lt;stream:stream
-      from='im.example.com'
-      id=''
-      to='juliet@im.example.com'
-      version='1.0'
-      xml:lang='en'
-      xmlns='jabber:client'
-      xmlns:stream='http://etherx.jabber.org/streams'&gt; |}]
 ;;
 
 let%expect_test "idle to negotiating" =
@@ -445,10 +448,47 @@ let%expect_test "idle to negotiating with &gt; 1.0" =
     reply_stanza:
     &lt;stream:features /&gt; |}]
 ;;
+
+let%expect_test "negotiating to closing" =
+  let fsm = create () in
+  let stanza =
+    Stanza.create
+      ( ("stream", "stream")
+      , [ ("", "from"), "juliet@im.example.com"
+        ; ("", "to"), "im.example.com"
+        ; ("", "version"), "1.0"
+        ; ("xml", "lang"), "en"
+        ; ("", "xmlns"), "jabber:client"
+        ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] )
+  in
+  let fsm, actions = update fsm (Events.STANZA stanza) in
+  print_endline (to_string fsm);
+  [%expect {| {state: negotiating} |}];
+  let strings = List.map (fun a -&gt; Actions.to_string a) actions in
+  List.iter (Printf.printf "%s\n") strings;
+  [%expect {|
+    reply_stanza:
+    &lt;stream:stream
+      from='im.example.com'
+      id=''
+      to='juliet@im.example.com'
+      version='1.0'
+      xml:lang='en'
+      xmlns='jabber:client'
+      xmlns:stream='http://etherx.jabber.org/streams'&gt;
+    reply_stanza:
+    &lt;stream:features /&gt; |}];
+  let fsm, actions = update fsm Events.CLOSE in
+  print_endline (to_string fsm);
+  [%expect{| {state: closing} |}];
+  let strings = List.map (fun a -&gt; Actions.to_string a) actions in
+  List.iter (Printf.printf "%s\n") strings;
+  [%expect {| close |}]
+;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-14 18:13:38 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-19 12:24:58 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
