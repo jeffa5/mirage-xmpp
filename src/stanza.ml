@@ -72,17 +72,17 @@ let pp_to_string ?(auto_close = true) s =
     | Stanza ((name, attrs), l) ->
       let tag_string = pp_tag_to_string (name, attrs) in
       (match l with
-       | [] ->
-         if auto_close
-         then indent ^ "<" ^ tag_string ^ " />"
-         else indent ^ "<" ^ tag_string ^ ">"
-       | ss ->
-         let stanzas =
-           String.concat ~sep:"\n" (List.map (fun s -> aux s (depth + 1)) ss)
-         in
-         let start_tag = indent ^ "<" ^ tag_string ^ ">" in
-         let end_tag = indent ^ "</" ^ name_to_string name ^ ">" in
-         start_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
+      | [] ->
+        if auto_close
+        then indent ^ "<" ^ tag_string ^ " />"
+        else indent ^ "<" ^ tag_string ^ ">"
+      | ss ->
+        let stanzas =
+          String.concat ~sep:"\n" (List.map (fun s -> aux s (depth + 1)) ss)
+        in
+        let start_tag = indent ^ "<" ^ tag_string ^ ">" in
+        let end_tag = indent ^ "</" ^ name_to_string name ^ ">" in
+        start_tag ^ "\n" ^ stanzas ^ "\n" ^ end_tag)
     | Text ss -> String.concat ~sep:"\n" (List.map (fun s -> indent ^ s) ss)
   in
   aux s 0
@@ -106,12 +106,12 @@ let to_string ?(auto_close = true) s =
     | Stanza ((name, attrs), l) ->
       let tag_string = tag_to_string (name, attrs) in
       (match l with
-       | [] -> if auto_close then "<" ^ tag_string ^ "/>" else "<" ^ tag_string ^ ">"
-       | ss ->
-         let stanzas = String.concat ~sep:"" (List.map (fun s -> aux s) ss) in
-         let start_tag = "<" ^ tag_string ^ ">" in
-         let end_tag = "</" ^ name_to_string name ^ ">" in
-         start_tag ^ stanzas ^ end_tag)
+      | [] -> if auto_close then "<" ^ tag_string ^ "/>" else "<" ^ tag_string ^ ">"
+      | ss ->
+        let stanzas = String.concat ~sep:"" (List.map (fun s -> aux s) ss) in
+        let start_tag = "<" ^ tag_string ^ ">" in
+        let end_tag = "</" ^ name_to_string name ^ ">" in
+        start_tag ^ stanzas ^ end_tag)
     | Text ss -> String.concat ~sep:"\n" ss
   in
   aux s

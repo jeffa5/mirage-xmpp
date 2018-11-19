@@ -13,8 +13,9 @@ let handle_action t stream =
     | Some action ->
       let open Actions in
       (match action with
-      | REPLY_STANZA (b, s) -> t.callback (Some (Stanza.to_string ~auto_close:b s))
-      | SEND_STANZA (_jid, s) -> t.callback (Some (Stanza.to_string s)));
+       | REPLY_STANZA (b, s) -> t.callback (Some (Stanza.to_string ~auto_close:b s))
+       | SEND_STANZA (_jid, s) -> t.callback (Some (Stanza.to_string s))
+       | CLOSE -> t.callback (Some "</stream:stream>"));
       aux ()
     | None ->
       t.callback None;
@@ -77,11 +78,11 @@ let make_test_handler s =
     match Astring.String.find_sub ~sub:"id='" s with
     | Some i ->
       (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-      | Some j ->
-        Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-        ^ "redacted_for_testing"
-        ^ Astring.String.with_index_range ~first:j s
-      | None -> assert false)
+       | Some j ->
+         Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+         ^ "redacted_for_testing"
+         ^ Astring.String.with_index_range ~first:j s
+       | None -> assert false)
     | None -> s
   in
   let connections = ref Connections.empty in
@@ -109,22 +110,6 @@ let%expect_test "creation of handler" =
     jid: empty
     fsm: {state: idle}
     } |}]
-;;
-
-let%expect_test "initial stanza event" =
-  let stanza =
-    Stanza.to_string
-      ~auto_close:false
-      (Stanza.create
-         ( ("", "stream")
-         , [("", "from"), "juliet@im.example.com"; ("", "to"), "im.example.com"] ))
-    ^ "</stream>"
-  in
-  test_stanza stanza;
-  [%expect
-    {|
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    end_of_stream |}]
 ;;
 
 let%expect_test "initial stanza with version" =
