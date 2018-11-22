@@ -14,3 +14,5 @@ val to_string : t -> string
 
 val compare : t -> t -> int
 val equal : t -> t -> bool
+val create_resource : unit -> string
+val set_resource : t -> string -> t

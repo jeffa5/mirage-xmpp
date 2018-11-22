@@ -2,11 +2,14 @@
 
 (** The type of events, examples for now *)
 type t =
-  | STANZA of Stanza.t
+  | STREAM_HEADER of Stanza.t
+  | RESOURCE_BIND_SERVER_GEN of string
+  | RESOURCE_BIND_CLIENT_GEN of string * string
   | CLOSE
-
-(** [lift s] converts the given stanza [s] into an event type *)
-(* val lift : Stanza.t -> t *)
+  | ERROR of string
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string
+
+(** [lift pr] converts the parse_result [pr] into an event type suitable for sending to the state machine *)
+val lift : Parser.parse_result -> t

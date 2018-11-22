@@ -10,6 +10,8 @@ type t =
 (** [create ~children t] creates a new stanza with the given tag type and any children of the tag, defaults to empty list *)
 val create : ?children:t list -> tag -> t
 
+val create_iq_bind : ?children:t list -> string -> t
+
 (** Make a stanza containing only text *)
 val text : string list -> t
 
@@ -25,7 +27,7 @@ val stream_header :
   -> string
   -> t
 
-val features : unit -> t
+val features : t
 
 (** [add_attr t a] updates the stanza [t] to include the attribute [a] *)
 val add_attr : tag -> attribute -> tag
@@ -48,3 +50,4 @@ val to_string : ?auto_close:bool -> t -> string
 val pp_to_string : ?auto_close:bool -> t -> string
 
 val get_value : attribute -> string
+val get_id : attribute list -> string

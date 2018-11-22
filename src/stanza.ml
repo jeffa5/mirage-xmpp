@@ -9,6 +9,16 @@ type t =
   | Text of string list
 
 let create ?(children = []) tag = Stanza (tag, children)
+
+let create_iq_bind ?(children = []) id =
+  create
+    (("", "iq"), [("", "id"), id; ("", "type"), "result"])
+    ~children:
+      [ create
+          (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
+          ~children ]
+;;
+
 let text s = Text s
 let attribute ?(prefix = "") name value = (prefix, name), value
 
@@ -44,12 +54,13 @@ let get_attribute_by_name attributes a =
 ;;
 
 let get_value (_, value) = value
+let get_id attrs = get_value (get_attribute_by_name_exn attrs "id")
 let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
 
 let pp_attribute_to_string (name, attribute) =
   let name_string = name_to_string name in
   if name_string = "id"
-  then name_string ^ "=''"
+  then name_string ^ "='redacted_for_testing'"
   else name_string ^ "='" ^ attribute ^ "'"
 ;;
 
@@ -74,7 +85,7 @@ let pp_to_string ?(auto_close = true) s =
       (match l with
       | [] ->
         if auto_close
-        then indent ^ "<" ^ tag_string ^ " />"
+        then indent ^ "<" ^ tag_string ^ "/>"
         else indent ^ "<" ^ tag_string ^ ">"
       | ss ->
         let stanzas =
@@ -139,7 +150,11 @@ let stream_header
       @ attributes )
 ;;
 
-let features () = create (("stream", "features"), [])
+let features =
+  create
+    (("stream", "features"), [])
+    ~children:[create (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])]
+;;
 
 let%expect_test "empty tag prefix" =
   let tag = ("", "name"), [] in
@@ -150,13 +165,13 @@ let%expect_test "empty tag prefix" =
 let%expect_test "empty prefix in stanza" =
   let stanza = Stanza ((("", "name"), []), []) in
   print_endline (pp_to_string stanza);
-  [%expect {| <name /> |}]
+  [%expect {| <name/> |}]
 ;;
 
 let%expect_test "create" =
   let stanza = create (("prefix", "name"), []) in
   print_endline (pp_to_string stanza);
-  [%expect {| <prefix:name /> |}]
+  [%expect {| <prefix:name/> |}]
 ;;
 
 let%expect_test "create tag" =
@@ -178,7 +193,7 @@ let%expect_test "empty prefix in stanza with attrs" =
   print_endline (pp_to_string stanza);
   [%expect {|
     <name
-      attr1='val1' /> |}]
+      attr1='val1'/> |}]
 ;;
 
 let%expect_test "create stanza with attrs" =
@@ -186,7 +201,7 @@ let%expect_test "create stanza with attrs" =
   print_endline (pp_to_string stanza);
   [%expect {|
     <prefix:name
-      prefix:attr1='val1' /> |}]
+      prefix:attr1='val1'/> |}]
 ;;
 
 let%expect_test "create tag with attrs" =
@@ -206,7 +221,7 @@ let%expect_test "create stanza with children" =
       <prefix:name
         prefix:attr1='val1'>
         <prefix:name
-        prefix:attr1='val1' />
+        prefix:attr1='val1'/>
       </prefix:name> |}]
 ;;
 

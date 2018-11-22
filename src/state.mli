@@ -6,7 +6,8 @@ type t
 (** Create a state machine in the initial state *)
 val create : unit -> t
 
-(** [update t e] updates the state machine [t] with the event [e] to give the resulting state machine in a new state and the list of actions to be performed *)
-val update : t -> Events.t -> t * Actions.t list
+(** [handle t e] updates the state machine [t] with the event [e] to give the resulting state machine in a new state and the list of actions to be performed *)
+val handle : t -> Events.t -> t * Actions.t list
 
 val to_string : t -> string
+val closed : t -> bool

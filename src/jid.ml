@@ -22,6 +22,8 @@ let compare (u1, d1, r1) (u2, d2, r2) =
   if d = 0 then if u = 0 then r else u else d
 ;;
 
+let create_resource () = "not-implemented"
+let set_resource (user, domain, _oldres) resource = user, domain, resource
 let equal (u1, d1, r1) (u2, d2, r2) = u1 = u2 && d1 = d2 && r1 = r2
 
 let to_string (user, domain, resource) =

@@ -3,7 +3,7 @@ type t =
   ; roster : Roster.t
   ; parser : Parser.t
   ; callback : string option -> unit
-  ; jid : Jid.t
+  ; mutable jid : Jid.t
   ; mutable fsm : State.t
   ; actions_push : Actions.t option -> unit }
 
@@ -12,11 +12,41 @@ let handle_action t stream =
     match%lwt Lwt_stream.get stream with
     | Some action ->
       let open Actions in
-      (match action with
-       | REPLY_STANZA (b, s) -> t.callback (Some (Stanza.to_string ~auto_close:b s))
-       | SEND_STANZA (_jid, s) -> t.callback (Some (Stanza.to_string s))
-       | CLOSE -> t.callback (Some "</stream:stream>"));
-      aux ()
+      let closed =
+        match action with
+        | REPLY_STANZA (b, s) ->
+          t.callback (Some (Stanza.to_string ~auto_close:b s));
+          false
+        | SEND_STANZA (_jid, s) ->
+          t.callback (Some (Stanza.to_string s));
+          false
+        | CLOSE ->
+          (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
+          t.callback (Some "</stream:stream>");
+          true
+        | ERROR e ->
+          t.callback (Some e);
+          true
+        | SET_JID j ->
+          t.jid <- j;
+          false
+        | SET_JID_RESOURCE (id, res) ->
+          t.jid <- Jid.set_resource t.jid res;
+          (* send the packet
+          *)
+          t.callback
+            (Some
+               (Stanza.to_string
+                  (Stanza.create_iq_bind
+                     id
+                     ~children:
+                       [ Stanza.create
+                           (("", "jid"), [])
+                           ~children:[Stanza.Text ["not in the right place to set jid"]]
+                       ])));
+          false
+      in
+      if closed then Lwt.return_unit else aux ()
     | None ->
       t.callback None;
       Lwt.return_unit
@@ -34,22 +64,14 @@ let create ~connections ~roster ~stream ~callback =
   t
 ;;
 
-exception HandlerException of string
-exception EndOfStream
-
 let handle t =
   let rec aux () =
-    let%lwt stanza =
-      match%lwt Parser.parse_stanza t.parser with
-      | Ok s ->
-        (match s with Some stanza -> Lwt.return stanza | None -> Lwt.fail EndOfStream)
-      | Error e -> Lwt.fail (HandlerException e)
-    in
-    let event = Events.STANZA stanza in
-    let new_fsm, actions = State.update t.fsm event in
+    let%lwt stanza = Parser.parse_stanza t.parser in
+    let event = Events.lift stanza in
+    let new_fsm, actions = State.handle t.fsm event in
     t.fsm <- new_fsm;
     List.iter (fun action -> t.actions_push (Some action)) actions;
-    aux ()
+    if State.closed t.fsm then Lwt.return_unit else aux ()
   in
   aux ()
 ;;
@@ -78,11 +100,11 @@ let make_test_handler s =
     match Astring.String.find_sub ~sub:"id='" s with
     | Some i ->
       (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-       | Some j ->
-         Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-         ^ "redacted_for_testing"
-         ^ Astring.String.with_index_range ~first:j s
-       | None -> assert false)
+      | Some j ->
+        Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+        ^ "redacted_for_testing"
+        ^ Astring.String.with_index_range ~first:j s
+      | None -> assert false)
     | None -> s
   in
   let connections = ref Connections.empty in
@@ -95,7 +117,8 @@ let make_test_handler s =
 let test_stanza stanza =
   let handler = make_test_handler stanza in
   let run = handle handler in
-  try Lwt_main.run run with EndOfStream -> print_endline "end_of_stream"
+  Lwt_main.run run;
+  handler
 ;;
 
 let%expect_test "creation of handler" =
@@ -126,10 +149,92 @@ let%expect_test "initial stanza with version" =
            ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
     ^ "</stream:stream>"
   in
-  test_stanza stanza;
+  let handler = test_stanza stanza in
   [%expect
     {|
     <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    <stream:features/>
-    end_of_stream |}]
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    </stream:stream>
+    |}];
+  print_endline (to_string handler);
+  [%expect
+    {|
+    {
+    roster: []
+    parser: stream and depth
+    callback
+    jid: juliet@im.example.com
+    fsm: {state: closed}
+    } |}]
+;;
+
+let%expect_test "error in initial stanza" =
+  let stanza =
+    Stanza.to_string
+      ~auto_close:false
+      (Stanza.create
+         ( ("stream", "stream")
+         , [ ("", "from"), "juliet@im.example.com"
+           ; ("", "to"), "im.example.com"
+           ; ("", "version"), "1.0"
+           ; ("xml", "lang"), "en"
+           ; ("", "xmlns"), "jabber:client"
+           ; ("xmlns", "stream"), "http://wrong.namespace.example.org/" ] ))
+    ^ "</stream:stream>"
+  in
+  let handler = test_stanza stanza in
+  [%expect {| invalid-namespace |}];
+  print_endline (to_string handler);
+  [%expect
+    {|
+    {
+    roster: []
+    parser: stream and depth
+    callback
+    jid: empty
+    fsm: {state: closed}
+    } |}]
+;;
+
+let%expect_test "bind resource" =
+  let stanza =
+    Stanza.to_string
+      ~auto_close:false
+      (Stanza.create
+         ( ("stream", "stream")
+         , [ ("", "from"), "juliet@im.example.com"
+           ; ("", "to"), "im.example.com"
+           ; ("", "version"), "1.0"
+           ; ("xml", "lang"), "en"
+           ; ("", "xmlns"), "jabber:client"
+           ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
+    ^ Stanza.to_string
+        (Stanza.create
+           (("", "iq"), [("", "id"), "some_id"; ("", "type"), "set"])
+           ~children:
+             [ Stanza.create
+                 (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
+                 ~children:
+                   [ Stanza.create
+                       (("", "resource"), [])
+                       ~children:[Stanza.Text ["balcony"]] ] ])
+    ^ "</stream:stream>"
+  in
+  let handler = test_stanza stanza in
+  [%expect
+    {|
+    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>not in the right place to set jid</jid></bind></iq>
+    </stream:stream> |}];
+  print_endline (to_string handler);
+  [%expect
+    {|
+    {
+    roster: []
+    parser: stream and depth
+    callback
+    jid: juliet@im.example.com/balcony
+    fsm: {state: closed}
+    } |}]
 ;;
