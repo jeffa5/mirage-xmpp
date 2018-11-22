@@ -2,5 +2,5 @@
  (name mirage_xmpp)
  (public_name mirage-xmpp)
  (libraries lwt lwt.unix markup-lwt astring asetmap uuidm)
- (inline_tests (flags -show-counts))
+ (inline_tests (flags -verbose -show-counts -strict))
  (preprocess (pps ppx_expect lwt_ppx bisect_ppx -conditional)))
