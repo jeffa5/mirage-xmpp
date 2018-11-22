@@ -19,6 +19,15 @@ let create_iq_bind ?(children = []) id =
           ~children ]
 ;;
 
+let create_iq_query ?(children = []) id from =
+  create
+    (("", "iq"), [("", "id"), id; ("", "to"), from; ("", "type"), "result"])
+    ~children:
+      [ create
+          (("", "query"), [("", "xmlns"), "jabber:iq:roster"; ("", "ver"), "ver7"])
+          ~children ]
+;;
+
 let text s = Text s
 let attribute ?(prefix = "") name value = (prefix, name), value
 
@@ -55,6 +64,7 @@ let get_attribute_by_name attributes a =
 
 let get_value (_, value) = value
 let get_id attrs = get_value (get_attribute_by_name_exn attrs "id")
+let get_from attrs = get_value (get_attribute_by_name_exn attrs "from")
 let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
 
 let pp_attribute_to_string (name, attribute) =

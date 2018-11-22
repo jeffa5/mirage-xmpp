@@ -7,6 +7,7 @@ type t =
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | CLOSE
   | ERROR of string
+  | ROSTER_GET of string * string
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string

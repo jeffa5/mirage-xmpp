@@ -24,11 +24,11 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str_list =
       match Astring.String.find_sub ~sub:"id='" s with
       | Some i ->
         (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-         | Some j ->
-           Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-           ^ "redacted_for_testing"
-           ^ Astring.String.with_index_range ~first:j s
-         | None -> assert false)
+        | Some j ->
+          Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+          ^ "redacted_for_testing"
+          ^ Astring.String.with_index_range ~first:j s
+        | None -> assert false)
       | None -> s
     in
     let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
@@ -37,7 +37,7 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str_list =
           let rec reader () =
             (* Repeatedly read data from the connection and print it *)
             let%lwt s = read_line i in
-            print_endline ("Receive:\n" ^ (mask_id s));
+            print_endline ("Receive:\n" ^ mask_id s);
             if s = "</stream:stream>" then Lwt.return "Finished" else reader ()
           in
           let rec writer = function
@@ -92,6 +92,7 @@ let%expect_test "start stop" =
     Configuring tap0
     Stopping unikernel
     Success |}]
+;;
 
 let%expect_test "initial stanza in list" =
   test_unikernel (fun () ->
@@ -121,7 +122,8 @@ let%expect_test "close stream" =
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'>"
         ; "</stream:stream>" ] );
-  [%expect {|
+  [%expect
+    {|
     Starting unikernel
     Configuring tap0
     Send:

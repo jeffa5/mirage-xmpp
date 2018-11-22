@@ -11,6 +11,7 @@ type t =
 val create : ?children:t list -> tag -> t
 
 val create_iq_bind : ?children:t list -> string -> t
+val create_iq_query : ?children:t list -> string -> string -> t
 
 (** Make a stanza containing only text *)
 val text : string list -> t
@@ -51,3 +52,4 @@ val pp_to_string : ?auto_close:bool -> t -> string
 
 val get_value : attribute -> string
 val get_id : attribute list -> string
+val get_from : attribute list -> string

@@ -46,11 +46,11 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     let dst, dst_port = S.TCPV4.dst flow in
     Logs.info (fun f ->
         f "New tcp connection from IP %s on port %d" (Ipaddr.V4.to_string dst) dst_port
-      );
+    );
     let stream, pushf = Lwt_stream.create () in
     Lwt.async (fun () -> read flow pushf);
     let outstream, outfun = Lwt_stream.create () in
-    Lwt.async (fun () -> write flow outstream );
+    Lwt.async (fun () -> write flow outstream);
     let roster = Mirage_xmpp.Roster.empty in
     let handler =
       Mirage_xmpp.Handler.create ~connections ~roster ~stream ~callback:outfun

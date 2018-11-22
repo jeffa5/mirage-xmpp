@@ -5,6 +5,7 @@ type t =
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
+  | GET_ROSTER of string * string
 
 let to_string = function
   | REPLY_STANZA (b, s) -> "reply_stanza:\n" ^ Stanza.pp_to_string ~auto_close:b s
@@ -14,4 +15,5 @@ let to_string = function
   | ERROR s -> "error: " ^ s
   | SET_JID j -> "set_jid: " ^ Jid.to_string j
   | SET_JID_RESOURCE (id, res) -> "set_jid_resource: id=" ^ id ^ " res=" ^ res
+  | GET_ROSTER (from, id) -> "get_roster: from=" ^ from ^ " id=" ^ id
 ;;
