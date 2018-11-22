@@ -11,14 +11,14 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>52.00%</h2>
+      <h2>55.56%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:13.95%"></span>
-      <span class="unvisited" style="top:44.19%"></span>
-      <span class="unvisited" style="top:46.51%"></span>
-      <span class="unvisited" style="top:48.84%"></span>
-      <span class="unvisited" style="top:51.16%"></span>
+      <span class="unvisited" style="top:13.33%"></span>
+      <span class="unvisited" style="top:42.22%"></span>
+      <span class="unvisited" style="top:44.44%"></span>
+      <span class="unvisited" style="top:46.67%"></span>
+      <span class="unvisited" style="top:48.89%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -48,13 +48,13 @@
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span > </span>
 <a id="L25"></a><span class="visited"> </span>
-<a id="L26"></a><span > </span>
-<a id="L27"></a><span > </span>
-<a id="L28"></a><span class="visited"> </span>
-<a id="L29"></a><span class="visited"> </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span class="visited"> </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
 <a id="L30"></a><span class="visited"> </span>
-<a id="L31"></a><span > </span>
-<a id="L32"></a><span > </span>
+<a id="L31"></a><span class="visited"> </span>
+<a id="L32"></a><span class="visited"> </span>
 <a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span > </span>
@@ -66,6 +66,8 @@
 <a id="L41"></a><span > </span>
 <a id="L42"></a><span > </span>
 <a id="L43"></a><span > </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -113,6 +115,8 @@
 <a href="#L41">41</a>
 <a href="#L42">42</a>
 <a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
 </pre>
         <pre id="code">
 open Astring
@@ -124,11 +128,11 @@ let full _ = <span data-count="0">f</span>alse
 let empty = <span data-count="2">"</span>", "", ""
 
 let of_string string =
-  <span data-count="2">m</span>atch String.cut ~sep:"@" string with
-  | <span data-count="2">S</span>ome (user, domres) -&gt;
+  <span data-count="9">m</span>atch String.cut ~sep:"@" string with
+  | <span data-count="9">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
     | <span data-count="1">S</span>ome (domain, resource) -&gt; user, domain, resource
-    | <span data-count="1">N</span>one -&gt; user, domres, "")
+    | <span data-count="8">N</span>one -&gt; user, domres, "")
   | None -&gt; assert false
 ;;
 
@@ -139,12 +143,14 @@ let compare (u1, d1, r1) (u2, d2, r2) =
   <span data-count="0">i</span>f d = 0 then <span data-count="0">i</span>f u = 0 then <span data-count="0">r</span> else <span data-count="0">u</span> else <span data-count="0">d</span>
 ;;
 
-let equal (u1, d1, r1) (u2, d2, r2) = <span data-count="6">u</span>1 = u2 &amp;&amp; <span data-count="2">d</span>1 = d2 &amp;&amp; <span data-count="1">r</span>1 = r2
+let create_resource () = <span data-count="1">"</span>not-implemented"
+let set_resource (user, domain, _oldres) resource = <span data-count="1">u</span>ser, domain, resource
+let equal (u1, d1, r1) (u2, d2, r2) = <span data-count="22">u</span>1 = u2 &amp;&amp; <span data-count="4">d</span>1 = d2 &amp;&amp; <span data-count="2">r</span>1 = r2
 
 let to_string (user, domain, resource) =
-  <span data-count="3">i</span>f equal empty (user, domain, resource)
-  then <span data-count="1">"</span>empty"
-  else <span data-count="2">u</span>ser ^ "@" ^ domain ^ if resource &lt;&gt; "" then <span data-count="1">"</span>/" ^ resource else <span data-count="1">"</span>"
+  <span data-count="11">i</span>f equal empty (user, domain, resource)
+  then <span data-count="2">"</span>empty"
+  else <span data-count="9">u</span>ser ^ "@" ^ domain ^ if resource &lt;&gt; "" then <span data-count="2">"</span>/" ^ resource else <span data-count="7">"</span>"
 ;;
 
 let%expect_test "make jid" =
@@ -161,7 +167,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-11-19 12:24:58 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
+    <div id="footer">Generated on 2018-11-22 15:08:24 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.3.4</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
