@@ -14,7 +14,7 @@ let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
   print_endline s
 ;;
 
-let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
+let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str_list =
   let timeout_t =
     let%lwt () = Lwt_unix.sleep timeout in
     Lwt.return "Timeout"
@@ -24,29 +24,36 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
       match Astring.String.find_sub ~sub:"id='" s with
       | Some i ->
         (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-        | Some j ->
-          Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-          ^ "redacted_for_testing"
-          ^ Astring.String.with_index_range ~first:j s
-        | None -> assert false)
+         | Some j ->
+           Astring.String.with_index_range ~first:0 ~last:(i + 3) s
+           ^ "redacted_for_testing"
+           ^ Astring.String.with_index_range ~first:j s
+         | None -> assert false)
       | None -> s
     in
     let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
     Lwt_io.(
       with_connection addr (fun (i, o) ->
-          print_endline "Send:";
-          print_endline str;
-          let%lwt () = write o str in
-          print_endline "Receive:";
-          let%lwt s = read_line i in
-          Lwt.return (mask_id s) ))
+          let rec reader () =
+            (* Repeatedly read data from the connection and print it *)
+            let%lwt s = read_line i in
+            print_endline ("Receive:\n" ^ (mask_id s));
+            if s = "</stream:stream>" then Lwt.return "Finished" else reader ()
+          in
+          let rec writer = function
+            (* Send all the data in the list to the server *)
+            | [] -> Lwt.return "Finished"
+            | x :: xs ->
+              print_endline ("Send:\n" ^ x);
+              let%lwt () = write o x in
+              let%lwt () = Lwt_unix.sleep 1. in
+              writer xs
+          in
+          Lwt.async (fun () -> writer str_list);
+          reader () ))
   in
   let s = Lwt_main.run (Lwt.pick [request; timeout_t]) in
   print_endline s
-;;
-
-let send_recv_list ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) l =
-  List.iter (fun s -> send_recv ~timeout ~host ~port s) l
 ;;
 
 let configure_tap () =
@@ -85,29 +92,10 @@ let%expect_test "start stop" =
     Configuring tap0
     Stopping unikernel
     Success |}]
-;;
-
-let%expect_test "initial stanza" =
-  test_unikernel (fun () ->
-      send_recv
-        "<stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' \
-         xml:lang='en' xmlns='jabber:client' \
-         xmlns:stream='http://etherx.jabber.org/streams'>" );
-  [%expect
-    {|
-    Starting unikernel
-    Configuring tap0
-    Send:
-    <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    Receive:
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    Stopping unikernel
-    Success |}]
-;;
 
 let%expect_test "initial stanza in list" =
   test_unikernel (fun () ->
-      send_recv_list
+      send_recv
         [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'>" ] );
@@ -119,6 +107,36 @@ let%expect_test "initial stanza in list" =
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
     <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    Timeout
+    Stopping unikernel
+    Success |}]
+;;
+
+let%expect_test "close stream" =
+  test_unikernel (fun () ->
+      send_recv
+        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "</stream:stream>" ] );
+  [%expect {|
+    Starting unikernel
+    Configuring tap0
+    Send:
+    <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    Send:
+    </stream:stream>
+    Receive:
+    Closing the connection
+    Receive:
+    </stream:stream>
+    Finished
     Stopping unikernel
     Success |}]
 ;;
