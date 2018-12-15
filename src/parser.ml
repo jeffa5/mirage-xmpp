@@ -4,7 +4,7 @@ type t =
 
 type parse_result =
   | Stanza of Stanza.t
-  | End
+  | Stream_Element of Stream.t
   | Error of string
 
 exception ParsingError of string
@@ -22,55 +22,77 @@ let create stream =
   {stream; depth = 0}
 ;;
 
-let parse_stanza parser =
-  let rec aux () =
-    let stanza = ref None in
-    match%lwt Markup_lwt.next parser.stream with
-    | exception ParsingError e -> Lwt.return_error e
-    | Some signal ->
-      (match signal with
-      | `Start_element tag ->
-        stanza := Some (Stanza.create tag);
+let rec parse_children parser =
+  match%lwt Markup_lwt.next parser.stream with
+  | exception ParsingError e -> Lwt.return_error e
+  | Some signal ->
+    (match signal with
+    | `Start_element tag ->
+      (match%lwt parse_children parser with
+      | Ok children ->
+        let element = Xml.Element (tag, children) in
+        (match%lwt parse_children parser with
+        | Ok element_list -> Lwt.return_ok (element :: element_list)
+        | Error e -> Lwt.return_error e)
+      | Error e -> Lwt.return_error e)
+    | `End_element -> Lwt.return_ok []
+    | `Text ss ->
+      let text = Xml.Text (String.concat "\n" ss) in
+      (match%lwt parse_children parser with
+      | Ok element_list -> Lwt.return_ok (text :: element_list)
+      | Error e -> Lwt.return_error e)
+    | _ -> assert false)
+  | None -> Lwt.return_error "End of parsing stream"
+;;
+
+let parse parser =
+  match%lwt Markup_lwt.next parser.stream with
+  | exception ParsingError e -> Lwt.return (Error e)
+  | Some signal ->
+    (match signal with
+    | `Start_element (((_namespace, name), _attrs) as tag) ->
+      (match parser.depth with
+      | 0 ->
+        (* start of stream *)
         parser.depth <- parser.depth + 1;
-        if parser.depth = 1
-        then (* return initial stream stanza *)
-          Lwt.return_ok !stanza
-        else
-          (* Parse all the children into this stanza *)
-          let rec parse_child () =
-            match%lwt aux () with
-            | Ok (Some child) ->
-              (match !stanza with
-              | Some s ->
-                stanza := Some (Stanza.add_content s child);
-                parse_child ()
-              | None -> assert false)
-            | Ok None -> Lwt.return_ok !stanza
-            | Error e -> Lwt.return_error e
-          in
-          parse_child ()
-      | `End_element ->
-        parser.depth <- parser.depth - 1;
-        Lwt.return_ok !stanza
-      | `Text s -> Lwt.return_ok (Some (Stanza.text s))
+        Lwt.return (Stream_Element (Stream.Header tag))
+      | 1 ->
+        (* parse stanza / error / feature *)
+        (match name with
+        | "iq" ->
+          (match%lwt parse_children parser with
+          | Ok children -> Lwt.return (Stanza (Stanza.Iq (Xml.Element (tag, children))))
+          | Error e -> Lwt.return (Error e))
+        | "message" ->
+          (match%lwt parse_children parser with
+          | Ok children ->
+            Lwt.return (Stanza (Stanza.Message (Xml.Element (tag, children))))
+          | Error e -> Lwt.return (Error e))
+        | "presence" ->
+          (match%lwt parse_children parser with
+          | Ok children ->
+            Lwt.return (Stanza (Stanza.Presence (Xml.Element (tag, children))))
+          | Error e -> Lwt.return (Error e))
+        | s -> Lwt.return (Error ("Unexpected tag with name: " ^ s)))
       | _ -> assert false)
-    | None -> Lwt.return_error "end_of_stream"
-  in
-  match%lwt aux () with
-  | Ok (Some s) -> Lwt.return (Stanza s)
-  | Ok None -> Lwt.return End
-  | Error e -> Lwt.return (Error e)
+    | `End_element ->
+      (match parser.depth with
+      | 1 -> (* End of the stream *)
+             Lwt.return (Stream_Element Stream.Close)
+      | _ -> assert false)
+    | _ -> Lwt.return (Error "base match case not implemented"))
+  | None -> Lwt.return (Error "Closed parser stream")
 ;;
 
 let parse_string s =
   let parser = create (Lwt_stream.of_string s) in
   let out () =
-    match%lwt parse_stanza parser with
+    match%lwt parse parser with
     | Stanza s ->
-      print_endline (Stanza.pp_to_string s);
+      print_endline (Stanza.to_string s);
       Lwt.return_unit
-    | End ->
-      print_endline "</stream:stream>";
+    | Stream_Element stream_element ->
+      print_endline ("Stream_Element\n" ^ Stream.to_string stream_element);
       Lwt.return_unit
     | Error e ->
       print_endline e;
@@ -79,34 +101,41 @@ let parse_string s =
   fun () -> Lwt_main.run (out ())
 ;;
 
-let to_string _t = "stream and depth"
-
 let%expect_test "initial stanza gets returned" =
   let pf = parse_string "<stream></stream>" in
   pf ();
-  [%expect {| <stream/> |}]
+  [%expect {|
+    Stream_Element
+    <stream> |}];
+  pf ();
+  [%expect {|
+    Stream_Element
+    </stream:stream> |}]
 ;;
 
-let%expect_test "second stanza should get returned too" =
-  let pf = parse_string "<stream><second/></stream>" in
+let%expect_test "empty stanza should be an error" =
+  let pf = parse_string "<stream><message/></stream>" in
   pf ();
-  [%expect {| <stream/> |}];
+  [%expect {|
+    Stream_Element
+    <stream> |}];
   pf ();
-  [%expect {| <second/> |}]
+  [%expect {| <message/> |}]
 ;;
 
-let%expect_test "nested stanza" =
-  let pf = parse_string "<stream><body><message>A message!</message></body></stream>" in
+let%expect_test "non empty stanza is ok" =
+  let pf = parse_string "<stream><message><body>A message!</body></message></stream>" in
   pf ();
-  [%expect {| <stream/> |}];
+  [%expect {|
+    Stream_Element
+    <stream> |}];
   pf ();
-  [%expect
-    {|
-    <body>
-      <message>
-        A message!
-      </message>
-    </body> |}]
+  [%expect {|
+    <message><body>A message!</body></message> |}];
+  pf ();
+  [%expect {|
+    Stream_Element
+    </stream:stream> |}]
 ;;
 
 let%expect_test "start end full" =
@@ -114,30 +143,23 @@ let%expect_test "start end full" =
     parse_string
       "<stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' \
        xml:lang='en' xmlns='jabber:client' \
-       xmlns:stream='http://etherx.jabber.org/streams'><body>text</body> \
-       </stream:stream>"
+       xmlns:stream='http://etherx.jabber.org/streams'><message><body>text</body></message></stream:stream>"
   in
   pf ();
   [%expect
     {|
-    <http://etherx.jabber.org/streams:stream
-      from='juliet@im.example.com'
-      to='im.example.com'
-      version='1.0'
-      http://www.w3.org/XML/1998/namespace:lang='en'
-      http://www.w3.org/2000/xmlns/:xmlns='jabber:client'
-      http://www.w3.org/2000/xmlns/:stream='http://etherx.jabber.org/streams'/> |}];
+    Stream_Element
+    <http://etherx.jabber.org/streams:stream from='juliet@im.example.com' to='im.example.com' version='1.0' http://www.w3.org/XML/1998/namespace:lang='en' http://www.w3.org/2000/xmlns/:xmlns='jabber:client' http://www.w3.org/2000/xmlns/:stream='http://etherx.jabber.org/streams'> |}];
+  pf ();
+  [%expect
+    {|
+    <jabber:client:message><jabber:client:body>text</jabber:client:body></jabber:client:message> |}];
   pf ();
   [%expect {|
-    <jabber:client:body>
-      text
-    </jabber:client:body> |}];
+    Stream_Element
+    </stream:stream> |}];
   pf ();
-  [%expect];
-  pf ();
-  [%expect {| </stream:stream> |}];
-  pf ();
-  [%expect {| end_of_stream |}]
+  [%expect {| Closed parser stream |}]
 ;;
 
 let%expect_test "resource binding" =
@@ -152,24 +174,14 @@ let%expect_test "resource binding" =
   pf ();
   [%expect
     {|
-    <http://etherx.jabber.org/streams:stream
-      from='juliet@im.example.com'
-      to='im.example.com'
-      version='1.0'
-      http://www.w3.org/XML/1998/namespace:lang='en'
-      http://www.w3.org/2000/xmlns/:xmlns='jabber:client'
-      http://www.w3.org/2000/xmlns/:stream='http://etherx.jabber.org/streams'/> |}];
+    Stream_Element
+    <http://etherx.jabber.org/streams:stream from='juliet@im.example.com' to='im.example.com' version='1.0' http://www.w3.org/XML/1998/namespace:lang='en' http://www.w3.org/2000/xmlns/:xmlns='jabber:client' http://www.w3.org/2000/xmlns/:stream='http://etherx.jabber.org/streams'> |}];
   pf ();
   [%expect
     {|
-    <jabber:client:iq
-      id='redacted_for_testing'
-      type='set'>
-      <urn:ietf:params:xml:ns:xmpp-bind:bind
-      http://www.w3.org/2000/xmlns/:xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
-        <urn:ietf:params:xml:ns:xmpp-bind:resource>
-          balcony
-        </urn:ietf:params:xml:ns:xmpp-bind:resource>
-      </urn:ietf:params:xml:ns:xmpp-bind:bind>
-    </jabber:client:iq> |}]
+    <jabber:client:iq id='yhc13a95' type='set'><urn:ietf:params:xml:ns:xmpp-bind:bind http://www.w3.org/2000/xmlns/:xmlns='urn:ietf:params:xml:ns:xmpp-bind'><urn:ietf:params:xml:ns:xmpp-bind:resource>balcony</urn:ietf:params:xml:ns:xmpp-bind:resource></urn:ietf:params:xml:ns:xmpp-bind:bind></jabber:client:iq> |}];
+  pf ();
+  [%expect {|
+      Stream_Element
+      </stream:stream> |}]
 ;;

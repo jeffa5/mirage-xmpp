@@ -2,10 +2,10 @@
 
 (** The type of events, examples for now *)
 type t =
-  | STREAM_HEADER of Stanza.t
+  | STREAM_HEADER of Xml.tag
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of string * string
-  | CLOSE
+  | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of string * string
 

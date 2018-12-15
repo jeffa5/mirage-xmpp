@@ -14,8 +14,14 @@ let handle_action t stream =
       let open Actions in
       let closed =
         match action with
-        | REPLY_STANZA (b, s) ->
-          t.callback (Some (Stanza.to_string ~auto_close:b s));
+        | SEND_STREAM_HEADER tag ->
+          t.callback (Some (Stream.to_string (Header tag)));
+          false
+        | SEND_STREAM_FEATURES xml ->
+          t.callback (Some (Xml.to_string xml));
+          false
+        | REPLY_STANZA s ->
+          t.callback (Some (Stanza.to_string s));
           false
         | SEND_STANZA (_jid, s) ->
           t.callback (Some (Stanza.to_string s));
@@ -39,10 +45,9 @@ let handle_action t stream =
                   (Stanza.create_iq_bind
                      id
                      ~children:
-                       [ Stanza.create
+                       [ Xml.create
                            (("", "jid"), [])
-                           ~children:[Stanza.Text ["not in the right place to set jid"]]
-                       ])));
+                           ~children:[Xml.Text "not in the right place to set jid"] ])));
           false
         | GET_ROSTER (from, id) ->
           let items = Roster.get_jids t.roster in
@@ -55,7 +60,7 @@ let handle_action t stream =
                      ~children:
                        (List.map
                           (fun jid ->
-                            Stanza.create (("", "item"), [("", "jid"), Jid.to_string jid])
+                            Xml.create (("", "item"), [("", "jid"), Jid.to_string jid])
                             )
                           items))));
           false
@@ -80,8 +85,8 @@ let create ~connections ~roster ~stream ~callback =
 
 let handle t =
   let rec aux () =
-    let%lwt stanza = Parser.parse_stanza t.parser in
-    let event = Events.lift stanza in
+    let%lwt parse_result = Parser.parse t.parser in
+    let event = Events.lift parse_result in
     let new_fsm, actions = State.handle t.fsm event in
     t.fsm <- new_fsm;
     List.iter (fun action -> t.actions_push (Some action)) actions;
@@ -96,7 +101,6 @@ let to_string t =
   ^ Roster.to_string t.roster
   ^ "\n"
   ^ "parser: "
-  ^ Parser.to_string t.parser
   ^ "\n"
   ^ "callback"
   ^ "\n"
@@ -142,7 +146,7 @@ let%expect_test "creation of handler" =
     {|
     {
     roster: []
-    parser: stream and depth
+    parser:
     callback
     jid: empty
     fsm: {state: idle}
@@ -151,9 +155,8 @@ let%expect_test "creation of handler" =
 
 let%expect_test "initial stanza with version" =
   let stanza =
-    Stanza.to_string
-      ~auto_close:false
-      (Stanza.create
+    Xml.to_string
+      (Xml.create
          ( ("stream", "stream")
          , [ ("", "from"), "juliet@im.example.com"
            ; ("", "to"), "im.example.com"
@@ -175,7 +178,7 @@ let%expect_test "initial stanza with version" =
     {|
     {
     roster: []
-    parser: stream and depth
+    parser:
     callback
     jid: juliet@im.example.com
     fsm: {state: closed}
@@ -184,9 +187,8 @@ let%expect_test "initial stanza with version" =
 
 let%expect_test "error in initial stanza" =
   let stanza =
-    Stanza.to_string
-      ~auto_close:false
-      (Stanza.create
+    Xml.to_string
+      (Xml.create
          ( ("stream", "stream")
          , [ ("", "from"), "juliet@im.example.com"
            ; ("", "to"), "im.example.com"
@@ -197,24 +199,27 @@ let%expect_test "error in initial stanza" =
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
-  [%expect {| invalid-namespace |}];
+  [%expect
+    {|
+    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    </stream:stream> |}];
   print_endline (to_string handler);
   [%expect
     {|
     {
     roster: []
-    parser: stream and depth
+    parser:
     callback
-    jid: empty
+    jid: juliet@im.example.com
     fsm: {state: closed}
     } |}]
 ;;
 
 let%expect_test "bind resource" =
   let stanza =
-    Stanza.to_string
-      ~auto_close:false
-      (Stanza.create
+    Xml.to_string
+      (Xml.create
          ( ("stream", "stream")
          , [ ("", "from"), "juliet@im.example.com"
            ; ("", "to"), "im.example.com"
@@ -222,16 +227,14 @@ let%expect_test "bind resource" =
            ; ("xml", "lang"), "en"
            ; ("", "xmlns"), "jabber:client"
            ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
-    ^ Stanza.to_string
-        (Stanza.create
+    ^ Xml.to_string
+        (Xml.create
            (("", "iq"), [("", "id"), "some_id"; ("", "type"), "set"])
            ~children:
-             [ Stanza.create
+             [ Xml.create
                  (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
                  ~children:
-                   [ Stanza.create
-                       (("", "resource"), [])
-                       ~children:[Stanza.Text ["balcony"]] ] ])
+                   [Xml.create (("", "resource"), []) ~children:[Xml.Text "balcony"]] ])
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
@@ -239,25 +242,23 @@ let%expect_test "bind resource" =
     {|
     <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>not in the right place to set jid</jid></bind></iq>
     </stream:stream> |}];
   print_endline (to_string handler);
   [%expect
     {|
     {
     roster: []
-    parser: stream and depth
+    parser:
     callback
-    jid: juliet@im.example.com/balcony
+    jid: juliet@im.example.com
     fsm: {state: closed}
     } |}]
 ;;
 
 let%expect_test "roster get" =
   let stanza =
-    Stanza.to_string
-      ~auto_close:false
-      (Stanza.create
+    Xml.to_string
+      (Xml.create
          ( ("stream", "stream")
          , [ ("", "from"), "juliet@im.example.com"
            ; ("", "to"), "im.example.com"
@@ -265,24 +266,22 @@ let%expect_test "roster get" =
            ; ("xml", "lang"), "en"
            ; ("", "xmlns"), "jabber:client"
            ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
-    ^ Stanza.to_string
-        (Stanza.create
+    ^ Xml.to_string
+        (Xml.create
            (("", "iq"), [("", "id"), "some_id"; ("", "type"), "set"])
            ~children:
-             [ Stanza.create
+             [ Xml.create
                  (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
                  ~children:
-                   [ Stanza.create
-                       (("", "resource"), [])
-                       ~children:[Stanza.Text ["balcony"]] ] ])
-    ^ Stanza.to_string
-        (Stanza.create
+                   [Xml.create (("", "resource"), []) ~children:[Xml.Text "balcony"]] ])
+    ^ Xml.to_string
+        (Xml.create
            ( ("", "iq")
            , [ ("", "id"), "some_id"
              ; ("", "type"), "get"
              ; ("", "from"), "juliet@example.com/balcony" ] )
            ~children:
-             [ Stanza.create
+             [ Xml.create
                  (("", "query"), [("", "xmlns"), "jabber:iq:roster"])
                  ~children:[] ])
     ^ "</stream:stream>"
@@ -292,17 +291,15 @@ let%expect_test "roster get" =
     {|
     <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>not in the right place to set jid</jid></bind></iq>
-    <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'/></iq>
     </stream:stream> |}];
   print_endline (to_string handler);
   [%expect
     {|
     {
     roster: []
-    parser: stream and depth
+    parser:
     callback
-    jid: juliet@im.example.com/balcony
+    jid: juliet@im.example.com
     fsm: {state: closed}
     } |}]
 ;;

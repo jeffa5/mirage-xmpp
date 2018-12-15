@@ -2,7 +2,9 @@
 
 (** The type of actions, examples for now *)
 type t =
-  | REPLY_STANZA of bool * Stanza.t
+  | SEND_STREAM_HEADER of Xml.tag
+  | SEND_STREAM_FEATURES of Xml.t
+  | REPLY_STANZA of Stanza.t
   | SEND_STANZA of Jid.t * Stanza.t
   | CLOSE
   | ERROR of string
