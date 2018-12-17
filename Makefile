@@ -87,7 +87,7 @@ check:
 
 .PHONY: docker-build
 docker-build:
-	docker build -f docker/mirage-xmpp-ci/Dockerfile --build-arg opam_deps="$$(./project-deps.sh)" -t jeffas/mirage-xmpp-ci:latest .
+	docker build -f docker/mirage-xmpp-ci/Dockerfile -t jeffas/mirage-xmpp-ci:latest .
 
 .PHONY: docker-ci
 docker-ci: docker-build

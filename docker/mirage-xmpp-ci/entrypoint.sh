@@ -2,6 +2,8 @@
 
 set -e
 
+opam depext --yes --update --install $(./project-deps.sh)
+
 eval $(opam env)
 
 echo -en "travis_fold:start:unit\r"
