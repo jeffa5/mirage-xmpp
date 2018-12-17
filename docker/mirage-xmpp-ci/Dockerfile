@@ -7,3 +7,7 @@ RUN opam switch 4.05 \
     && opam depext --yes --update --install $opam_deps
 
 WORKDIR /home/opam/app
+
+COPY . .
+
+RUN sudo chown -R opam:opam .

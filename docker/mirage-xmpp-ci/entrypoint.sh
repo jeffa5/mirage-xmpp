@@ -20,5 +20,3 @@ echo -en "travis_fold:end:makedocs\r"
 echo -en "travis_fold:start:coverage\r"
 make coverage
 echo -en "travis_fold:end:coverage\r"
-
-make clean

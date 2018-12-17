@@ -91,4 +91,4 @@ docker-build:
 
 .PHONY: docker-ci
 docker-ci: docker-build
-	docker run --privileged -v $${PWD}:/home/opam/app jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
+	docker run --privileged jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
