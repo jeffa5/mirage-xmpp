@@ -2,9 +2,14 @@
 
 set -e
 
-opam depext --yes --update --install $(./project-deps.sh)
+opam switch 4.05
+opam update
+opam upgrade -y
 
 eval $(opam env)
+
+opam depext --yes --update --install dune
+opam depext --yes --update --install $(./project-deps.sh)
 
 echo -en "travis_fold:start:unit\r"
 make unit
