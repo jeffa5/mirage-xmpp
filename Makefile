@@ -19,6 +19,7 @@ build: unit
 .PHONY: install
 install: build
 	dune install
+	opam pin -y .
 
 #
 # MIRAGE
@@ -38,12 +39,12 @@ integration: mirage
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
-	sudo mirage/xmpp -l "*:debug"
-
+	sudo mirage/xmpp -l "*:debug" > unikernel.log 2>&1
 # configure the tap for connecting
 .PHONY: tap
 tap:
-	sudo ifconfig tap0 10.0.0.1 up
+	sudo ip addr add 10.0.0.1/16 dev tap0
+	sudo ip link set tap0 up
 
 # promote the files, typically for expect tests
 .PHONY: promote
@@ -83,3 +84,11 @@ format: clean
 .PHONY: check
 check:
 	dune build @check
+
+.PHONY: docker-build
+docker-build: clean
+	docker build -f docker/mirage-xmpp-ci/Dockerfile --build-arg opam_deps="$$(./project-deps.sh)" -t jeffas/mirage-xmpp-ci:latest .
+
+.PHONY: docker-ci
+docker-ci: docker-build
+	docker run --privileged -v $${PWD}:/home/opam/app jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh

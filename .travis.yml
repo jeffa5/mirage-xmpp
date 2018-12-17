@@ -1,12 +1,10 @@
 language: c
+
+services:
+  - docker
+
 script:
-  - sudo bash -ex .travis-opam.sh
-sudo: required
-env:
-  global:
-    - PACKAGE=mirage-xmpp
-  matrix:
-    - OCAML_VERSION=4.05
+  - make docker-ci
 
 deploy:
   provider: pages
