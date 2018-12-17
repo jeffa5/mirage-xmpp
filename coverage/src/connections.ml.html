@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="../coverage.css" />
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">src/</span>connections.ml
+        </a>
+      </h1>
+      <h2>12.50%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:50.00%"></span>
+      <span class="unvisited" style="top:57.14%"></span>
+      <span class="unvisited" style="top:64.29%"></span>
+      <span class="unvisited" style="top:85.71%"></span>
+      <span class="unvisited" style="top:92.86%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span class="visited"> </span>
+<a id="L7"></a><span class="unvisited"> </span>
+<a id="L8"></a><span class="unvisited"> </span>
+<a id="L9"></a><span class="unvisited"> </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span class="unvisited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
+<a id="L14"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+</pre>
+        <pre id="code">
+open Asetmap
+module Table = Map.Make (Jid)
+
+type t = (Actions.t option -&gt; unit) Table.t
+
+let empty = <span data-count="2">T</span>able.empty
+let add jid f t = <span data-count="0">T</span>able.add jid f t
+let find jid t = <span data-count="0">T</span>able.find jid t
+let remove jid t = <span data-count="0">T</span>able.remove jid t
+
+let to_string t =
+  <span data-count="0">l</span>et aux (jid, _) = <span data-count="0">J</span>id.to_string jid in
+  <span data-count="0">S</span>tring.concat "\n" (List.map (fun p -&gt; <span data-count="0">a</span>ux p) (Table.to_list t))
+;;
+</pre>
+      </div>
+    </div>
+    <div id="footer">Generated on 2018-12-17 15:25:55 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>
