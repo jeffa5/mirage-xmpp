@@ -86,7 +86,7 @@ check:
 	dune build @check
 
 .PHONY: docker-build
-docker-build: clean
+docker-build:
 	docker build -f docker/mirage-xmpp-ci/Dockerfile --build-arg opam_deps="$$(./project-deps.sh)" -t jeffas/mirage-xmpp-ci:latest .
 
 .PHONY: docker-ci
