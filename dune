@@ -1,1 +1,1 @@
-(ignored_subdirs (demos pages))
+(data_only_dirs demos pages)
