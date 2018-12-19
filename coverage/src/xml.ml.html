@@ -106,26 +106,26 @@ type t =
   | Text of string
   | Element of tag * t list
 
-let name_to_string (prefix, name) = <span data-count="217">i</span>f prefix &lt;&gt; "" then <span data-count="81">p</span>refix ^ ":" ^ name else <span data-count="136">n</span>ame
+let name_to_string (prefix, name) = <span data-count="216">i</span>f prefix &lt;&gt; "" then <span data-count="81">p</span>refix ^ ":" ^ name else <span data-count="135">n</span>ame
 let attribute_to_string (name, attribute) = <span data-count="132">n</span>ame_to_string name ^ "='" ^ attribute ^ "'"
 
 let tag_to_string ~empty (name, attributes) =
-  <span data-count="58">l</span>et sep = <span data-count="58">"</span> " in
-  <span data-count="58">l</span>et attr_string =
-    <span data-count="58">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="132">a</span>ttribute_to_string a) attributes)
+  <span data-count="57">l</span>et sep = <span data-count="57">"</span> " in
+  <span data-count="57">l</span>et attr_string =
+    <span data-count="57">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="132">a</span>ttribute_to_string a) attributes)
   in
-  <span data-count="58">l</span>et name_string = <span data-count="58">n</span>ame_to_string name in
-  <span data-count="58">"</span>&lt;"
+  <span data-count="57">l</span>et name_string = <span data-count="57">n</span>ame_to_string name in
+  <span data-count="57">"</span>&lt;"
   ^ name_string
-  ^ (if attr_string &lt;&gt; "" then <span data-count="36">s</span>ep ^ attr_string else <span data-count="22">"</span>")
-  ^ if empty then <span data-count="22">"</span>/&gt;" else <span data-count="36">"</span>&gt;"
+  ^ (if attr_string &lt;&gt; "" then <span data-count="36">s</span>ep ^ attr_string else <span data-count="21">"</span>")
+  ^ if empty then <span data-count="21">"</span>/&gt;" else <span data-count="36">"</span>&gt;"
 ;;
 
 let rec to_string = <span data-count="2">f</span>unction
   | <span data-count="6">T</span>ext s -&gt; s
-  | <span data-count="43">E</span>lement (((name, _attributes) as tag), children) -&gt;
+  | <span data-count="42">E</span>lement (((name, _attributes) as tag), children) -&gt;
     (match children with
-    | <span data-count="16">[</span>] -&gt; tag_to_string ~empty:true tag
+    | <span data-count="15">[</span>] -&gt; tag_to_string ~empty:true tag
     | <span data-count="27">c</span>s -&gt;
       tag_to_string ~empty:false tag
       ^ String.concat "" (List.map (fun c -&gt; <span data-count="27">t</span>o_string c) cs)
@@ -138,7 +138,7 @@ let create ?(children = <span data-count="6">[</span>]) tag = <span data-count="
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-17 15:25:55 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-19 10:02:17 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

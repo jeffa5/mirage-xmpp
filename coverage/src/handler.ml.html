@@ -700,7 +700,7 @@ let handle_action t stream =
                      ~children:
                        [ Xml.create
                            (("", "jid"), [])
-                           ~children:[Xml.Text "not in the right place to set jid"] ])));
+                           ~children:[Xml.Text (Jid.to_string t.jid)] ])));
           <span data-count="0">f</span>alse
         | <span data-count="0">G</span>ET_ROSTER (from, id) -&gt;
           let items = <span data-count="0">R</span>oster.get_jids t.roster in
@@ -959,7 +959,7 @@ let%expect_test "roster get" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-17 15:25:55 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-19 10:02:17 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
