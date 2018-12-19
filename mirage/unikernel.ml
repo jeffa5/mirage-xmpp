@@ -67,7 +67,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Logs.info (fun f -> f "Port is: %d" port);
     let connections = ref Mirage_xmpp.Connections.empty in
     S.listen_tcpv4 s ~port (on_connect connections);
-    S.listen_tcpv4 s ~port:(port + 1) (fun _flow ->
+    S.listen_tcpv4 s ~port:8081 (fun _flow ->
         Logs.info (fun f -> f "Received exit signal");
         exit 0 );
     Logs.info (fun f -> f "Started listening");

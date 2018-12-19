@@ -4,7 +4,7 @@ let port =
   let doc =
     Key.Arg.info ~doc:"The TCP port on which to listen for incoming connections." ["port"]
   in
-  Key.(create "port" Arg.(opt int 8080 doc))
+  Key.(create "port" Arg.(opt int 5222 doc))
 ;;
 
 let packages = [package "lwt_ppx"; package "mirage-xmpp"]

@@ -1,4 +1,4 @@
-let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
+let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str =
   let timeout_t =
     let%lwt () = Lwt_unix.sleep timeout in
     Lwt.return "Timeout"
@@ -14,7 +14,7 @@ let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str =
   print_endline s
 ;;
 
-let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str_list =
+let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str_list =
   let timeout_t =
     let%lwt () = Lwt_unix.sleep timeout in
     Lwt.return "Timeout"
@@ -58,7 +58,9 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 8080) str_list =
 
 let configure_tap () =
   print_endline "Configuring tap0";
-  let command = Lwt_process.shell "sudo ip addr add 10.0.0.1/16 dev tap0 && sudo ip link set tap0 up" in
+  let command =
+    Lwt_process.shell "sudo ip addr add 10.0.0.1/16 dev tap0 && sudo ip link set tap0 up"
+  in
   match Lwt_main.run (Lwt_process.exec command) with _ -> ()
 ;;
 
