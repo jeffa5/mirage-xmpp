@@ -46,6 +46,10 @@ tap:
 	sudo ip addr add 10.0.0.1/16 dev tap0
 	sudo ip link set tap0 up
 
+.PHONY: demo
+demo:
+	./demo-stanzas.py
+
 # promote the files, typically for expect tests
 .PHONY: promote
 promote:
@@ -92,3 +96,7 @@ docker-build:
 .PHONY: docker-ci
 docker-ci: docker-build
 	docker run --privileged --name mirage-xmpp-ci jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
+
+.PHONY: docker-prune
+docker-prune:
+	docker system prune

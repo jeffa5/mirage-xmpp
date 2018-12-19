@@ -11,3 +11,6 @@ docs
 # gh-pages
 _site
 .sass-cache
+
+# python stuff
+.mypy_cache
