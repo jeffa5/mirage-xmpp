@@ -47,7 +47,7 @@ let handle_action t stream =
                      ~children:
                        [ Xml.create
                            (("", "jid"), [])
-                           ~children:[Xml.Text "not in the right place to set jid"] ])));
+                           ~children:[Xml.Text (Jid.to_string t.jid)] ])));
           false
         | GET_ROSTER (from, id) ->
           let items = Roster.get_jids t.roster in
