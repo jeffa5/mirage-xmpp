@@ -11,12 +11,10 @@
           <span class="dirname">src/</span>actions.ml
         </a>
       </h1>
-      <h2>72.73%</h2>
+      <h2>92.31%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:46.15%"></span>
-      <span class="unvisited" style="top:53.85%"></span>
-      <span class="unvisited" style="top:64.10%"></span>
+      <span class="unvisited" style="top:45.65%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -33,19 +31,19 @@
 <a id="L10"></a><span > </span>
 <a id="L11"></a><span > </span>
 <a id="L12"></a><span > </span>
-<a id="L13"></a><span class="visited"> </span>
-<a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span > </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span > </span>
+<a id="L15"></a><span class="visited"> </span>
 <a id="L16"></a><span class="visited"> </span>
-<a id="L17"></a><span class="visited"> </span>
-<a id="L18"></a><span class="unvisited"> </span>
-<a id="L19"></a><span > </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span class="visited"> </span>
+<a id="L19"></a><span class="visited"> </span>
 <a id="L20"></a><span class="visited"> </span>
 <a id="L21"></a><span class="unvisited"> </span>
 <a id="L22"></a><span class="visited"> </span>
 <a id="L23"></a><span class="visited"> </span>
 <a id="L24"></a><span class="visited"> </span>
-<a id="L25"></a><span class="unvisited"> </span>
+<a id="L25"></a><span class="visited"> </span>
 <a id="L26"></a><span > </span>
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
@@ -59,7 +57,14 @@
 <a id="L36"></a><span > </span>
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
-<a id="L39"></a><span > </span>
+<a id="L39"></a><span class="visited"> </span>
+<a id="L40"></a><span > </span>
+<a id="L41"></a><span > </span>
+<a id="L42"></a><span > </span>
+<a id="L43"></a><span > </span>
+<a id="L44"></a><span class="visited"> </span>
+<a id="L45"></a><span class="visited"> </span>
+<a id="L46"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -103,33 +108,40 @@
 <a href="#L37">37</a>
 <a href="#L38">38</a>
 <a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
+<a href="#L42">42</a>
+<a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
 </pre>
         <pre id="code">
 type t =
   | SEND_STREAM_HEADER of Xml.tag
   | SEND_STREAM_FEATURES of Xml.t
   | REPLY_STANZA of Stanza.t
-  | SEND_STANZA of Jid.t * Stanza.t
   | CLOSE
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
   | GET_ROSTER of string * Jid.t
   | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
+  | PUSH_ROSTER of Jid.t * Jid.t
+  | ADD_TO_CONNECTIONS
+  | REMOVE_FROM_CONNECTIONS
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="6">S</span>END_STREAM_HEADER tag -&gt;
+  | <span data-count="7">S</span>END_STREAM_HEADER tag -&gt;
     "SEND_STREAM_HEADER: " ^ Utils.mask_id (Xml.tag_to_string ~empty:true tag)
-  | <span data-count="6">S</span>END_STREAM_FEATURES xml -&gt; "SEND_STREAM_FEATURES: " ^ Xml.to_string xml
+  | <span data-count="7">S</span>END_STREAM_FEATURES xml -&gt; "SEND_STREAM_FEATURES: " ^ Xml.to_string xml
   | <span data-count="1">R</span>EPLY_STANZA s -&gt; "REPLY_STANZA: " ^ Utils.mask_id (Stanza.to_string s)
-  | <span data-count="0">S</span>END_STANZA (jid, s) -&gt;
-    "SEND_STANZA:\n" ^ Jid.to_string jid ^ "\n" ^ Stanza.to_string s
-  | <span data-count="4">C</span>LOSE -&gt; "CLOSE"
+  | <span data-count="5">C</span>LOSE -&gt; "CLOSE"
   | <span data-count="0">E</span>RROR s -&gt; "ERROR: " ^ s
-  | <span data-count="6">S</span>ET_JID j -&gt; "SET_JID: " ^ Jid.to_string j
-  | <span data-count="2">S</span>ET_JID_RESOURCE (id, res) -&gt; "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
-  | <span data-count="1">G</span>ET_ROSTER (id, from) -&gt; "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
-  | <span data-count="0">S</span>ET_ROSTER (id, from, target, handle, subscribed, groups) -&gt;
+  | <span data-count="7">S</span>ET_JID j -&gt; "SET_JID: " ^ Jid.to_string j
+  | <span data-count="3">S</span>ET_JID_RESOURCE (id, res) -&gt; "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
+  | <span data-count="2">G</span>ET_ROSTER (id, from) -&gt; "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | <span data-count="1">S</span>ET_ROSTER (id, from, target, handle, subscribed, groups) -&gt;
     "SET_ROSTER: id="
     ^ id
     ^ " from="
@@ -143,11 +155,18 @@ let to_string = <span data-count="2">f</span>unction
     ^ " groups=["
     ^ String.concat " " groups
     ^ "]"
+  | <span data-count="1">P</span>USH_ROSTER (bare_jid, updated_jid) -&gt;
+    "PUSH_ROSTER: bare_jid="
+    ^ Jid.to_string bare_jid
+    ^ " updated_jid="
+    ^ Jid.to_string updated_jid
+  | <span data-count="2">A</span>DD_TO_CONNECTIONS -&gt; "ADD_TO_CONNECTIONS"
+  | <span data-count="2">R</span>EMOVE_FROM_CONNECTIONS -&gt; "REMOVE_FROM_CONNECTIONS"
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

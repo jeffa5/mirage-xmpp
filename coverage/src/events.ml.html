@@ -11,17 +11,13 @@
           <span class="dirname">src/</span>events.ml
         </a>
       </h1>
-      <h2>60.47%</h2>
+      <h2>69.77%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:6.36%"></span>
       <span class="unvisited" style="top:7.51%"></span>
       <span class="unvisited" style="top:8.67%"></span>
-      <span class="unvisited" style="top:25.43%"></span>
-      <span class="unvisited" style="top:26.59%"></span>
       <span class="unvisited" style="top:27.75%"></span>
-      <span class="unvisited" style="top:31.79%"></span>
-      <span class="unvisited" style="top:32.37%"></span>
       <span class="unvisited" style="top:39.88%"></span>
       <span class="unvisited" style="top:43.35%"></span>
       <span class="unvisited" style="top:43.93%"></span>
@@ -78,9 +74,9 @@
 <a id="L41"></a><span class="visited"> </span>
 <a id="L42"></a><span > </span>
 <a id="L43"></a><span > </span>
-<a id="L44"></a><span class="unvisited"> </span>
+<a id="L44"></a><span class="visited"> </span>
 <a id="L45"></a><span > </span>
-<a id="L46"></a><span class="unvisited"> </span>
+<a id="L46"></a><span class="visited"> </span>
 <a id="L47"></a><span > </span>
 <a id="L48"></a><span class="unvisited"> </span>
 <a id="L49"></a><span class="visited"> </span>
@@ -89,8 +85,8 @@
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span class="visited"> </span>
 <a id="L54"></a><span > </span>
-<a id="L55"></a><span class="unvisited"> </span>
-<a id="L56"></a><span class="unvisited"> </span>
+<a id="L55"></a><span class="visited"> </span>
+<a id="L56"></a><span class="visited"> </span>
 <a id="L57"></a><span > </span>
 <a id="L58"></a><span > </span>
 <a id="L59"></a><span > </span>
@@ -423,32 +419,32 @@ let to_string = <span data-count="2">f</span>unction
 let not_implemented = <span data-count="2">E</span>RROR "not implemented"
 
 let lift_iq = <span data-count="2">f</span>unction
-  | <span data-count="4">X</span>ml.Element (((_prefix, _name), attributes), children) -&gt;
+  | <span data-count="10">X</span>ml.Element (((_prefix, _name), attributes), children) -&gt;
     (match Stanza.get_type attributes with
-    | <span data-count="2">"</span>set" -&gt;
+    | <span data-count="6">"</span>set" -&gt;
       (match children with
       | <span data-count="1">[</span>Xml.Element (((_p, "bind"), _attrs), [])] -&gt;
         (* resource bind with server-generated resource identifier (7.6) *)
         RESOURCE_BIND_SERVER_GEN (Stanza.get_id attributes)
-      | <span data-count="0">[</span>Xml.Element (((_p, "bind"), _attrs), [child])] -&gt;
+      | <span data-count="3">[</span>Xml.Element (((_p, "bind"), _attrs), [child])] -&gt;
         (match child with
-        | <span data-count="0">X</span>ml.Element (((_, "resource"), []), [Xml.Text t]) -&gt;
+        | <span data-count="3">X</span>ml.Element (((_, "resource"), []), [Xml.Text t]) -&gt;
           RESOURCE_BIND_CLIENT_GEN (Stanza.get_id attributes, t)
         | <span data-count="0">_</span> -&gt; not_implemented)
-      | <span data-count="1">[</span> Xml.Element
+      | <span data-count="2">[</span> Xml.Element
             (((_, "query"), _), [Xml.Element (((_, "item"), attrs), group_elements)]) ]
       -&gt;
         let groups =
-          <span data-count="1">L</span>ist.map
+          <span data-count="2">L</span>ist.map
             (fun element -&gt;
-              <span data-count="0">m</span>atch element with
-              | <span data-count="0">X</span>ml.Element (((_, "group"), _), [Xml.Text group]) -&gt; group
+              <span data-count="1">m</span>atch element with
+              | <span data-count="1">X</span>ml.Element (((_, "group"), _), [Xml.Text group]) -&gt; group
               | _ -&gt; assert false )
             group_elements
         in
-        <span data-count="1">l</span>et jid = <span data-count="1">S</span>tanza.get_jid attrs in
-        <span data-count="1">l</span>et handle = <span data-count="1">S</span>tanza.get_name attrs in
-        <span data-count="1">R</span>OSTER_SET
+        <span data-count="2">l</span>et jid = <span data-count="2">S</span>tanza.get_jid attrs in
+        <span data-count="2">l</span>et handle = <span data-count="2">S</span>tanza.get_name attrs in
+        <span data-count="2">R</span>OSTER_SET
           ( Stanza.get_id attributes
           , Stanza.get_from attributes
           , jid
@@ -456,9 +452,9 @@ let lift_iq = <span data-count="2">f</span>unction
           , false
           , groups )
       | <span data-count="0">_</span> -&gt; not_implemented)
-    | <span data-count="2">"</span>get" -&gt;
+    | <span data-count="4">"</span>get" -&gt;
       (match children with
-      | <span data-count="2">[</span>Xml.Element (((_, "query"), _), [])] -&gt;
+      | <span data-count="4">[</span>Xml.Element (((_, "query"), _), [])] -&gt;
         (* roster get query *)
         ROSTER_GET (Stanza.get_id attributes, Stanza.get_from attributes)
       | <span data-count="0">_</span> -&gt; not_implemented)
@@ -467,22 +463,22 @@ let lift_iq = <span data-count="2">f</span>unction
 ;;
 
 let lift parse_result =
-  <span data-count="13">l</span>et open Parser in
+  <span data-count="21">l</span>et open Parser in
   match parse_result with
-  | <span data-count="4">S</span>tanza stanza -&gt;
+  | <span data-count="10">S</span>tanza stanza -&gt;
     (match stanza with
-    | <span data-count="4">S</span>tanza.Iq element -&gt; lift_iq element
+    | <span data-count="10">S</span>tanza.Iq element -&gt; lift_iq element
     | <span data-count="0">S</span>tanza.Presence (Element (((_prefix, _name), _attributes), _children) as _xml) -&gt;
       not_implemented
     | <span data-count="0">S</span>tanza.Message (Element (((_prefix, _name), _attributes), _children) as _xml) -&gt;
       not_implemented
     | <span data-count="0">_</span> -&gt; ERROR "Not expecing text elements")
-  | <span data-count="8">S</span>tream_Element stream_element -&gt;
+  | <span data-count="10">S</span>tream_Element stream_element -&gt;
     (match stream_element with
-    | <span data-count="4">H</span>eader tag -&gt; STREAM_HEADER tag
+    | <span data-count="5">H</span>eader tag -&gt; STREAM_HEADER tag
     | <span data-count="0">F</span>eatures -&gt; not_implemented
     | <span data-count="0">E</span>rror -&gt; not_implemented
-    | <span data-count="4">C</span>lose -&gt; STREAM_CLOSE)
+    | <span data-count="5">C</span>lose -&gt; STREAM_CLOSE)
   | <span data-count="1">E</span>rror e -&gt; ERROR e
 ;;
 
@@ -563,7 +559,7 @@ let%expect_test "roster set" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

@@ -11,12 +11,9 @@
           <span class="dirname">src/</span>rosters.ml
         </a>
       </h1>
-      <h2>80.77%</h2>
+      <h2>100.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:27.97%"></span>
-      <span class="unvisited" style="top:28.67%"></span>
-      <span class="unvisited" style="top:29.37%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -60,9 +57,9 @@
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
 <a id="L39"></a><span > </span>
-<a id="L40"></a><span class="unvisited"> </span>
-<a id="L41"></a><span class="unvisited"> </span>
-<a id="L42"></a><span class="unvisited"> </span>
+<a id="L40"></a><span class="visited"> </span>
+<a id="L41"></a><span class="visited"> </span>
+<a id="L42"></a><span class="visited"> </span>
 <a id="L43"></a><span > </span>
 <a id="L44"></a><span > </span>
 <a id="L45"></a><span class="visited"> </span>
@@ -332,58 +329,58 @@ type user =
 let t = <span data-count="2">r</span>ef Jid_map.empty
 
 let create_roster ~jid =
-  <span data-count="5">t</span> := Jid_map.add jid {presence_status = false; roster = Jid_map.empty} !t
+  <span data-count="6">t</span> := Jid_map.add jid {presence_status = false; roster = Jid_map.empty} !t
 ;;
 
-let create_item ~handle ~subscribed ~groups () = <span data-count="11">{</span>handle; subscribed; groups}
+let create_item ~handle ~subscribed ~groups () = <span data-count="13">{</span>handle; subscribed; groups}
 
 let rec set_item ~user_jid ~target_jid ~handle ~subscribed ~groups =
-  <span data-count="11">l</span>et item = <span data-count="11">c</span>reate_item ~handle ~subscribed ~groups () in
-  <span data-count="11">m</span>atch Jid_map.find user_jid !t with
-  | <span data-count="6">S</span>ome {presence_status; roster} -&gt;
+  <span data-count="13">l</span>et item = <span data-count="13">c</span>reate_item ~handle ~subscribed ~groups () in
+  <span data-count="13">m</span>atch Jid_map.find user_jid !t with
+  | <span data-count="7">S</span>ome {presence_status; roster} -&gt;
     t :=
       Jid_map.add
         user_jid
         {presence_status; roster = Jid_map.add target_jid item roster}
         !t
-  | <span data-count="5">N</span>one -&gt;
+  | <span data-count="6">N</span>one -&gt;
     create_roster ~jid:user_jid;
-    <span data-count="5">s</span>et_item ~user_jid ~target_jid ~handle ~subscribed ~groups
+    <span data-count="6">s</span>et_item ~user_jid ~target_jid ~handle ~subscribed ~groups
 ;;
 
 let get_jids user_jid =
-  <span data-count="0">m</span>atch Jid_map.find user_jid !t with
-  | <span data-count="0">S</span>ome {roster; _} -&gt; Jid_map.to_list roster |&gt; <span data-count="0">L</span>ist.map (fun (jid, _) -&gt; <span data-count="0">j</span>id)
-  | <span data-count="0">N</span>one -&gt; []
+  <span data-count="2">m</span>atch Jid_map.find user_jid !t with
+  | <span data-count="1">S</span>ome {roster; _} -&gt; Jid_map.to_list roster |&gt; <span data-count="1">L</span>ist.map (fun (jid, _) -&gt; <span data-count="1">j</span>id)
+  | <span data-count="1">N</span>one -&gt; []
 ;;
 
-let groups_to_string groups = <span data-count="5">"</span>[" ^ String.concat "," groups ^ "]"
+let groups_to_string groups = <span data-count="6">"</span>[" ^ String.concat "," groups ^ "]"
 
 let item_to_string {handle; subscribed; groups} =
-  <span data-count="5">"</span>{"
+  <span data-count="6">"</span>{"
   ^ String.concat "; " [handle; string_of_bool subscribed; groups_to_string groups]
   ^ "}"
 ;;
 
 let roster_to_string roster =
-  <span data-count="5">J</span>id_map.to_list roster
-  |&gt; <span data-count="5">L</span>ist.map (fun (jid, item) -&gt; <span data-count="5">J</span>id.to_string jid ^ ": " ^ item_to_string item)
-  |&gt; <span data-count="5">S</span>tring.concat "\n"
+  <span data-count="6">J</span>id_map.to_list roster
+  |&gt; <span data-count="6">L</span>ist.map (fun (jid, item) -&gt; <span data-count="6">J</span>id.to_string jid ^ ": " ^ item_to_string item)
+  |&gt; <span data-count="6">S</span>tring.concat "\n"
 ;;
 
 let user_to_string {presence_status; roster} =
-  <span data-count="5">s</span>tring_of_bool presence_status ^ "; " ^ roster_to_string roster
+  <span data-count="6">s</span>tring_of_bool presence_status ^ "; " ^ roster_to_string roster
 ;;
 
 let to_string () =
-  <span data-count="10">"</span>["
+  <span data-count="11">"</span>["
   ^ ( Jid_map.to_list !t
-    |&gt; <span data-count="10">L</span>ist.map (fun (jid, user) -&gt; <span data-count="5">J</span>id.to_string jid ^ ": " ^ user_to_string user)
-    |&gt; <span data-count="10">S</span>tring.concat "\n" )
+    |&gt; <span data-count="11">L</span>ist.map (fun (jid, user) -&gt; <span data-count="6">J</span>id.to_string jid ^ ": " ^ user_to_string user)
+    |&gt; <span data-count="11">S</span>tring.concat "\n" )
   ^ "]"
 ;;
 
-let clear () = <span data-count="10">t</span> := Jid_map.empty
+let clear () = <span data-count="11">t</span> := Jid_map.empty
 
 let%expect_test "empty initially" =
   clear ();
@@ -459,7 +456,7 @@ let%expect_test "add same jid multiple times" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

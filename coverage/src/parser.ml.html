@@ -11,12 +11,10 @@
           <span class="dirname">src/</span>parser.ml
         </a>
       </h1>
-      <h2>80.43%</h2>
+      <h2>82.61%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:13.17%"></span>
       <span class="unvisited" style="top:14.40%"></span>
-      <span class="unvisited" style="top:16.05%"></span>
       <span class="unvisited" style="top:24.28%"></span>
       <span class="unvisited" style="top:24.69%"></span>
       <span class="unvisited" style="top:27.16%"></span>
@@ -67,14 +65,14 @@
 <a id="L29"></a><span class="visited"> </span>
 <a id="L30"></a><span class="visited"> </span>
 <a id="L31"></a><span class="visited"> </span>
-<a id="L32"></a><span class="unvisited"> </span>
+<a id="L32"></a><span class="visited"> </span>
 <a id="L33"></a><span class="visited"> </span>
 <a id="L34"></a><span class="visited"> </span>
 <a id="L35"></a><span class="unvisited"> </span>
 <a id="L36"></a><span class="visited"> </span>
 <a id="L37"></a><span class="visited"> </span>
 <a id="L38"></a><span class="visited"> </span>
-<a id="L39"></a><span class="unvisited"> </span>
+<a id="L39"></a><span class="visited"> </span>
 <a id="L40"></a><span > </span>
 <a id="L41"></a><span > </span>
 <a id="L42"></a><span > </span>
@@ -540,7 +538,7 @@ type parse_result =
 exception ParsingError of string
 
 let make_parser stream =
-  <span data-count="12">M</span>arkup_lwt.parse_xml
+  <span data-count="13">M</span>arkup_lwt.parse_xml
     ~report:(fun _ e -&gt;
       <span data-count="1">l</span>et error_string = <span data-count="1">M</span>arkup.Error.to_string e in
       <span data-count="1">L</span>wt.fail (ParsingError error_string) )
@@ -548,74 +546,74 @@ let make_parser stream =
 ;;
 
 let create stream =
-  <span data-count="12">l</span>et stream = <span data-count="12">M</span>arkup_lwt.lwt_stream stream |&gt; <span data-count="12">m</span>ake_parser |&gt; <span data-count="12">M</span>arkup.signals in
-  <span data-count="12">{</span>stream; depth = 0}
+  <span data-count="13">l</span>et stream = <span data-count="13">M</span>arkup_lwt.lwt_stream stream |&gt; <span data-count="13">m</span>ake_parser |&gt; <span data-count="13">M</span>arkup.signals in
+  <span data-count="13">{</span>stream; depth = 0}
 ;;
 
 let convert_attribute ((namespace, name), value) =
-  <span data-count="43">l</span>et open Xml in
+  <span data-count="73">l</span>et open Xml in
   ( namespace
   , match name with
-    | <span data-count="6">"</span>from" -&gt; From (Jid.of_string value)
-    | <span data-count="6">"</span>to" -&gt; To (Jid.of_string value)
-    | <span data-count="5">"</span>id" -&gt; Id value
-    | <span data-count="0">"</span>jid" -&gt; Jid (Jid.of_string value)
-    | <span data-count="7">"</span>xmlns" -&gt; Xmlns value
-    | <span data-count="1">"</span>type" -&gt; Type value
+    | <span data-count="10">"</span>from" -&gt; From (Jid.of_string value)
+    | <span data-count="7">"</span>to" -&gt; To (Jid.of_string value)
+    | <span data-count="12">"</span>id" -&gt; Id value
+    | <span data-count="1">"</span>jid" -&gt; Jid (Jid.of_string value)
+    | <span data-count="14">"</span>xmlns" -&gt; Xmlns value
+    | <span data-count="7">"</span>type" -&gt; Type value
     | <span data-count="0">"</span>ver" -&gt; Ver value
-    | <span data-count="6">"</span>version" -&gt; Version value
-    | <span data-count="6">"</span>lang" -&gt; Lang value
-    | <span data-count="6">"</span>stream" -&gt; Stream value
-    | <span data-count="0">"</span>name" -&gt; Name value
+    | <span data-count="7">"</span>version" -&gt; Version value
+    | <span data-count="7">"</span>lang" -&gt; Lang value
+    | <span data-count="7">"</span>stream" -&gt; Stream value
+    | <span data-count="1">"</span>name" -&gt; Name value
     | _ -&gt; assert false )
 ;;
 
 let convert_attributes attributes =
-  <span data-count="20">L</span>ist.map (fun attr -&gt; <span data-count="43">c</span>onvert_attribute attr) attributes
+  <span data-count="38">L</span>ist.map (fun attr -&gt; <span data-count="73">c</span>onvert_attribute attr) attributes
 ;;
 
 let rec parse_children parser =
-  <span data-count="17">m</span>atch%lwt <span data-count="17">M</span>arkup_lwt.next parser.stream with
+  <span data-count="49">m</span>atch%lwt <span data-count="49">M</span>arkup_lwt.next parser.stream with
   | exception <span data-count="1">P</span>arsingError e -&gt; Lwt.return_error e
-  | <span data-count="16">S</span>ome signal -&gt;
+  | <span data-count="48">S</span>ome signal -&gt;
     (match signal with
-    | <span data-count="4">`</span>Start_element (name, attributes) -&gt;
-      let tag = <span data-count="4">n</span>ame, convert_attributes attributes in
-      (<span data-count="4">m</span>atch%lwt <span data-count="4">p</span>arse_children parser with
-      | <span data-count="4">O</span>k children -&gt;
-        let element = <span data-count="4">X</span>ml.Element (tag, children) in
-        (<span data-count="4">m</span>atch%lwt <span data-count="4">p</span>arse_children parser with
-        | <span data-count="4">O</span>k element_list -&gt; Lwt.return_ok (element :: element_list)
+    | <span data-count="15">`</span>Start_element (name, attributes) -&gt;
+      let tag = <span data-count="15">n</span>ame, convert_attributes attributes in
+      (<span data-count="15">m</span>atch%lwt <span data-count="15">p</span>arse_children parser with
+      | <span data-count="15">O</span>k children -&gt;
+        let element = <span data-count="15">X</span>ml.Element (tag, children) in
+        (<span data-count="15">m</span>atch%lwt <span data-count="15">p</span>arse_children parser with
+        | <span data-count="15">O</span>k element_list -&gt; Lwt.return_ok (element :: element_list)
         | <span data-count="0">E</span>rror e -&gt; Lwt.return_error e)
       | <span data-count="0">E</span>rror e -&gt; Lwt.return_error e)
-    | <span data-count="8">`</span>End_element -&gt; Lwt.return_ok []
-    | <span data-count="4">`</span>Text ss -&gt;
-      let text = <span data-count="4">X</span>ml.Text (String.concat "\n" ss) in
-      (<span data-count="4">m</span>atch%lwt <span data-count="4">p</span>arse_children parser with
-      | <span data-count="4">O</span>k element_list -&gt; Lwt.return_ok (text :: element_list)
+    | <span data-count="25">`</span>End_element -&gt; Lwt.return_ok []
+    | <span data-count="8">`</span>Text ss -&gt;
+      let text = <span data-count="8">X</span>ml.Text (String.concat "\n" ss) in
+      (<span data-count="8">m</span>atch%lwt <span data-count="8">p</span>arse_children parser with
+      | <span data-count="8">O</span>k element_list -&gt; Lwt.return_ok (text :: element_list)
       | <span data-count="0">E</span>rror e -&gt; Lwt.return_error e)
     | _ -&gt; assert false)
   | <span data-count="0">N</span>one -&gt; Lwt.return_error "End of parsing stream"
 ;;
 
 let rec parse parser =
-  <span data-count="27">m</span>atch%lwt <span data-count="27">M</span>arkup_lwt.next parser.stream with
+  <span data-count="35">m</span>atch%lwt <span data-count="35">M</span>arkup_lwt.next parser.stream with
   | exception <span data-count="0">P</span>arsingError e -&gt; Lwt.return (Error e)
-  | <span data-count="26">S</span>ome signal -&gt;
+  | <span data-count="34">S</span>ome signal -&gt;
     (match signal with
-    | <span data-count="16">`</span>Start_element ((namespace, name), attrs) -&gt;
-      let tag = <span data-count="16">(</span>namespace, name), convert_attributes attrs in
-      <span data-count="16">(</span>match parser.depth with
-      | <span data-count="11">0</span> -&gt;
+    | <span data-count="23">`</span>Start_element ((namespace, name), attrs) -&gt;
+      let tag = <span data-count="23">(</span>namespace, name), convert_attributes attrs in
+      <span data-count="23">(</span>match parser.depth with
+      | <span data-count="12">0</span> -&gt;
         (* start of stream *)
         parser.depth &lt;- parser.depth + 1;
-        <span data-count="11">L</span>wt.return (Stream_Element (Stream.Header tag))
-      | <span data-count="5">1</span> -&gt;
+        <span data-count="12">L</span>wt.return (Stream_Element (Stream.Header tag))
+      | <span data-count="11">1</span> -&gt;
         (* parse stanza / error / feature *)
         (match name with
-        | <span data-count="3">"</span>iq" -&gt;
-          (match%lwt <span data-count="3">p</span>arse_children parser with
-          | <span data-count="2">O</span>k children -&gt; Lwt.return (Stanza (Stanza.Iq (Xml.Element (tag, children))))
+        | <span data-count="9">"</span>iq" -&gt;
+          (match%lwt <span data-count="9">p</span>arse_children parser with
+          | <span data-count="8">O</span>k children -&gt; Lwt.return (Stanza (Stanza.Iq (Xml.Element (tag, children))))
           | <span data-count="1">E</span>rror e -&gt; Lwt.return (Error e))
         | <span data-count="2">"</span>message" -&gt;
           (match%lwt <span data-count="2">p</span>arse_children parser with
@@ -629,9 +627,9 @@ let rec parse parser =
           | <span data-count="0">E</span>rror e -&gt; Lwt.return (Error e))
         | <span data-count="0">s</span> -&gt; Lwt.return (Error ("Unexpected tag with name: " ^ s)))
       | _ -&gt; assert false)
-    | <span data-count="8">`</span>End_element -&gt;
+    | <span data-count="9">`</span>End_element -&gt;
       (match parser.depth with
-      | <span data-count="8">1</span> -&gt; (* End of the stream *)
+      | <span data-count="9">1</span> -&gt; (* End of the stream *)
              Lwt.return (Stream_Element Stream.Close)
       | _ -&gt; assert false)
     | <span data-count="2">`</span>Text ss -&gt;
@@ -774,7 +772,7 @@ let%expect_test "non-whitespace between elements" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

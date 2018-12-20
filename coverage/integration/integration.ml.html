@@ -14,7 +14,7 @@
       <h2>97.22%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:0.38%"></span>
+      <span class="some-visited" style="top:0.37%"></span>
       <span class="unvisited" style="top:1.50%"></span>
     </div>
     <div id="report">
@@ -286,6 +286,7 @@
 <a id="L264"></a><span > </span>
 <a id="L265"></a><span > </span>
 <a id="L266"></a><span > </span>
+<a id="L267"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -556,6 +557,7 @@
 <a href="#L264">264</a>
 <a href="#L265">265</a>
 <a href="#L266">266</a>
+<a href="#L267">267</a>
 </pre>
         <pre id="code">
 let send ?(timeout = <span data-count="6">1</span>0.) ?(host = <span data-count="6">"</span>10.0.0.2") ?(port = <span data-count="0">5</span>222) str =
@@ -793,7 +795,8 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
         ; "&lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query \
            xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;"
         ; "&lt;/stream:stream&gt;" ] );
-  [%expect {|
+  [%expect
+    {|
     Starting unikernel
     Configuring tap0
     Send:
@@ -827,7 +830,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

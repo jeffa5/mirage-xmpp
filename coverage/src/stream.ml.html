@@ -11,11 +11,11 @@
           <span class="dirname">src/</span>stream.ml
         </a>
       </h1>
-      <h2>84.62%</h2>
+      <h2>83.33%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:22.50%"></span>
-      <span class="unvisited" style="top:25.00%"></span>
+      <span class="unvisited" style="top:23.68%"></span>
+      <span class="unvisited" style="top:26.32%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -40,17 +40,17 @@
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span > </span>
 <a id="L20"></a><span > </span>
-<a id="L21"></a><span class="visited"> </span>
-<a id="L22"></a><span > </span>
-<a id="L23"></a><span > </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span class="visited"> </span>
+<a id="L23"></a><span class="visited"> </span>
 <a id="L24"></a><span class="visited"> </span>
 <a id="L25"></a><span class="visited"> </span>
 <a id="L26"></a><span class="visited"> </span>
-<a id="L27"></a><span class="visited"> </span>
-<a id="L28"></a><span class="visited"> </span>
-<a id="L29"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span class="visited"> </span>
 <a id="L30"></a><span > </span>
-<a id="L31"></a><span class="visited"> </span>
+<a id="L31"></a><span > </span>
 <a id="L32"></a><span > </span>
 <a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
@@ -58,8 +58,6 @@
 <a id="L36"></a><span > </span>
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
-<a id="L39"></a><span > </span>
-<a id="L40"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -102,8 +100,6 @@
 <a href="#L36">36</a>
 <a href="#L37">37</a>
 <a href="#L38">38</a>
-<a href="#L39">39</a>
-<a href="#L40">40</a>
 </pre>
         <pre id="code">
 type t =
@@ -113,7 +109,7 @@ type t =
   | Close
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="11">H</span>eader tag -&gt; Xml.tag_to_string ~empty:false tag
+  | <span data-count="17">H</span>eader tag -&gt; Xml.tag_to_string ~empty:false tag
   | <span data-count="0">F</span>eatures -&gt; "features"
   | <span data-count="0">E</span>rror -&gt; "error"
   | <span data-count="4">C</span>lose -&gt; "&lt;/stream:stream&gt;"
@@ -126,19 +122,17 @@ let features =
       [Xml.create (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])]
 ;;
 
-let gen_id () = <span data-count="20">U</span>uidm.(to_string (create `V4))
-
 let create_header
-    ?(version = <span data-count="14">"</span>1.0")
-    ?(lang = <span data-count="14">"</span>en")
-    ?(xmlns = <span data-count="14">"</span>jabber:client")
-    ?(stream_ns = <span data-count="20">"</span>http://etherx.jabber.org/streams")
-    ?(attributes = <span data-count="20">[</span>])
+    ?(version = <span data-count="17">"</span>1.0")
+    ?(lang = <span data-count="17">"</span>en")
+    ?(xmlns = <span data-count="17">"</span>jabber:client")
+    ?(stream_ns = <span data-count="24">"</span>http://etherx.jabber.org/streams")
+    ?(attributes = <span data-count="24">[</span>])
     from
     dest =
-  <span data-count="20">(</span> ("stream", "stream")
+  <span data-count="24">(</span> ("stream", "stream")
   , [ "", Xml.From from
-    ; "", Xml.Id (gen_id ())
+    ; "", Xml.Id (Stanza.gen_id ())
     ; "", Xml.To dest
     ; "", Xml.Version version
     ; "xml", Xml.Lang lang
@@ -149,7 +143,7 @@ let create_header
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
