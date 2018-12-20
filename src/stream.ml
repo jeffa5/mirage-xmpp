@@ -18,8 +18,6 @@ let features =
       [Xml.create (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])]
 ;;
 
-let gen_id () = Uuidm.(to_string (create `V4))
-
 let create_header
     ?(version = "1.0")
     ?(lang = "en")
@@ -30,7 +28,7 @@ let create_header
     dest =
   ( ("stream", "stream")
   , [ "", Xml.From from
-    ; "", Xml.Id (gen_id ())
+    ; "", Xml.Id (Stanza.gen_id ())
     ; "", Xml.To dest
     ; "", Xml.Version version
     ; "xml", Xml.Lang lang

@@ -2,14 +2,21 @@ open Astring
 
 (* a JID is of the form user@domain/resource *)
 type bare_jid = string * string
+type full_jid = bare_jid * string
 
 type t =
-  | Full_JID of bare_jid * string
+  | Full_JID of full_jid
   | Bare_JID of bare_jid
   | Domain of string
   | Empty
 
 let empty = Empty
+
+let to_bare = function
+  | Full_JID (bare_jid, _) -> Bare_JID bare_jid
+  | Bare_JID bare_jid -> Bare_JID bare_jid
+  | _ -> raise Not_found
+;;
 
 let of_string str =
   match String.cut ~sep:"@" str with

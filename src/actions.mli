@@ -5,13 +5,15 @@ type t =
   | SEND_STREAM_HEADER of Xml.tag
   | SEND_STREAM_FEATURES of Xml.t
   | REPLY_STANZA of Stanza.t
-  | SEND_STANZA of Jid.t * Stanza.t
   | CLOSE
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
   | GET_ROSTER of string * Jid.t
   | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
+  | PUSH_ROSTER of Jid.t * Jid.t
+  | ADD_TO_CONNECTIONS
+  | REMOVE_FROM_CONNECTIONS
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

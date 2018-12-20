@@ -5,6 +5,8 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
+let gen_id () = Uuidm.(to_string (create `V4))
+
 let create_message ?(children = []) attributes =
   Message (Element ((("", "message"), attributes), children))
 ;;
@@ -26,9 +28,9 @@ let create_iq_bind ?(children = []) id =
           ~children ]
 ;;
 
-let create_iq_query ?(children = []) ~id ~from () =
+let create_iq_query ?(children = []) ?(attributes = []) ~id ~from () =
   create_iq
-    ["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"]
+    (["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"] @ attributes)
     ~children:
       [ Xml.create
           (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"; "", Xml.Ver "ver7"])

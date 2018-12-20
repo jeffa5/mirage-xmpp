@@ -233,7 +233,8 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
         ; "<iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query \
            xmlns='jabber:iq:roster'/></iq>"
         ; "</stream:stream>" ] );
-  [%expect {|
+  [%expect
+    {|
     Starting unikernel
     Configuring tap0
     Send:

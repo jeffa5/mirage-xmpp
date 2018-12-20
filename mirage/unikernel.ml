@@ -42,7 +42,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     aux ()
   ;;
 
-  let on_connect connections flow =
+  let on_connect flow =
     let dst, dst_port = S.TCPV4.dst flow in
     Logs.info (fun f ->
         f "New tcp connection from IP %s on port %d" (Ipaddr.V4.to_string dst) dst_port
@@ -51,7 +51,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Lwt.async (fun () -> read flow pushf);
     let outstream, outfun = Lwt_stream.create () in
     Lwt.async (fun () -> write flow outstream);
-    let handler = Mirage_xmpp.Handler.create ~connections ~stream ~callback:outfun in
+    let handler = Mirage_xmpp.Handler.create ~stream ~callback:outfun in
     let%lwt () = Mirage_xmpp.Handler.handle handler in
     Logs.info (fun f -> f "Closing the connection");
     let%lwt () = write_string flow "Closing the connection" in
@@ -62,8 +62,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Logs.info (fun f -> f "Started Unikernel");
     let port = Key_gen.port () in
     Logs.info (fun f -> f "Port is: %d" port);
-    let connections = ref Mirage_xmpp.Connections.empty in
-    S.listen_tcpv4 s ~port (on_connect connections);
+    S.listen_tcpv4 s ~port on_connect;
     S.listen_tcpv4 s ~port:8081 (fun _flow ->
         Logs.info (fun f -> f "Received exit signal");
         exit 0 );

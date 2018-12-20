@@ -1,8 +1,16 @@
 (** The type of a Jabber ID *)
+type bare_jid = string * string
 
-type t
+type full_jid = bare_jid * string
+
+type t =
+  | Full_JID of full_jid
+  | Bare_JID of bare_jid
+  | Domain of string
+  | Empty
 
 val empty : t
+val to_bare : t -> t
 
 (** [of_string s] creates a new jid from the string, splitting it appropriately *)
 val of_string : string -> t

@@ -4,11 +4,19 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
+val gen_id : unit -> string
 val create_message : ?children:Xml.t list -> Xml.attribute list -> t
 val create_presence : ?children:Xml.t list -> Xml.attribute list -> t
 val create_iq : ?children:Xml.t list -> Xml.attribute list -> t
 val create_iq_bind : ?children:Xml.t list -> string -> t
-val create_iq_query : ?children:Xml.t list -> id:string -> from:Jid.t -> unit -> t
+
+val create_iq_query :
+     ?children:Xml.t list
+  -> ?attributes:Xml.attribute list
+  -> id:string
+  -> from:Jid.t
+  -> unit
+  -> t
 
 (** [get_attribute_by_name_exn l a] searches [l] for an attribute with name equal to [a], throwing an exception Not_found if it is not available. *)
 
