@@ -97,7 +97,7 @@ docker-build:
 
 .PHONY: docker-ci
 docker-ci: docker-build
-	docker rm mirage-xmpp-ci
+	docker container prune -f
 	@echo -en "travis_fold:start:docker-run\r"
 	docker run --privileged --name mirage-xmpp-ci jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
 	@echo -en "travis_fold:end:docker-run\r"
