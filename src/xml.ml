@@ -1,5 +1,19 @@
 type name = string * string
-type attribute = name * string
+
+type attribute_value =
+  | From of Jid.t
+  | To of Jid.t
+  | Id of string
+  | Jid of Jid.t
+  | Xmlns of string
+  | Type of string
+  | Ver of string
+  | Version of string
+  | Lang of string
+  | Stream of string
+  | Name of string
+
+type attribute = string * attribute_value
 type tag = name * attribute list
 
 type t =
@@ -7,7 +21,23 @@ type t =
   | Element of tag * t list
 
 let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
-let attribute_to_string (name, attribute) = name_to_string name ^ "='" ^ attribute ^ "'"
+
+let attribute_to_string (namespace, nameval) =
+  (if namespace <> "" then namespace ^ ":" else "")
+  ^
+  match nameval with
+  | From jid -> "from='" ^ Jid.to_string jid ^ "'"
+  | To jid -> "to='" ^ Jid.to_string jid ^ "'"
+  | Id s -> "id='" ^ s ^ "'"
+  | Jid jid -> "jid='" ^ Jid.to_string jid ^ "'"
+  | Xmlns s -> "xmlns='" ^ s ^ "'"
+  | Type s -> "type='" ^ s ^ "'"
+  | Ver s -> "ver='" ^ s ^ "'"
+  | Version s -> "version='" ^ s ^ "'"
+  | Lang s -> "lang='" ^ s ^ "'"
+  | Stream s -> "stream='" ^ s ^ "'"
+  | Name s -> "name='" ^ s ^ "'"
+;;
 
 let tag_to_string ~empty (name, attributes) =
   let sep = " " in

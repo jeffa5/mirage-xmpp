@@ -5,47 +5,78 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
-let create_message ?(children = []) tag = Message (Element (tag, children))
-let create_presence ?(children = []) tag = Presence (Element (tag, children))
-let create_iq ?(children = []) tag = Iq (Element (tag, children))
+let create_message ?(children = []) attributes =
+  Message (Element ((("", "message"), attributes), children))
+;;
+
+let create_presence ?(children = []) attributes =
+  Presence (Element ((("", "presence"), attributes), children))
+;;
+
+let create_iq ?(children = []) attributes =
+  Iq (Element ((("", "iq"), attributes), children))
+;;
 
 let create_iq_bind ?(children = []) id =
   create_iq
-    (("", "iq"), [("", "id"), id; ("", "type"), "result"])
+    ["", Xml.Id id; "", Xml.Type "result"]
     ~children:
       [ Xml.create
-          (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
+          (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])
           ~children ]
 ;;
 
-let create_iq_query ?(children = []) id from =
+let create_iq_query ?(children = []) ~id ~from () =
   create_iq
-    (("", "iq"), [("", "id"), id; ("", "to"), from; ("", "type"), "result"])
+    ["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"]
     ~children:
       [ Xml.create
-          (("", "query"), [("", "xmlns"), "jabber:iq:roster"; ("", "ver"), "ver7"])
+          (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"; "", Xml.Ver "ver7"])
           ~children ]
 ;;
 
-let get_attribute_by_name_exn attributes a =
-  let rec aux = function
-    | [] -> raise Not_found
-    | (((_, name), _) as attr) :: attrs -> if name = a then attr else aux attrs
-  in
-  aux attributes
+let rec get_id = function
+  | [] -> raise Not_found
+  | (_, Xml.Id id) :: _ -> id
+  | _ :: attrs -> get_id attrs
 ;;
 
-let get_attribute_by_name attributes a =
-  let rec aux = function
-    | [] -> None
-    | (((_, name), _) as attr) :: attrs -> if name = a then Some attr else aux attrs
-  in
-  aux attributes
+let rec get_from = function
+  | [] -> raise Not_found
+  | (_, Xml.From jid) :: _ -> jid
+  | _ :: attrs -> get_from attrs
 ;;
 
-let get_value (_, value) = value
-let get_id attrs = get_value (get_attribute_by_name_exn attrs "id")
-let get_from attrs = get_value (get_attribute_by_name_exn attrs "from")
+let rec get_to = function
+  | [] -> raise Not_found
+  | (_, Xml.To jid) :: _ -> jid
+  | _ :: attrs -> get_to attrs
+;;
+
+let rec get_type = function
+  | [] -> raise Not_found
+  | (_, Xml.Type t) :: _ -> t
+  | _ :: attrs -> get_type attrs
+;;
+
+let rec get_version = function
+  | [] -> raise Not_found
+  | (_, Xml.Version v) :: _ -> v
+  | _ :: attrs -> get_version attrs
+;;
+
+let rec get_jid = function
+  | [] -> raise Not_found
+  | (_, Xml.Jid jid) :: _ -> jid
+  | _ :: attrs -> get_jid attrs
+;;
+
+let rec get_name = function
+  | [] -> raise Not_found
+  | (_, Xml.Name name) :: _ -> name
+  | _ :: attrs -> get_name attrs
+;;
+
 let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
 
 let pp_attribute_to_string (name, attribute) =
@@ -68,27 +99,6 @@ let to_string = function
   | Message xml -> Xml.to_string xml
   | Presence xml -> Xml.to_string xml
   | Iq xml -> Xml.to_string xml
-;;
-
-let gen_id () = Uuidm.(to_string (create `V4))
-
-let create_stream_header
-    ?(version = "1.0")
-    ?(lang = "en")
-    ?(xmlns = "jabber:client")
-    ?(stream_ns = "http://etherx.jabber.org/streams")
-    ?(attributes = [])
-    from
-    dest =
-  ( ("stream", "stream")
-  , [ ("", "from"), from
-    ; ("", "id"), gen_id ()
-    ; ("", "to"), dest
-    ; ("", "version"), version
-    ; ("xml", "lang"), lang
-    ; ("", "xmlns"), xmlns
-    ; ("xmlns", "stream"), stream_ns ]
-    @ attributes )
 ;;
 
 let%expect_test "empty tag prefix" =

@@ -7,7 +7,8 @@ type t =
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
-  | GET_ROSTER of string * string
+  | GET_ROSTER of string * Jid.t
+  | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
 
 let to_string = function
   | SEND_STREAM_HEADER tag ->
@@ -20,5 +21,19 @@ let to_string = function
   | ERROR s -> "ERROR: " ^ s
   | SET_JID j -> "SET_JID: " ^ Jid.to_string j
   | SET_JID_RESOURCE (id, res) -> "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
-  | GET_ROSTER (from, id) -> "GET_ROSTER: from=" ^ from ^ " id=" ^ id
+  | GET_ROSTER (id, from) -> "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | SET_ROSTER (id, from, target, handle, subscribed, groups) ->
+    "SET_ROSTER: id="
+    ^ id
+    ^ " from="
+    ^ Jid.to_string from
+    ^ " target="
+    ^ Jid.to_string target
+    ^ " handle="
+    ^ handle
+    ^ " subscribed="
+    ^ string_of_bool subscribed
+    ^ " groups=["
+    ^ String.concat " " groups
+    ^ "]"
 ;;

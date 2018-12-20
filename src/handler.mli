@@ -12,7 +12,6 @@ type t
 (** [create c r s f] creates a new handler. [c] is a connections table of the currently active connections to the server. [r] is the roster for the server. [s] is a stream to receive the incoming data on. [f] is a callback function which can be used to send data back to the user *)
 val create :
      connections:Connections.t ref
-  -> roster:Roster.t
   -> stream:char Lwt_stream.t
   -> callback:(string option -> unit)
   -> t

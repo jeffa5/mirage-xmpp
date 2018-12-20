@@ -1,8 +1,6 @@
 (** The type of a Jabber ID *)
-type t
 
-(** [full t] is a predicate on whether the JID is a full JID *)
-val full : t -> bool
+type t
 
 val empty : t
 
@@ -13,6 +11,5 @@ val of_string : string -> t
 val to_string : t -> string
 
 val compare : t -> t -> int
-val equal : t -> t -> bool
 val create_resource : unit -> string
-val set_resource : t -> string -> t
+val set_resource : string -> t -> t

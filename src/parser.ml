@@ -22,12 +22,35 @@ let create stream =
   {stream; depth = 0}
 ;;
 
+let convert_attribute ((namespace, name), value) =
+  let open Xml in
+  ( namespace
+  , match name with
+    | "from" -> From (Jid.of_string value)
+    | "to" -> To (Jid.of_string value)
+    | "id" -> Id value
+    | "jid" -> Jid (Jid.of_string value)
+    | "xmlns" -> Xmlns value
+    | "type" -> Type value
+    | "ver" -> Ver value
+    | "version" -> Version value
+    | "lang" -> Lang value
+    | "stream" -> Stream value
+    | "name" -> Name value
+    | _ -> assert false )
+;;
+
+let convert_attributes attributes =
+  List.map (fun attr -> convert_attribute attr) attributes
+;;
+
 let rec parse_children parser =
   match%lwt Markup_lwt.next parser.stream with
   | exception ParsingError e -> Lwt.return_error e
   | Some signal ->
     (match signal with
-    | `Start_element tag ->
+    | `Start_element (name, attributes) ->
+      let tag = name, convert_attributes attributes in
       (match%lwt parse_children parser with
       | Ok children ->
         let element = Xml.Element (tag, children) in
@@ -50,7 +73,8 @@ let rec parse parser =
   | exception ParsingError e -> Lwt.return (Error e)
   | Some signal ->
     (match signal with
-    | `Start_element (((_namespace, name), _attrs) as tag) ->
+    | `Start_element ((namespace, name), attrs) ->
+      let tag = (namespace, name), convert_attributes attrs in
       (match parser.depth with
       | 0 ->
         (* start of stream *)
@@ -88,7 +112,7 @@ let rec parse parser =
     | `Doctype _doctype -> Lwt.return (Error "Unexpected Doctype")
     | `PI (s1, s2) -> Lwt.return (Error ("Unexpected PI: " ^ s1 ^ ", " ^ s2))
     | `Comment s -> Lwt.return (Error ("Unexpected Comment: " ^ s)))
-  | None -> Lwt.return (Error "Closed parser stream")
+  | None -> Lwt.return (Error "End of parsing stream")
 ;;
 
 let parse_string s =
@@ -156,7 +180,7 @@ let%expect_test "start end full" =
     Stream_Element
     </stream:stream> |}];
   pf ();
-  [%expect {| Closed parser stream |}]
+  [%expect {| End of parsing stream |}]
 ;;
 
 let%expect_test "resource binding" =
@@ -191,4 +215,29 @@ let%expect_test "invalid xml" =
       <stream> |}];
   pf ();
   [%expect {| unmatched start tag 'iq' |}]
+;;
+
+let%expect_test "whitespace between elements" =
+  let pf = parse_string "<stream>  <iq>\n</iq> </stream>" in
+  pf ();
+  [%expect {|
+      Stream_Element
+      <stream> |}];
+  pf ();
+  [%expect {|
+    <iq>
+    </iq> |}]
+;;
+
+let%expect_test "non-whitespace between elements" =
+  let pf =
+    parse_string "<stream>invalid string <iq> n </iq>more invalid stuff</stream>"
+  in
+  pf ();
+  [%expect {|
+      Stream_Element
+      <stream> |}];
+  pf ();
+  [%expect {|
+    Unexpected Text: invalid string |}]
 ;;

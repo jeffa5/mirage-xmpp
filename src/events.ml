@@ -4,7 +4,8 @@ type t =
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | STREAM_CLOSE
   | ERROR of string
-  | ROSTER_GET of string * string
+  | ROSTER_GET of string * Jid.t
+  | ROSTER_SET of string * Jid.t * Jid.t * string * bool * string list
 
 let to_string = function
   | STREAM_HEADER tag -> "STREAM_HEADER: " ^ Xml.tag_to_string ~empty:true tag
@@ -13,14 +14,28 @@ let to_string = function
     "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " jid=" ^ jid
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
-  | ROSTER_GET (from, id) -> "ROSTER_GET: from=" ^ from ^ " id=" ^ id
+  | ROSTER_GET (id, from) -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+    "ROSTER_SET: id="
+    ^ id
+    ^ " from="
+    ^ Jid.to_string from
+    ^ " target="
+    ^ Jid.to_string target
+    ^ " handle="
+    ^ handle
+    ^ " subscribed="
+    ^ string_of_bool subscribed
+    ^ " groups=["
+    ^ String.concat " " groups
+    ^ "]"
 ;;
 
 let not_implemented = ERROR "not implemented"
 
 let lift_iq = function
   | Xml.Element (((_prefix, _name), attributes), children) ->
-    (match Stanza.get_value (Stanza.get_attribute_by_name_exn attributes "type") with
+    (match Stanza.get_type attributes with
     | "set" ->
       (match children with
       | [Xml.Element (((_p, "bind"), _attrs), [])] ->
@@ -31,12 +46,32 @@ let lift_iq = function
         | Xml.Element (((_, "resource"), []), [Xml.Text t]) ->
           RESOURCE_BIND_CLIENT_GEN (Stanza.get_id attributes, t)
         | _ -> not_implemented)
+      | [ Xml.Element
+            (((_, "query"), _), [Xml.Element (((_, "item"), attrs), group_elements)]) ]
+      ->
+        let groups =
+          List.map
+            (fun element ->
+              match element with
+              | Xml.Element (((_, "group"), _), [Xml.Text group]) -> group
+              | _ -> assert false )
+            group_elements
+        in
+        let jid = Stanza.get_jid attrs in
+        let handle = Stanza.get_name attrs in
+        ROSTER_SET
+          ( Stanza.get_id attributes
+          , Stanza.get_from attributes
+          , jid
+          , handle
+          , false
+          , groups )
       | _ -> not_implemented)
     | "get" ->
       (match children with
-      | [Xml.Element (((_p, "query"), _attrs), [])] ->
+      | [Xml.Element (((_, "query"), _), [])] ->
         (* roster get query *)
-        ROSTER_GET (Stanza.get_from attributes, Stanza.get_id attributes)
+        ROSTER_GET (Stanza.get_id attributes, Stanza.get_from attributes)
       | _ -> not_implemented)
     | _ -> not_implemented)
   | Xml.Text _t -> not_implemented
@@ -75,13 +110,13 @@ let%expect_test "iq get" =
          (Stanza.Iq
             (Element
                ( ( ("", "iq")
-                 , [ ("", "from"), "juliet@capulet.com/balcony"
-                   ; ("", "id"), "h83vxa4c"
-                   ; ("", "type"), "get" ] )
+                 , [ "", Xml.From (Jid.of_string "juliet@capulet.com/balcony")
+                   ; "", Xml.Id "h83vxa4c"
+                   ; "", Xml.Type "get" ] )
                , [Xml.Element ((("", "query"), []), [])] ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_GET: from=juliet@capulet.com/balcony id=h83vxa4c |}]
+  [%expect {| ROSTER_GET: id=h83vxa4c from=juliet@capulet.com/balcony |}]
 ;;
 
 let%expect_test "iq set" =
@@ -90,9 +125,49 @@ let%expect_test "iq set" =
       (Stanza
          (Stanza.Iq
             (Element
-               ( (("", "iq"), [("", "id"), "l3b1vs75"; ("", "type"), "set"])
+               ( (("", "iq"), ["", Xml.Id "l3b1vs75"; "", Xml.Type "set"])
                , [Xml.Element ((("", "bind"), []), [])] ))))
   in
   print_endline (to_string event);
   [%expect {| RESOURCE_BIND_SERVER_GEN: id |}]
+;;
+
+let%expect_test "roster get" =
+  let event =
+    lift
+      (Stanza
+         (Stanza.Iq
+            (Element
+               ( ( ("", "iq")
+                 , [ "", Xml.From (Jid.of_string "juliet@example.com/balony")
+                   ; "", Xml.Id "bv1bs71f"
+                   ; "", Xml.Type "get" ] )
+               , [Xml.Element ((("", "query"), ["", Xml.Xmlns "jabber:iq:roster"]), [])]
+               ))))
+  in
+  print_endline (to_string event);
+  [%expect {| ROSTER_GET: id=bv1bs71f from=juliet@example.com/balony |}]
+;;
+
+let%expect_test "roster set" =
+  let event =
+    lift
+      (Stanza
+         (Stanza.Iq
+            (Element
+               ( ( ("", "iq")
+                 , [ "", Xml.From (Jid.of_string "juliet@example.com/balony")
+                   ; "", Xml.Id "rs1"
+                   ; "", Xml.Type "set" ] )
+               , [ Xml.Element
+                     ( (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"])
+                     , [ Xml.Element
+                           ( ( ("", "item")
+                             , [ "", Xml.Jid (Jid.of_string "nurse@example.com")
+                               ; "", Xml.Name "Nurse" ] )
+                           , [] ) ] ) ] ))))
+  in
+  print_endline (to_string event);
+  [%expect
+    {| ROSTER_SET: id=rs1 from=juliet@example.com/balony target=nurse@example.com handle=Nurse subscribed=false groups=[] |}]
 ;;

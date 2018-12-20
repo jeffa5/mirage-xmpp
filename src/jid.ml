@@ -1,35 +1,60 @@
 open Astring
 
 (* a JID is of the form user@domain/resource *)
-type t = string * string * string
+type bare_jid = string * string
 
-let full _ = false
-let empty = "", "", ""
+type t =
+  | Full_JID of bare_jid * string
+  | Bare_JID of bare_jid
+  | Domain of string
+  | Empty
 
-let of_string string =
-  match String.cut ~sep:"@" string with
+let empty = Empty
+
+let of_string str =
+  match String.cut ~sep:"@" str with
   | Some (user, domres) ->
     (match String.cut ~sep:"/" domres with
-    | Some (domain, resource) -> user, domain, resource
-    | None -> user, domres, "")
-  | None -> assert false
+    | Some (domain, resource) -> Full_JID ((user, domain), resource)
+    | None -> Bare_JID (user, domres))
+  | None -> Domain str
 ;;
 
-let compare (u1, d1, r1) (u2, d2, r2) =
-  let d = String.compare d1 d2 in
-  let u = String.compare u1 u2 in
-  let r = String.compare r1 r2 in
+let compare jid1 jid2 =
+  let user1, domain1, resource1 =
+    match jid1 with
+    | Full_JID ((u1, d1), r1) -> u1, d1, r1
+    | Bare_JID (u1, d1) -> u1, d1, ""
+    | Domain d1 -> "", d1, ""
+    | Empty -> "", "", ""
+  in
+  let user2, domain2, resource2 =
+    match jid2 with
+    | Full_JID ((u2, d2), r2) -> u2, d2, r2
+    | Bare_JID (u2, d2) -> u2, d2, ""
+    | Domain d2 -> "", d2, ""
+    | Empty -> "", "", ""
+  in
+  let d = String.compare domain1 domain2 in
+  let u = String.compare user1 user2 in
+  let r = String.compare resource1 resource2 in
   if d = 0 then if u = 0 then r else u else d
 ;;
 
 let create_resource () = "not-implemented"
-let set_resource (user, domain, _oldres) resource = user, domain, resource
-let equal (u1, d1, r1) (u2, d2, r2) = u1 = u2 && d1 = d2 && r1 = r2
 
-let to_string (user, domain, resource) =
-  if equal empty (user, domain, resource)
-  then "empty"
-  else user ^ "@" ^ domain ^ if resource <> "" then "/" ^ resource else ""
+let set_resource new_resource = function
+  | Full_JID ((user, domain), _resource) -> Full_JID ((user, domain), new_resource)
+  | Bare_JID (user, domain) -> Full_JID ((user, domain), new_resource)
+  | Domain _domain -> assert false
+  | Empty -> assert false
+;;
+
+let to_string = function
+  | Full_JID ((user, domain), resource) -> user ^ "@" ^ domain ^ "/" ^ resource
+  | Bare_JID (user, domain) -> user ^ "@" ^ domain
+  | Domain domain -> domain
+  | Empty -> "empty"
 ;;
 
 let%expect_test "make jid" =

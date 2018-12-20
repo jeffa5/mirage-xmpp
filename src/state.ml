@@ -1,5 +1,4 @@
 (* The state representing the current status of the connection *)
-open Stanza
 open Events
 
 type state =
@@ -25,25 +24,25 @@ let handle_idle _t = function
   | STREAM_HEADER (_name, attrs) ->
     (* new incoming connection *)
     (* construct reply *)
-    let from = get_value (get_attribute_by_name_exn attrs "to") in
-    let dest = get_value (get_attribute_by_name_exn attrs "from") in
-    let header = create_stream_header from dest in
+    let from = Stanza.get_from attrs in
+    let dest = Stanza.get_to attrs in
+    let header = Stream.create_header dest from in
     (* check the version attribute *)
-    (match get_attribute_by_name attrs "version" with
-    | Some attr ->
-      if float_of_string (get_value attr) >= 1.0
-      then
-        ( {state = NEGOTIATING}
-        , [ Actions.SET_JID (Jid.of_string dest)
-          ; Actions.SEND_STREAM_HEADER header
-          ; Actions.SEND_STREAM_FEATURES Stream.features ] )
-      else assert false
-    | None -> assert false)
+    let version = Stanza.get_version attrs in
+    if float_of_string version >= 1.0
+    then
+      ( {state = NEGOTIATING}
+      , [ Actions.SET_JID from
+        ; Actions.SEND_STREAM_HEADER header
+        ; Actions.SEND_STREAM_FEATURES Stream.features ] )
+    else assert false
   | RESOURCE_BIND_SERVER_GEN _ -> assert false
   | RESOURCE_BIND_CLIENT_GEN _ -> assert false
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.ERROR "No stream"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET (_from, _id) -> {state = CLOSED}, [Actions.ERROR "No stream"]
+  | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
+    {state = CLOSED}, [Actions.ERROR "No stream"]
 ;;
 
 let handle_negotiating _t = function
@@ -64,6 +63,9 @@ let handle_negotiating _t = function
     {state = CLOSED}, [Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET (from, id) -> {state = CONNECTED}, [Actions.GET_ROSTER (from, id)]
+  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+    ( {state = CONNECTED}
+    , [Actions.SET_ROSTER (id, from, target, handle, subscribed, groups)] )
 ;;
 
 let handle_connected _t = function
@@ -73,6 +75,9 @@ let handle_connected _t = function
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET (from, id) -> {state = CONNECTED}, [Actions.GET_ROSTER (from, id)]
+  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+    ( {state = CONNECTED}
+    , [Actions.SET_ROSTER (id, from, target, handle, subscribed, groups)] )
 ;;
 
 let handle_closed _t = function
@@ -84,6 +89,8 @@ let handle_closed _t = function
     {state = CLOSED}, [Actions.ERROR "Not expecting a close"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET (_from, _id) -> {state = CLOSED}, [Actions.ERROR "already closed"]
+  | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
+    {state = CLOSED}, [Actions.ERROR "already closed"]
 ;;
 
 let handle t event =
@@ -103,12 +110,12 @@ let%expect_test "create" =
 let%expect_test "idle to negotiating" =
   let fsm = create () in
   let header =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"1.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER header) in
   print_endline (to_string fsm);
@@ -125,12 +132,12 @@ let%expect_test "idle to negotiating" =
 let%expect_test "idle to negotiating with > 1.0" =
   let fsm = create () in
   let stanza =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"2.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
@@ -147,12 +154,12 @@ let%expect_test "idle to negotiating with > 1.0" =
 let%expect_test "negotiating to closing" =
   let fsm = create () in
   let stanza =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"1.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
@@ -175,12 +182,12 @@ let%expect_test "negotiating to closing" =
 let%expect_test "bind resource" =
   let fsm = create () in
   let stanza =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"1.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
@@ -211,12 +218,12 @@ let%expect_test "bind resource" =
 let%expect_test "bind resource client" =
   let fsm = create () in
   let stanza =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"1.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
@@ -246,12 +253,12 @@ let%expect_test "bind resource client" =
 let%expect_test "roster get" =
   let fsm = create () in
   let stanza =
-    Stanza.create_stream_header
+    Stream.create_header
       ~version:"1.0"
       ~lang:"en"
       ~xmlns:"jabber:client"
-      "juliet@im.example.com"
-      "im.example.com"
+      (Jid.of_string "juliet@im.example.com")
+      (Jid.of_string "im.example.com")
   in
   let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
@@ -267,11 +274,13 @@ let%expect_test "roster get" =
   [%expect {| {state: negotiating} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {| SET_JID_RESOURCE: id=id res=client-res |}];
-  let fsm, actions = handle fsm (Events.ROSTER_GET ("from", "id")) in
+  let fsm, actions =
+    handle fsm (Events.ROSTER_GET ("some_id", Jid.of_string "juliet@example.com"))
+  in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| GET_ROSTER: from=from id=id |}];
+  [%expect {| GET_ROSTER: id=some_id from=juliet@example.com |}];
   let fsm, actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| {state: closed} |}];

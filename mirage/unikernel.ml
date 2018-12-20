@@ -51,10 +51,7 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Lwt.async (fun () -> read flow pushf);
     let outstream, outfun = Lwt_stream.create () in
     Lwt.async (fun () -> write flow outstream);
-    let roster = Mirage_xmpp.Roster.empty in
-    let handler =
-      Mirage_xmpp.Handler.create ~connections ~roster ~stream ~callback:outfun
-    in
+    let handler = Mirage_xmpp.Handler.create ~connections ~stream ~callback:outfun in
     let%lwt () = Mirage_xmpp.Handler.handle handler in
     Logs.info (fun f -> f "Closing the connection");
     let%lwt () = write_string flow "Closing the connection" in

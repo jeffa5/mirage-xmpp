@@ -1,6 +1,5 @@
 type t =
   { connections : Connections.t ref
-  ; roster : Roster.t
   ; parser : Parser.t
   ; callback : string option -> unit
   ; mutable jid : Jid.t
@@ -37,7 +36,7 @@ let handle_action t stream =
           t.jid <- j;
           false
         | SET_JID_RESOURCE (id, res) ->
-          t.jid <- Jid.set_resource t.jid res;
+          t.jid <- Jid.set_resource res t.jid;
           (* send the packet *)
           t.callback
             (Some
@@ -49,20 +48,27 @@ let handle_action t stream =
                            (("", "jid"), [])
                            ~children:[Xml.Text (Jid.to_string t.jid)] ])));
           false
-        | GET_ROSTER (from, id) ->
-          let items = Roster.get_jids t.roster in
+        | GET_ROSTER (id, from) ->
+          let items = Rosters.get_jids from in
           t.callback
             (Some
                (Stanza.to_string
                   (Stanza.create_iq_query
-                     id
-                     from
+                     ~id
+                     ~from
                      ~children:
                        (List.map
-                          (fun jid ->
-                            Xml.create (("", "item"), [("", "jid"), Jid.to_string jid])
-                            )
-                          items))));
+                          (fun jid -> Xml.create (("", "item"), ["", Xml.Jid jid]))
+                          items)
+                     ())));
+          false
+        | SET_ROSTER (id, from, target, handle, subscribed, groups) ->
+          Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscribed ~groups;
+          t.callback
+            (Some
+               (Stanza.to_string
+                  (Stanza.create_iq
+                     ["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"])));
           false
       in
       if closed then Lwt.return_unit else aux ()
@@ -73,12 +79,12 @@ let handle_action t stream =
   aux ()
 ;;
 
-let create ~connections ~roster ~stream ~callback =
+let create ~connections ~stream ~callback =
   let parser = Parser.create stream in
   let jid = Jid.empty in
   let fsm = State.create () in
   let actions_stream, actions_push = Lwt_stream.create () in
-  let t = {connections; roster; parser; callback; jid; fsm; actions_push} in
+  let t = {connections; parser; callback; jid; fsm; actions_push} in
   Lwt.async (fun () -> handle_action t actions_stream);
   t
 ;;
@@ -98,7 +104,7 @@ let handle t =
 let to_string t =
   "{\n"
   ^ "roster: "
-  ^ Roster.to_string t.roster
+  ^ Rosters.to_string ()
   ^ "\n"
   ^ "parser: "
   ^ "\n"
@@ -126,10 +132,9 @@ let make_test_handler s =
     | None -> s
   in
   let connections = ref Connections.empty in
-  let roster = Roster.empty in
   let stream = Lwt_stream.of_string s in
   let callback so = match so with Some s -> print_endline (mask_id s) | None -> () in
-  create ~connections ~roster ~stream ~callback
+  create ~connections ~stream ~callback
 ;;
 
 let test_stanza stanza =
@@ -140,6 +145,7 @@ let test_stanza stanza =
 ;;
 
 let%expect_test "creation of handler" =
+  Rosters.clear ();
   let handler = make_test_handler "<stream></stream>" in
   print_endline (to_string handler);
   [%expect
@@ -154,16 +160,13 @@ let%expect_test "creation of handler" =
 ;;
 
 let%expect_test "initial stanza with version" =
+  Rosters.clear ();
   let stanza =
     Xml.to_string
       (Xml.create
-         ( ("stream", "stream")
-         , [ ("", "from"), "juliet@im.example.com"
-           ; ("", "to"), "im.example.com"
-           ; ("", "version"), "1.0"
-           ; ("xml", "lang"), "en"
-           ; ("", "xmlns"), "jabber:client"
-           ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
+         (Stream.create_header
+            (Jid.of_string "juliet@im.example.com")
+            (Jid.of_string "im.example.com")))
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
@@ -186,16 +189,13 @@ let%expect_test "initial stanza with version" =
 ;;
 
 let%expect_test "error in initial stanza" =
+  Rosters.clear ();
   let stanza =
     Xml.to_string
       (Xml.create
-         ( ("stream", "stream")
-         , [ ("", "from"), "juliet@im.example.com"
-           ; ("", "to"), "im.example.com"
-           ; ("", "version"), "1.0"
-           ; ("xml", "lang"), "en"
-           ; ("", "xmlns"), "jabber:client"
-           ; ("xmlns", "stream"), "http://wrong.namespace.example.org/" ] ))
+         (Stream.create_header
+            (Jid.of_string "juliet@im.example.com")
+            (Jid.of_string "im.example.com")))
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
@@ -217,22 +217,19 @@ let%expect_test "error in initial stanza" =
 ;;
 
 let%expect_test "bind resource" =
+  Rosters.clear ();
   let stanza =
     Xml.to_string
       (Xml.create
-         ( ("stream", "stream")
-         , [ ("", "from"), "juliet@im.example.com"
-           ; ("", "to"), "im.example.com"
-           ; ("", "version"), "1.0"
-           ; ("xml", "lang"), "en"
-           ; ("", "xmlns"), "jabber:client"
-           ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
+         (Stream.create_header
+            (Jid.of_string "juliet@im.example.com")
+            (Jid.of_string "im.example.com")))
     ^ Xml.to_string
         (Xml.create
-           (("", "iq"), [("", "id"), "some_id"; ("", "type"), "set"])
+           (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
            ~children:
              [ Xml.create
-                 (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
+                 (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])
                  ~children:
                    [Xml.create (("", "resource"), []) ~children:[Xml.Text "balcony"]] ])
     ^ "</stream:stream>"
@@ -256,34 +253,29 @@ let%expect_test "bind resource" =
 ;;
 
 let%expect_test "roster get" =
+  Rosters.clear ();
   let stanza =
     Xml.to_string
       (Xml.create
-         ( ("stream", "stream")
-         , [ ("", "from"), "juliet@im.example.com"
-           ; ("", "to"), "im.example.com"
-           ; ("", "version"), "1.0"
-           ; ("xml", "lang"), "en"
-           ; ("", "xmlns"), "jabber:client"
-           ; ("xmlns", "stream"), "http://etherx.jabber.org/streams" ] ))
+         (Stream.create_header
+            (Jid.of_string "juliet@im.example.com")
+            (Jid.of_string "im.example.com")))
     ^ Xml.to_string
         (Xml.create
-           (("", "iq"), [("", "id"), "some_id"; ("", "type"), "set"])
+           (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
            ~children:
              [ Xml.create
-                 (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])
+                 (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])
                  ~children:
                    [Xml.create (("", "resource"), []) ~children:[Xml.Text "balcony"]] ])
     ^ Xml.to_string
         (Xml.create
            ( ("", "iq")
-           , [ ("", "id"), "some_id"
-             ; ("", "type"), "get"
-             ; ("", "from"), "juliet@example.com/balcony" ] )
+           , [ "", Xml.Id "some_id"
+             ; "", Xml.Type "get"
+             ; "", Xml.From (Jid.of_string "juliet@example.com/balcony") ] )
            ~children:
-             [ Xml.create
-                 (("", "query"), [("", "xmlns"), "jabber:iq:roster"])
-                 ~children:[] ])
+             [Xml.create (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"]) ~children:[]])
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in

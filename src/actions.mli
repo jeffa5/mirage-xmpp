@@ -10,7 +10,8 @@ type t =
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
-  | GET_ROSTER of string * string
+  | GET_ROSTER of string * Jid.t
+  | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

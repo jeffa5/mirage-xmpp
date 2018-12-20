@@ -144,3 +144,123 @@ let%expect_test "close stream" =
     Stopping unikernel
     Success |}]
 ;;
+
+let%expect_test "open stream with iq bind" =
+  test_unikernel (fun () ->
+      send_recv
+        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<iq id='yhc13a95' type='set'><bind \
+           xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>"
+        ; "</stream:stream>" ] );
+  [%expect
+    {|
+      Starting unikernel
+      Configuring tap0
+      Send:
+      <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+      Send:
+      <iq id='yhc13a95' type='set'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>
+      Receive:
+      <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+      Send:
+      </stream:stream>
+      Receive:
+      Closing the connection
+      Receive:
+      </stream:stream>
+      Finished
+      Stopping unikernel
+      Success |}]
+;;
+
+let%expect_test "open stream with iq bind and roster get without contacts" =
+  test_unikernel (fun () ->
+      send_recv
+        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<iq id='yhc13a95' type='set'><bind \
+           xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>"
+        ; "<iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query \
+           xmlns='jabber:iq:roster'/></iq>"
+        ; "</stream:stream>" ] );
+  [%expect
+    {|
+      Starting unikernel
+      Configuring tap0
+      Send:
+      <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+      Send:
+      <iq id='yhc13a95' type='set'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>
+      Receive:
+      <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+      Send:
+      <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
+      Receive:
+      <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'/></iq>
+      Send:
+      </stream:stream>
+      Receive:
+      Closing the connection
+      Receive:
+      </stream:stream>
+      Finished
+      Stopping unikernel
+      Success |}]
+;;
+
+let%expect_test "open stream with iq bind and roster get with contacts" =
+  test_unikernel (fun () ->
+      send_recv
+        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<iq id='yhc13a95' type='set'><bind \
+           xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>"
+        ; "<iq from='juliet@example.com/balcony' id='ph1xaz53' type='set'><query \
+           xmlns='jabber:iq:roster'><item jid='nurse@example.com' \
+           name='Nurse'><group>Servants</group></item></query></iq>"
+        ; "<iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query \
+           xmlns='jabber:iq:roster'/></iq>"
+        ; "</stream:stream>" ] );
+  [%expect {|
+    Starting unikernel
+    Configuring tap0
+    Send:
+    <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    Send:
+    <iq id='yhc13a95' type='set'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>
+    Receive:
+    <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+    Send:
+    <iq from='juliet@example.com/balcony' id='ph1xaz53' type='set'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse'><group>Servants</group></item></query></iq>
+    Receive:
+    <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'/>
+    Send:
+    <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
+    Receive:
+    <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'><item jid='nurse@example.com'/></query></iq>
+    Send:
+    </stream:stream>
+    Receive:
+    Closing the connection
+    Receive:
+    </stream:stream>
+    Finished
+    Stopping unikernel
+    Success |}]
+;;

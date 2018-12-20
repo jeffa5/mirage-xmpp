@@ -15,5 +15,26 @@ let features =
   Xml.create
     (("stream", "features"), [])
     ~children:
-      [Xml.create (("", "bind"), [("", "xmlns"), "urn:ietf:params:xml:ns:xmpp-bind"])]
+      [Xml.create (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])]
+;;
+
+let gen_id () = Uuidm.(to_string (create `V4))
+
+let create_header
+    ?(version = "1.0")
+    ?(lang = "en")
+    ?(xmlns = "jabber:client")
+    ?(stream_ns = "http://etherx.jabber.org/streams")
+    ?(attributes = [])
+    from
+    dest =
+  ( ("stream", "stream")
+  , [ "", Xml.From from
+    ; "", Xml.Id (gen_id ())
+    ; "", Xml.To dest
+    ; "", Xml.Version version
+    ; "xml", Xml.Lang lang
+    ; "", Xml.Xmlns xmlns
+    ; "xmlns", Xml.Stream stream_ns ]
+    @ attributes )
 ;;
