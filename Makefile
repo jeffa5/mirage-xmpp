@@ -91,11 +91,20 @@ check:
 
 .PHONY: docker-build
 docker-build:
+	@echo -en "travis_fold:start:docker-build\r"
 	docker build -f docker/mirage-xmpp-ci/Dockerfile -t jeffas/mirage-xmpp-ci:latest .
+	@echo -en "travis_fold:end:docker-build\r"
 
 .PHONY: docker-ci
 docker-ci: docker-build
+	docker rm mirage-xmpp-ci
+	@echo -en "travis_fold:start:docker-run\r"
 	docker run --privileged --name mirage-xmpp-ci jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
+	@echo -en "travis_fold:end:docker-run\r"
+	@echo -en "travis_fold:start:docker-copy\r"
+	docker cp mirage-xmpp-ci:/home/opam/app/pages/docs pages
+	docker cp mirage-xmpp-ci:/home/opam/app/pages/coverage pages
+	@echo -en "travis_fold:end:docker-copy\r"
 
 .PHONY: docker-prune
 docker-prune:

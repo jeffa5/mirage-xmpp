@@ -5,8 +5,6 @@ services:
 
 script:
   - make docker-ci
-  - docker cp mirage-xmpp-ci:/home/opam/app/pages/docs pages
-  - docker cp mirage-xmpp-ci:/home/opam/app/pages/coverage pages
 
 deploy:
   provider: pages
