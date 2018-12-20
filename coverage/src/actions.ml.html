@@ -11,11 +11,12 @@
           <span class="dirname">src/</span>actions.ml
         </a>
       </h1>
-      <h2>80.00%</h2>
+      <h2>72.73%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:70.83%"></span>
-      <span class="unvisited" style="top:83.33%"></span>
+      <span class="unvisited" style="top:46.15%"></span>
+      <span class="unvisited" style="top:53.85%"></span>
+      <span class="unvisited" style="top:64.10%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -31,19 +32,34 @@
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span > </span>
 <a id="L11"></a><span > </span>
-<a id="L12"></a><span class="visited"> </span>
+<a id="L12"></a><span > </span>
 <a id="L13"></a><span class="visited"> </span>
-<a id="L14"></a><span > </span>
-<a id="L15"></a><span class="visited"> </span>
+<a id="L14"></a><span class="visited"> </span>
+<a id="L15"></a><span > </span>
 <a id="L16"></a><span class="visited"> </span>
-<a id="L17"></a><span class="unvisited"> </span>
-<a id="L18"></a><span > </span>
-<a id="L19"></a><span class="visited"> </span>
-<a id="L20"></a><span class="unvisited"> </span>
-<a id="L21"></a><span class="visited"> </span>
+<a id="L17"></a><span class="visited"> </span>
+<a id="L18"></a><span class="unvisited"> </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span class="visited"> </span>
+<a id="L21"></a><span class="unvisited"> </span>
 <a id="L22"></a><span class="visited"> </span>
 <a id="L23"></a><span class="visited"> </span>
-<a id="L24"></a><span > </span>
+<a id="L24"></a><span class="visited"> </span>
+<a id="L25"></a><span class="unvisited"> </span>
+<a id="L26"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span > </span>
+<a id="L33"></a><span > </span>
+<a id="L34"></a><span > </span>
+<a id="L35"></a><span > </span>
+<a id="L36"></a><span > </span>
+<a id="L37"></a><span > </span>
+<a id="L38"></a><span > </span>
+<a id="L39"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -72,6 +88,21 @@
 <a href="#L22">22</a>
 <a href="#L23">23</a>
 <a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
+<a href="#L33">33</a>
+<a href="#L34">34</a>
+<a href="#L35">35</a>
+<a href="#L36">36</a>
+<a href="#L37">37</a>
+<a href="#L38">38</a>
+<a href="#L39">39</a>
 </pre>
         <pre id="code">
 type t =
@@ -83,7 +114,8 @@ type t =
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
-  | GET_ROSTER of string * string
+  | GET_ROSTER of string * Jid.t
+  | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
 
 let to_string = <span data-count="2">f</span>unction
   | <span data-count="6">S</span>END_STREAM_HEADER tag -&gt;
@@ -96,12 +128,26 @@ let to_string = <span data-count="2">f</span>unction
   | <span data-count="0">E</span>RROR s -&gt; "ERROR: " ^ s
   | <span data-count="6">S</span>ET_JID j -&gt; "SET_JID: " ^ Jid.to_string j
   | <span data-count="2">S</span>ET_JID_RESOURCE (id, res) -&gt; "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
-  | <span data-count="1">G</span>ET_ROSTER (from, id) -&gt; "GET_ROSTER: from=" ^ from ^ " id=" ^ id
+  | <span data-count="1">G</span>ET_ROSTER (id, from) -&gt; "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | <span data-count="0">S</span>ET_ROSTER (id, from, target, handle, subscribed, groups) -&gt;
+    "SET_ROSTER: id="
+    ^ id
+    ^ " from="
+    ^ Jid.to_string from
+    ^ " target="
+    ^ Jid.to_string target
+    ^ " handle="
+    ^ handle
+    ^ " subscribed="
+    ^ string_of_bool subscribed
+    ^ " groups=["
+    ^ String.concat " " groups
+    ^ "]"
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-19 10:02:17 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-20 15:41:49 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
