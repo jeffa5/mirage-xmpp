@@ -3,89 +3,66 @@ type t =
   ; callback : string option -> unit
   ; mutable jid : Jid.t
   ; mutable fsm : State.t
-  ; actions_push : Actions.t option -> unit }
+  ; actions_push : Actions.t option -> unit
+  ; mutable closed : bool }
 
 let handle_action t stream =
   let rec aux () =
     match%lwt Lwt_stream.get stream with
     | Some action ->
       let open Actions in
-      let closed =
-        match action with
-        | SEND_STREAM_HEADER {from; ato} ->
-          t.callback (Some (Stream.to_string (Header (Stream.create_header ato from))));
-          false
-        | SEND_STREAM_FEATURES ->
-          t.callback (Some (Xml.to_string Stream.features));
-          false
-        | REPLY_STANZA s ->
-          t.callback (Some (Stanza.to_string s));
-          false
-        | SERVER_GEN_RESOURCE_IDENTIFIER id ->
+      (match action with
+      | SEND_STREAM_HEADER {from; ato} ->
+        t.callback (Some (Stream.to_string (Header (Stream.create_header ato from))))
+      | SEND_STREAM_FEATURES -> t.callback (Some (Xml.to_string Stream.features))
+      | REPLY_STANZA s -> t.callback (Some (Stanza.to_string s))
+      | SERVER_GEN_RESOURCE_IDENTIFIER id ->
+        t.callback
+          (Some
+             (Stanza.to_string
+                (Stanza.create_bind_result
+                   ~id
+                   ~jid:(Jid.set_resource (Jid.create_resource ()) t.jid)
+                   ())))
+      | CLOSE ->
+        (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
+        t.callback (Some "</stream:stream>");
+        t.closed <- true
+      | ERROR e ->
+        t.callback (Some e);
+        t.closed <- true
+      | SET_JID j -> t.jid <- j
+      | SET_JID_RESOURCE {id; resource} ->
+        t.jid <- Jid.set_resource resource t.jid;
+        (* send the packet *)
+        t.callback
+          (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())))
+      | GET_ROSTER {id; from} ->
+        let items = Rosters.get from in
+        t.callback
+          (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)))
+      | SET_ROSTER {id; from; target; handle; subscription; groups} ->
+        Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscription ~groups;
+        t.callback
+          (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)))
+      | PUSH_ROSTER {jid; updated_jid} ->
+        (match jid with
+        | Full_JID _fjid as full_jid ->
           t.callback
             (Some
                (Stanza.to_string
-                  (Stanza.create_bind_result
-                     ~id
-                     ~jid:(Jid.set_resource (Jid.create_resource ()) t.jid)
-                     ())));
-          false
-        | CLOSE ->
-          (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
-          t.callback (Some "</stream:stream>");
-          true
-        | ERROR e ->
-          t.callback (Some e);
-          true
-        | SET_JID j ->
-          t.jid <- j;
-          false
-        | SET_JID_RESOURCE {id; resource} ->
-          t.jid <- Jid.set_resource resource t.jid;
-          (* send the packet *)
-          t.callback
-            (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())));
-          false
-        | GET_ROSTER {id; from} ->
-          let items = Rosters.get from in
-          t.callback
-            (Some
-               (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)));
-          false
-        | SET_ROSTER {id; from; target; handle; subscription; groups} ->
-          Rosters.set_item
-            ~user_jid:from
-            ~target_jid:target
-            ~handle
-            ~subscription
-            ~groups;
-          t.callback
-            (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)));
-          false
-        | PUSH_ROSTER {jid; updated_jid} ->
-          (match jid with
-          | Full_JID _fjid as full_jid ->
-            t.callback
-              (Some
-                 (Stanza.to_string
-                    (Stanza.create_roster_push
-                       ~id:(Stanza.gen_id ())
-                       ~ato:full_jid
-                       ~jid:updated_jid)))
-          | Bare_JID _bjid as bare_jid ->
-            Connections.find_all bare_jid
-            |> List.iter (fun (target_jid, actions_push) ->
-                   actions_push (Some (PUSH_ROSTER {jid = target_jid; updated_jid})) )
-          | _ -> assert false);
-          false
-        | ADD_TO_CONNECTIONS ->
-          Connections.add t.jid t.actions_push;
-          false
-        | REMOVE_FROM_CONNECTIONS ->
-          Connections.remove t.jid;
-          false
-      in
-      if closed then Lwt.return_unit else aux ()
+                  (Stanza.create_roster_push
+                     ~id:(Stanza.gen_id ())
+                     ~ato:full_jid
+                     ~jid:updated_jid)))
+        | Bare_JID _bjid as bare_jid ->
+          Connections.find_all bare_jid
+          |> List.iter (fun (target_jid, actions_push) ->
+                 actions_push (Some (PUSH_ROSTER {jid = target_jid; updated_jid})) )
+        | _ -> assert false)
+      | ADD_TO_CONNECTIONS -> Connections.add t.jid t.actions_push
+      | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid);
+      if t.closed then Lwt.return_unit else aux ()
     | None ->
       t.callback None;
       Lwt.return_unit
@@ -98,7 +75,7 @@ let create ~stream ~callback =
   let jid = Jid.empty in
   let fsm = State.create () in
   let actions_stream, actions_push = Lwt_stream.create () in
-  let t = {parser; callback; jid; fsm; actions_push} in
+  let t = {parser; callback; jid; fsm; actions_push; closed = false} in
   Lwt.async (fun () -> handle_action t actions_stream);
   t
 ;;
@@ -129,6 +106,8 @@ let to_string t =
     ; Jid.to_string t.jid
     ; "fsm: "
     ; State.to_string t.fsm
+    ; "closed: "
+    ; string_of_bool t.closed
     ; "}" ]
 ;;
 
@@ -178,6 +157,8 @@ let%expect_test "creation of handler" =
     empty
     fsm:
     {state: idle}
+    closed:
+    false
     } |}]
 ;;
 
@@ -213,6 +194,8 @@ let%expect_test "initial stanza with version" =
     juliet@im.example.com
     fsm:
     {state: closed}
+    closed:
+    true
     } |}]
 ;;
 
@@ -247,6 +230,8 @@ let%expect_test "error in initial stanza" =
     juliet@im.example.com
     fsm:
     {state: closed}
+    closed:
+    true
     } |}]
 ;;
 
@@ -287,6 +272,8 @@ let%expect_test "bind resource" =
     juliet@im.example.com/balcony
     fsm:
     {state: closed}
+    closed:
+    true
     } |}]
 ;;
 
@@ -340,6 +327,8 @@ let%expect_test "roster get" =
       juliet@im.example.com/balcony
       fsm:
       {state: closed}
+      closed:
+      true
       }
      |}]
 ;;
@@ -412,6 +401,8 @@ let%expect_test "roster set" =
       juliet@im.example.com/balcony
       fsm:
       {state: closed}
+      closed:
+      true
       }
      |}]
 ;;
