@@ -7,7 +7,7 @@ type t =
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
-  | GET_ROSTER of string * Jid.t
+  | GET_ROSTER of {from:Jid.t; id:string}
   | SET_ROSTER of string * Jid.t * Jid.t * string * string * string list
   | PUSH_ROSTER of Jid.t * Jid.t
   | ADD_TO_CONNECTIONS
@@ -23,7 +23,7 @@ let to_string = function
   | ERROR s -> "ERROR: " ^ s
   | SET_JID j -> "SET_JID: " ^ Jid.to_string j
   | SET_JID_RESOURCE (id, res) -> "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
-  | GET_ROSTER (id, from) -> "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | GET_ROSTER {id; from} -> "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
   | SET_ROSTER (id, from, target, handle, subscribed, groups) ->
     "SET_ROSTER: id="
     ^ id

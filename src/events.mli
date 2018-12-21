@@ -7,7 +7,7 @@ type t =
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | STREAM_CLOSE
   | ERROR of string
-  | ROSTER_GET of string * Jid.t
+  | ROSTER_GET of {from:Jid.t; id:string}
   | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
 
 (** [to_string t] takes an event and returns it's string representation *)

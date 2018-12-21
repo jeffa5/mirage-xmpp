@@ -36,7 +36,7 @@ let handle_idle _t = function
   | RESOURCE_BIND_CLIENT_GEN _ -> assert false
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.ERROR "No stream"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
-  | ROSTER_GET (_from, _id) -> {state = CLOSED}, [Actions.ERROR "No stream"]
+  | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "No stream"]
   | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
     {state = CLOSED}, [Actions.ERROR "No stream"]
 ;;
@@ -51,8 +51,8 @@ let handle_negotiating _t = function
     (* the stream can close during negotiation so close our direction too *)
     {state = CLOSED}, [Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
-  | ROSTER_GET (from, id) ->
-    {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER (from, id)]
+  | ROSTER_GET {from; id} ->
+          {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER {from; id}]
   | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
     ( {state = CONNECTED}
     , [ Actions.ADD_TO_CONNECTIONS
@@ -68,7 +68,7 @@ let handle_connected _t = function
   | RESOURCE_BIND_CLIENT_GEN _ -> assert false
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR e]
-  | ROSTER_GET (from, id) -> {state = CONNECTED}, [Actions.GET_ROSTER (from, id)]
+  | ROSTER_GET {from; id} -> {state = CONNECTED}, [Actions.GET_ROSTER {from; id}]
   | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
     ( {state = CONNECTED}
     , [ Actions.SET_ROSTER (id, from, target, handle, subscribed, groups)
@@ -83,7 +83,7 @@ let handle_closed _t = function
     (* shouldn't receive another close after being closed *)
     {state = CLOSED}, [Actions.ERROR "Not expecting a close"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
-  | ROSTER_GET (_from, _id) -> {state = CLOSED}, [Actions.ERROR "already closed"]
+  | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "already closed"]
   | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
     {state = CLOSED}, [Actions.ERROR "already closed"]
 ;;
@@ -263,7 +263,7 @@ let%expect_test "roster get" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {| SET_JID_RESOURCE: id=id res=client-res |}];
   let fsm, actions =
-    handle fsm (Events.ROSTER_GET ("some_id", Jid.of_string "juliet@example.com"))
+    handle fsm (Events.ROSTER_GET {id="some_id"; from=Jid.of_string "juliet@example.com"})
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];
@@ -305,7 +305,7 @@ let%expect_test "roster set" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {| SET_JID_RESOURCE: id=id res=client-res |}];
   let fsm, actions =
-    handle fsm (Events.ROSTER_GET ("some_id", Jid.of_string "juliet@example.com"))
+    handle fsm (Events.ROSTER_GET {id="some_id"; from=Jid.of_string "juliet@example.com"})
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];

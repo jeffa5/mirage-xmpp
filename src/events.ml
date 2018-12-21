@@ -4,7 +4,7 @@ type t =
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | STREAM_CLOSE
   | ERROR of string
-  | ROSTER_GET of string * Jid.t
+  | ROSTER_GET of {from:Jid.t; id:string}
   | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
 
 let to_string = function
@@ -20,7 +20,7 @@ let to_string = function
     "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " jid=" ^ jid
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
-  | ROSTER_GET (id, from) -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
+  | ROSTER_GET {from; id} -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
   | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
     "ROSTER_SET: id="
     ^ id
@@ -77,7 +77,7 @@ let lift_iq = function
       (match children with
       | [Xml.Element (((_, "query"), _), [])] ->
         (* roster get query *)
-        ROSTER_GET (Stanza.get_id attributes, Stanza.get_from attributes)
+              ROSTER_GET {from=Stanza.get_from attributes; id=Stanza.get_id attributes}
       | _ -> not_implemented)
     | _ -> not_implemented)
   | Xml.Text _t -> not_implemented

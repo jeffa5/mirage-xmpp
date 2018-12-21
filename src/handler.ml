@@ -46,7 +46,7 @@ let handle_action t stream =
           t.callback
             (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())));
           false
-        | GET_ROSTER (id, from) ->
+        | GET_ROSTER {id; from} ->
           let items = Rosters.get from in
           t.callback
             (Some
