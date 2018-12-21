@@ -52,8 +52,8 @@ let handle_action t stream =
             (Some
                (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)));
           false
-        | SET_ROSTER (id, from, target, handle, subscribed, groups) ->
-          Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscribed ~groups;
+        | SET_ROSTER { id; from; target; handle; subscription; groups } ->
+          Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscription ~groups;
           t.callback
             (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)));
           false

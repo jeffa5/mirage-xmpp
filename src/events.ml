@@ -5,7 +5,7 @@ type t =
   | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of {from:Jid.t; id:string}
-  | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
+  | ROSTER_SET of {id:string; from:Jid.t; target:Jid.t; handle:string; subscription:string; groups:string list}
 
 let to_string = function
   | STREAM_HEADER {from; ato; version} ->
@@ -21,7 +21,7 @@ let to_string = function
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
   | ROSTER_GET {from; id} -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
-  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+  | ROSTER_SET {id; from; target; handle; subscription; groups} ->
     "ROSTER_SET: id="
     ^ id
     ^ " from="
@@ -31,7 +31,7 @@ let to_string = function
     ^ " handle="
     ^ handle
     ^ " subscribed="
-    ^ subscribed
+    ^ subscription
     ^ " groups=["
     ^ String.concat " " groups
     ^ "]"
@@ -66,12 +66,12 @@ let lift_iq = function
         let jid = Stanza.get_jid attrs in
         let handle = Stanza.get_name attrs in
         ROSTER_SET
-          ( Stanza.get_id attributes
-          , Stanza.get_from attributes
-          , jid
-          , handle
-          , "none"
-          , groups )
+          { id=Stanza.get_id attributes
+          ; from=Stanza.get_from attributes
+          ; target=jid
+          ; handle
+          ; subscription="none"
+          ; groups }
       | _ -> not_implemented)
     | "get" ->
       (match children with

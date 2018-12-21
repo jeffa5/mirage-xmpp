@@ -37,7 +37,7 @@ let handle_idle _t = function
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.ERROR "No stream"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "No stream"]
-  | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
+  | ROSTER_SET _ ->
     {state = CLOSED}, [Actions.ERROR "No stream"]
 ;;
 
@@ -53,10 +53,10 @@ let handle_negotiating _t = function
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET {from; id} ->
           {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER {from; id}]
-  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+  | ROSTER_SET {id; from; target; handle; subscription; groups } ->
     ( {state = CONNECTED}
     , [ Actions.ADD_TO_CONNECTIONS
-      ; Actions.SET_ROSTER (id, from, target, handle, subscribed, groups)
+      ; Actions.SET_ROSTER { id; from; target; handle; subscription; groups }
       ; Actions.PUSH_ROSTER (Jid.to_bare from, target) ] )
 ;;
 
@@ -69,9 +69,9 @@ let handle_connected _t = function
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR e]
   | ROSTER_GET {from; id} -> {state = CONNECTED}, [Actions.GET_ROSTER {from; id}]
-  | ROSTER_SET (id, from, target, handle, subscribed, groups) ->
+  | ROSTER_SET { id; from; target; handle; subscription; groups } ->
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER (id, from, target, handle, subscribed, groups)
+    , [ Actions.SET_ROSTER { id; from; target; handle; subscription; groups }
       ; Actions.PUSH_ROSTER (Jid.to_bare from, target) ] )
 ;;
 
@@ -84,7 +84,7 @@ let handle_closed _t = function
     {state = CLOSED}, [Actions.ERROR "Not expecting a close"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "already closed"]
-  | ROSTER_SET (_id, _from, _target, _handle, _subscribed, _groups) ->
+  | ROSTER_SET _ ->
     {state = CLOSED}, [Actions.ERROR "already closed"]
 ;;
 
@@ -318,12 +318,12 @@ let%expect_test "roster set" =
     handle
       fsm
       (Events.ROSTER_SET
-         ( "some_id"
-         , Jid.of_string "juliet@example.com"
-         , Jid.of_string "nurse@example.com"
-         , "Nurse"
-         , "none"
-         , ["Servants"] ))
+         { id="some_id"
+         ; from=Jid.of_string "juliet@example.com"
+         ; target=Jid.of_string "nurse@example.com"
+         ; handle="Nurse"
+         ; subscription="none"
+         ; groups=["Servants"] })
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];

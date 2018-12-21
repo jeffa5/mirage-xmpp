@@ -11,7 +11,7 @@ type t =
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
   | GET_ROSTER of {from:Jid.t; id:string}
-  | SET_ROSTER of string * Jid.t * Jid.t * string * string * string list
+  | SET_ROSTER of {id:string; from:Jid.t; target:Jid.t; handle:string; subscription:string; groups:string list}
   | PUSH_ROSTER of Jid.t * Jid.t
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS

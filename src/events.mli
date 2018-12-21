@@ -8,7 +8,7 @@ type t =
   | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of {from:Jid.t; id:string}
-  | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
+  | ROSTER_SET of {id:string; from:Jid.t; target:Jid.t; handle:string; subscription:string; groups:string list}
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string

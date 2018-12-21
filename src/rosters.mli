@@ -4,7 +4,7 @@ val set_item :
      user_jid:Jid.t
   -> target_jid:Jid.t
   -> handle:string
-  -> subscribed:string
+  -> subscription:string
   -> groups:string list
   -> unit
 
