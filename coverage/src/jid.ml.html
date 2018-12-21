@@ -11,7 +11,7 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>85.71%</h2>
+      <h2>83.33%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:23.38%"></span>
@@ -19,6 +19,7 @@
       <span class="unvisited" style="top:46.75%"></span>
       <span class="unvisited" style="top:54.55%"></span>
       <span class="unvisited" style="top:55.84%"></span>
+      <span class="unvisited" style="top:66.23%"></span>
       <span class="unvisited" style="top:70.13%"></span>
     </div>
     <div id="report">
@@ -74,7 +75,7 @@
 <a id="L48"></a><span class="visited"> </span>
 <a id="L49"></a><span > </span>
 <a id="L50"></a><span > </span>
-<a id="L51"></a><span class="visited"> </span>
+<a id="L51"></a><span class="unvisited"> </span>
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span class="visited"> </span>
 <a id="L54"></a><span class="unvisited"> </span>
@@ -234,7 +235,7 @@ let compare jid1 jid2 =
   <span data-count="23">i</span>f d = 0 then <span data-count="22">i</span>f u = 0 then <span data-count="18">r</span> else <span data-count="4">u</span> else <span data-count="1">d</span>
 ;;
 
-let create_resource () = <span data-count="1">"</span>not-implemented"
+let create_resource () = <span data-count="0">"</span>not-implemented"
 
 let set_resource new_resource = <span data-count="3">f</span>unction
   | <span data-count="0">F</span>ull_JID ((user, domain), _resource) -&gt; Full_JID ((user, domain), new_resource)
@@ -264,7 +265,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-21 10:08:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

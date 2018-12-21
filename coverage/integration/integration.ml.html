@@ -769,7 +769,7 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       Send:
       &lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;
       Receive:
-      &lt;iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'&gt;&lt;query xmlns='jabber:iq:roster' ver='ver7'/&gt;&lt;/iq&gt;
+      &lt;iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'&gt;&lt;query xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;
       Send:
       &lt;/stream:stream&gt;
       Receive:
@@ -812,11 +812,11 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Send:
     &lt;iq from='juliet@example.com/balcony' id='ph1xaz53' type='set'&gt;&lt;query xmlns='jabber:iq:roster'&gt;&lt;item jid='nurse@example.com' name='Nurse'&gt;&lt;group&gt;Servants&lt;/group&gt;&lt;/item&gt;&lt;/query&gt;&lt;/iq&gt;
     Receive:
-    &lt;iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'/&gt;
+    &lt;iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'/&gt;
     Send:
     &lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;
     Receive:
-    &lt;iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'&gt;&lt;query xmlns='jabber:iq:roster' ver='ver7'&gt;&lt;item jid='nurse@example.com'/&gt;&lt;/query&gt;&lt;/iq&gt;
+    &lt;iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'&gt;&lt;query xmlns='jabber:iq:roster'&gt;&lt;item jid='nurse@example.com' name='Nurse' subscription='none'&gt;&lt;group&gt;Servants&lt;/group&gt;&lt;/item&gt;&lt;/query&gt;&lt;/iq&gt;
     Send:
     &lt;/stream:stream&gt;
     Receive:
@@ -830,7 +830,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-20 22:20:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-21 10:08:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
