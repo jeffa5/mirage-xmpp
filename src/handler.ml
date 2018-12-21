@@ -112,21 +112,10 @@ let to_string t =
 ;;
 
 let make_test_handler s =
-  let mask_id s =
-    match Astring.String.find_sub ~sub:"id='" s with
-    | Some i ->
-      (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-      | Some j ->
-        Astring.String.with_index_range ~first:0 ~last:(i + 3) s
-        ^ "redacted_for_testing"
-        ^ Astring.String.with_index_range ~first:j s
-      | None -> assert false)
-    | None -> s
-  in
   let stream = Lwt_stream.of_string s in
   let callback so =
     match so with
-    | Some s -> print_endline (mask_id s)
+    | Some s -> print_endline (Utils.mask_id s)
     | None -> print_endline "received None in callback"
   in
   create ~stream ~callback
