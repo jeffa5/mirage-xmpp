@@ -5,7 +5,7 @@ type t =
   | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of string * Jid.t
-  | ROSTER_SET of string * Jid.t * Jid.t * string * bool * string list
+  | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
 
 let to_string = function
   | STREAM_HEADER tag -> "STREAM_HEADER: " ^ Xml.tag_to_string ~empty:true tag
@@ -25,7 +25,7 @@ let to_string = function
     ^ " handle="
     ^ handle
     ^ " subscribed="
-    ^ string_of_bool subscribed
+    ^ subscribed
     ^ " groups=["
     ^ String.concat " " groups
     ^ "]"
@@ -64,7 +64,7 @@ let lift_iq = function
           , Stanza.get_from attributes
           , jid
           , handle
-          , false
+          , "none"
           , groups )
       | _ -> not_implemented)
     | "get" ->
@@ -169,5 +169,5 @@ let%expect_test "roster set" =
   in
   print_endline (to_string event);
   [%expect
-    {| ROSTER_SET: id=rs1 from=juliet@example.com/balony target=nurse@example.com handle=Nurse subscribed=false groups=[] |}]
+    {| ROSTER_SET: id=rs1 from=juliet@example.com/balony target=nurse@example.com handle=Nurse subscribed=none groups=[] |}]
 ;;

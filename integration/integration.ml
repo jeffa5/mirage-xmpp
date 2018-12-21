@@ -207,7 +207,7 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       Send:
       <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
       Receive:
-      <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'/></iq>
+      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       Send:
       </stream:stream>
       Receive:
@@ -250,11 +250,11 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Send:
     <iq from='juliet@example.com/balcony' id='ph1xaz53' type='set'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse'><group>Servants</group></item></query></iq>
     Receive:
-    <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'/>
+    <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'/>
     Send:
     <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
     Receive:
-    <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'><item jid='nurse@example.com'/></query></iq>
+    <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
     Send:
     </stream:stream>
     Receive:

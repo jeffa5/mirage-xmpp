@@ -12,6 +12,7 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
+  | Subscription of string
 
 type attribute = string * attribute_value
 type tag = name * attribute list

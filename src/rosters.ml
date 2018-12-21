@@ -5,7 +5,7 @@ module Jid_map = Map.Make (Jid)
 
 type item =
   { handle : string
-  ; subscribed : bool
+  ; subscribed : string
   ; groups : string list }
 
 type roster = item Jid_map.t
@@ -36,18 +36,19 @@ let rec set_item ~user_jid ~target_jid ~handle ~subscribed ~groups =
     set_item ~user_jid ~target_jid ~handle ~subscribed ~groups
 ;;
 
-let get_jids user_jid =
+let get user_jid =
   match Jid_map.find user_jid !t with
-  | Some {roster; _} -> Jid_map.to_list roster |> List.map (fun (jid, _) -> jid)
+  | Some {roster; _} ->
+    Jid_map.to_list roster
+    |> List.map (fun (jid, {handle; subscribed; groups}) ->
+           jid, handle, subscribed, groups )
   | None -> []
 ;;
 
 let groups_to_string groups = "[" ^ String.concat "," groups ^ "]"
 
 let item_to_string {handle; subscribed; groups} =
-  "{"
-  ^ String.concat "; " [handle; string_of_bool subscribed; groups_to_string groups]
-  ^ "}"
+  "{" ^ String.concat "; " [handle; subscribed; groups_to_string groups] ^ "}"
 ;;
 
 let roster_to_string roster =
@@ -82,11 +83,11 @@ let%expect_test "add one jid" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:false
+    ~subscribed:"none"
     ~groups:[];
   print_endline (to_string ());
   [%expect
-    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; false; []}] |}]
+    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; none; []}] |}]
 ;;
 
 let%expect_test "add one jid with groups" =
@@ -95,11 +96,11 @@ let%expect_test "add one jid with groups" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:false
+    ~subscribed:"none"
     ~groups:["Group1"; "Group2"];
   print_endline (to_string ());
   [%expect
-    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; false; [Group1,Group2]}] |}]
+    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; none; [Group1,Group2]}] |}]
 ;;
 
 let%expect_test "add same jid multiple times" =
@@ -108,17 +109,17 @@ let%expect_test "add same jid multiple times" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:false
+    ~subscribed:"none"
     ~groups:["Group1"; "Group2"];
   set_item
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:false
+    ~subscribed:"none"
     ~groups:["Group1"; "Group2"];
   print_endline (to_string ());
   [%expect
-    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; false; [Group1,Group2]}] |}]
+    {| [juliet@im.example.com: false; romeo@im.example.com: {my romeo; none; [Group1,Group2]}] |}]
 ;;
 
 let%expect_test "add same jid multiple times" =
@@ -127,17 +128,17 @@ let%expect_test "add same jid multiple times" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:false
+    ~subscribed:"none"
     ~groups:["Group1"; "Group2"];
   set_item
     ~user_jid:(Jid.of_string "lord@im.example.com")
     ~target_jid:(Jid.of_string "king@im.example.com")
     ~handle:"king1"
-    ~subscribed:true
+    ~subscribed:"none"
     ~groups:["Kings1"; "Rulers"; "Others"];
   print_endline (to_string ());
   [%expect
     {|
-      [juliet@im.example.com: false; romeo@im.example.com: {my romeo; false; [Group1,Group2]}
-      lord@im.example.com: false; king@im.example.com: {king1; true; [Kings1,Rulers,Others]}] |}]
+      [juliet@im.example.com: false; romeo@im.example.com: {my romeo; none; [Group1,Group2]}
+      lord@im.example.com: false; king@im.example.com: {king1; none; [Kings1,Rulers,Others]}] |}]
 ;;

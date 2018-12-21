@@ -21,6 +21,15 @@ let handle_action t stream =
         | REPLY_STANZA s ->
           t.callback (Some (Stanza.to_string s));
           false
+        | SERVER_GEN_RESOURCE_IDENTIFIER id ->
+          t.callback
+            (Some
+               (Stanza.to_string
+                  (Stanza.create_bind_result
+                     ~id
+                     ~jid:(Jid.set_resource (Jid.create_resource ()) t.jid)
+                     ())));
+          false
         | CLOSE ->
           (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
           t.callback (Some "</stream:stream>");
@@ -35,50 +44,29 @@ let handle_action t stream =
           t.jid <- Jid.set_resource res t.jid;
           (* send the packet *)
           t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_iq_bind
-                     id
-                     ~children:
-                       [ Xml.create
-                           (("", "jid"), [])
-                           ~children:[Xml.Text (Jid.to_string t.jid)] ])));
+            (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())));
           false
         | GET_ROSTER (id, from) ->
-          let items = Rosters.get_jids from in
+          let items = Rosters.get from in
           t.callback
             (Some
-               (Stanza.to_string
-                  (Stanza.create_iq_query
-                     ~id
-                     ~from
-                     ~children:
-                       (List.map
-                          (fun jid -> Xml.create (("", "item"), ["", Xml.Jid jid]))
-                          items)
-                     ())));
+               (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)));
           false
         | SET_ROSTER (id, from, target, handle, subscribed, groups) ->
           Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscribed ~groups;
           t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_iq
-                     ["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"])));
+            (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)));
           false
         | PUSH_ROSTER (jid, updated_jid) ->
           (match jid with
           | Full_JID _fjid as full_jid ->
-            let item = Xml.create (("", "item"), ["", Xml.Jid updated_jid]) in
             t.callback
               (Some
                  (Stanza.to_string
-                    (Stanza.create_iq_query
+                    (Stanza.create_roster_push
                        ~id:(Stanza.gen_id ())
-                       ~from:(Jid.to_bare full_jid)
-                       ~attributes:["", Xml.To full_jid; "", Xml.Type "set"]
-                       ~children:[item]
-                       ())))
+                       ~ato:full_jid
+                       ~jid:updated_jid)))
           | Bare_JID _bjid as bare_jid ->
             Connections.find_all bare_jid
             |> List.iter (fun (target_jid, actions_push) ->
@@ -266,14 +254,11 @@ let%expect_test "bind resource" =
          (Stream.create_header
             (Jid.of_string "juliet@im.example.com")
             (Jid.of_string "im.example.com")))
-    ^ Xml.to_string
-        (Xml.create
-           (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
-           ~children:
-             [ Xml.create
-                 (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])
-                 ~children:
-                   [Xml.create (("", "resource"), []) ~children:[Xml.Text "balcony"]] ])
+    ^ Stanza.to_string
+        (Stanza.create_iq
+           ~id:(Stanza.gen_id ())
+           ~atype:"set"
+           [Stanza.create_bind [Stanza.create_resource [Xml.Text "balcony"]]])
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
@@ -333,7 +318,7 @@ let%expect_test "roster get" =
       <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-      <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'/></iq>
+      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       </stream:stream>
     |}];
   print_endline (to_string handler);
@@ -404,8 +389,8 @@ let%expect_test "roster set" =
       <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-      <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'/>
-      <iq id='redacted_for_testing' to='juliet@example.com/balcony' type='result'><query xmlns='jabber:iq:roster' ver='ver7'><item jid='nurse@example.com'/></query></iq>
+      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'/>
+      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
       </stream:stream>
     |}];
   print_endline (to_string handler);
@@ -413,7 +398,7 @@ let%expect_test "roster set" =
     {|
       {
       rosters:
-      [juliet@example.com/balcony: false; nurse@example.com: {Nurse; false; [Servants]}]
+      [juliet@example.com/balcony: false; nurse@example.com: {Nurse; none; [Servants]}]
       connections:
       []
       parser:

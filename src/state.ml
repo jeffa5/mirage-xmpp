@@ -48,14 +48,7 @@ let handle_idle _t = function
 let handle_negotiating _t = function
   | STREAM_HEADER _s -> {state = CLOSED}, [Actions.ERROR "Not expecting stream header"]
   | RESOURCE_BIND_SERVER_GEN id ->
-    ( {state = NEGOTIATING}
-    , [ Actions.REPLY_STANZA
-          (Stanza.create_iq_bind
-             id
-             ~children:
-               [ Xml.create
-                   (("", "jid"), [])
-                   ~children:[Xml.Text (Jid.create_resource ())] ]) ] )
+    {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id]
   | RESOURCE_BIND_CLIENT_GEN (id, res) ->
     {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE (id, res)]
   | STREAM_CLOSE ->
@@ -210,9 +203,8 @@ let%expect_test "bind resource" =
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
-  [%expect
-    {|
-    REPLY_STANZA: <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>not-implemented</jid></bind></iq> |}];
+  [%expect {|
+    SERVER_GEN_RESOURCE_IDENTIFIER: id |}];
   let fsm, actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| {state: closed} |}];
@@ -341,7 +333,7 @@ let%expect_test "roster set" =
          , Jid.of_string "juliet@example.com"
          , Jid.of_string "nurse@example.com"
          , "Nurse"
-         , false
+         , "none"
          , ["Servants"] ))
   in
   print_endline (to_string fsm);
@@ -349,7 +341,7 @@ let%expect_test "roster set" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect
     {|
-    SET_ROSTER: id=some_id from=juliet@example.com target=nurse@example.com handle=Nurse subscribed=false groups=[Servants]
+    SET_ROSTER: id=some_id from=juliet@example.com target=nurse@example.com handle=Nurse subscribed=none groups=[Servants]
     PUSH_ROSTER: bare_jid=juliet@example.com updated_jid=nurse@example.com |}];
   let fsm, actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);

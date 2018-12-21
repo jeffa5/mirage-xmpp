@@ -5,12 +5,13 @@ type t =
   | SEND_STREAM_HEADER of Xml.tag
   | SEND_STREAM_FEATURES of Xml.t
   | REPLY_STANZA of Stanza.t
+  | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | CLOSE
   | ERROR of string
   | SET_JID of Jid.t
   | SET_JID_RESOURCE of string * string
   | GET_ROSTER of string * Jid.t
-  | SET_ROSTER of string * Jid.t * Jid.t * string * bool * string list
+  | SET_ROSTER of string * Jid.t * Jid.t * string * string * string list
   | PUSH_ROSTER of Jid.t * Jid.t
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS

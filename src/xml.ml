@@ -12,6 +12,7 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
+  | Subscription of string
 
 type attribute = string * attribute_value
 type tag = name * attribute list
@@ -37,6 +38,7 @@ let attribute_to_string (namespace, nameval) =
   | Lang s -> "lang='" ^ s ^ "'"
   | Stream s -> "stream='" ^ s ^ "'"
   | Name s -> "name='" ^ s ^ "'"
+  | Subscription s -> "subscription='" ^ s ^ "'"
 ;;
 
 let tag_to_string ~empty (name, attributes) =

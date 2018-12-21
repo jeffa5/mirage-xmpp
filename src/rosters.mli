@@ -4,10 +4,10 @@ val set_item :
      user_jid:Jid.t
   -> target_jid:Jid.t
   -> handle:string
-  -> subscribed:bool
+  -> subscribed:string
   -> groups:string list
   -> unit
 
-val get_jids : Jid.t -> Jid.t list
+val get : Jid.t -> (Jid.t * string * string * string list) list
 val to_string : unit -> string
 val clear : unit -> unit

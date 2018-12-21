@@ -7,34 +7,62 @@ type t =
 
 let gen_id () = Uuidm.(to_string (create `V4))
 
-let create_message ?(children = []) attributes =
-  Message (Element ((("", "message"), attributes), children))
+let create_iq ?(attributes = []) ?ato ~atype ~id children =
+  let attributes =
+    match ato with Some ato -> ("", Xml.To ato) :: attributes | None -> attributes
+  in
+  Iq (Element ((("", "iq"), ["", Xml.Id id; "", Xml.Type atype] @ attributes), children))
 ;;
 
-let create_presence ?(children = []) attributes =
-  Presence (Element ((("", "presence"), attributes), children))
+let create_bind ?(attributes = []) children =
+  Xml.create
+    (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"] @ attributes)
+    ~children
 ;;
 
-let create_iq ?(children = []) attributes =
-  Iq (Element ((("", "iq"), attributes), children))
+let create_query children =
+  Xml.create (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"]) ~children
 ;;
 
-let create_iq_bind ?(children = []) id =
+let create_resource ?(attributes = []) children =
+  Xml.create (("", "resource"), attributes) ~children
+;;
+
+let create_bind_result ~id ~jid () =
   create_iq
-    ["", Xml.Id id; "", Xml.Type "result"]
-    ~children:
-      [ Xml.create
-          (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"])
-          ~children ]
+    ~id
+    ~atype:"result"
+    [create_bind [Xml.create (("", "jid"), []) ~children:[Xml.Text (Jid.to_string jid)]]]
 ;;
 
-let create_iq_query ?(children = []) ?(attributes = []) ~id ~from () =
+let create_roster_get_result ~id ~ato items =
   create_iq
-    (["", Xml.Id id; "", Xml.To from; "", Xml.Type "result"] @ attributes)
-    ~children:
-      [ Xml.create
-          (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"; "", Xml.Ver "ver7"])
-          ~children ]
+    ~id
+    ~atype:"result"
+    ~ato
+    [ create_query
+        (List.map
+           (fun (jid, handle, subscribed, groups) ->
+             Xml.create
+               ( ("", "item")
+               , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscribed]
+               )
+               ~children:
+                 (List.map
+                    (fun group ->
+                      Xml.create (("", "group"), []) ~children:[Xml.Text group] )
+                    groups) )
+           items) ]
+;;
+
+let create_roster_set_result ~id ~ato = create_iq ~id ~atype:"result" ~ato []
+
+let create_roster_push ~id ~ato ~jid =
+  create_iq
+    ~id
+    ~ato
+    ~atype:"set"
+    [create_query [Xml.create (("", "item"), ["", Xml.Jid jid])]]
 ;;
 
 let rec get_id = function
