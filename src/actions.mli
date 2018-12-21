@@ -18,7 +18,7 @@ type t =
       ; handle : string
       ; subscription : string
       ; groups : string list }
-  | PUSH_ROSTER of Jid.t * Jid.t
+  | PUSH_ROSTER of {jid : Jid.t; updated_jid : Jid.t}
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
 

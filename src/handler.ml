@@ -62,7 +62,7 @@ let handle_action t stream =
           t.callback
             (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)));
           false
-        | PUSH_ROSTER (jid, updated_jid) ->
+        | PUSH_ROSTER {jid; updated_jid} ->
           (match jid with
           | Full_JID _fjid as full_jid ->
             t.callback
@@ -75,7 +75,7 @@ let handle_action t stream =
           | Bare_JID _bjid as bare_jid ->
             Connections.find_all bare_jid
             |> List.iter (fun (target_jid, actions_push) ->
-                   actions_push (Some (PUSH_ROSTER (target_jid, updated_jid))) )
+                   actions_push (Some (PUSH_ROSTER {jid = target_jid; updated_jid})) )
           | _ -> assert false);
           false
         | ADD_TO_CONNECTIONS ->

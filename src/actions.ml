@@ -15,7 +15,7 @@ type t =
       ; handle : string
       ; subscription : string
       ; groups : string list }
-  | PUSH_ROSTER of Jid.t * Jid.t
+  | PUSH_ROSTER of {jid : Jid.t; updated_jid : Jid.t}
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
 
@@ -45,11 +45,8 @@ let to_string = function
     ^ " groups=["
     ^ String.concat " " groups
     ^ "]"
-  | PUSH_ROSTER (bare_jid, updated_jid) ->
-    "PUSH_ROSTER: bare_jid="
-    ^ Jid.to_string bare_jid
-    ^ " updated_jid="
-    ^ Jid.to_string updated_jid
+  | PUSH_ROSTER {jid; updated_jid} ->
+    "PUSH_ROSTER: jid=" ^ Jid.to_string jid ^ " updated_jid=" ^ Jid.to_string updated_jid
   | ADD_TO_CONNECTIONS -> "ADD_TO_CONNECTIONS"
   | REMOVE_FROM_CONNECTIONS -> "REMOVE_FROM_CONNECTIONS"
 ;;
