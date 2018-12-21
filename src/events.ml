@@ -1,11 +1,17 @@
 type t =
   | STREAM_HEADER of {from : Jid.t; ato : Jid.t; version : string}
   | RESOURCE_BIND_SERVER_GEN of string
-  | RESOURCE_BIND_CLIENT_GEN of string * string
+  | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
   | STREAM_CLOSE
   | ERROR of string
-  | ROSTER_GET of {from:Jid.t; id:string}
-  | ROSTER_SET of {id:string; from:Jid.t; target:Jid.t; handle:string; subscription:string; groups:string list}
+  | ROSTER_GET of {from : Jid.t; id : string}
+  | ROSTER_SET of
+      { id : string
+      ; from : Jid.t
+      ; target : Jid.t
+      ; handle : string
+      ; subscription : string
+      ; groups : string list }
 
 let to_string = function
   | STREAM_HEADER {from; ato; version} ->
@@ -16,8 +22,8 @@ let to_string = function
     ^ " version="
     ^ version
   | RESOURCE_BIND_SERVER_GEN _id -> "RESOURCE_BIND_SERVER_GEN: id"
-  | RESOURCE_BIND_CLIENT_GEN (id, jid) ->
-    "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " jid=" ^ jid
+  | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
+    "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " resource=" ^ resource
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
   | ROSTER_GET {from; id} -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
@@ -49,8 +55,8 @@ let lift_iq = function
         RESOURCE_BIND_SERVER_GEN (Stanza.get_id attributes)
       | [Xml.Element (((_p, "bind"), _attrs), [child])] ->
         (match child with
-        | Xml.Element (((_, "resource"), []), [Xml.Text t]) ->
-          RESOURCE_BIND_CLIENT_GEN (Stanza.get_id attributes, t)
+        | Xml.Element (((_, "resource"), []), [Xml.Text resource]) ->
+          RESOURCE_BIND_CLIENT_GEN {id = Stanza.get_id attributes; resource}
         | _ -> not_implemented)
       | [ Xml.Element
             (((_, "query"), _), [Xml.Element (((_, "item"), attrs), group_elements)]) ]
@@ -66,18 +72,18 @@ let lift_iq = function
         let jid = Stanza.get_jid attrs in
         let handle = Stanza.get_name attrs in
         ROSTER_SET
-          { id=Stanza.get_id attributes
-          ; from=Stanza.get_from attributes
-          ; target=jid
+          { id = Stanza.get_id attributes
+          ; from = Stanza.get_from attributes
+          ; target = jid
           ; handle
-          ; subscription="none"
+          ; subscription = "none"
           ; groups }
       | _ -> not_implemented)
     | "get" ->
       (match children with
       | [Xml.Element (((_, "query"), _), [])] ->
         (* roster get query *)
-              ROSTER_GET {from=Stanza.get_from attributes; id=Stanza.get_id attributes}
+        ROSTER_GET {from = Stanza.get_from attributes; id = Stanza.get_id attributes}
       | _ -> not_implemented)
     | _ -> not_implemented)
   | Xml.Text _t -> not_implemented

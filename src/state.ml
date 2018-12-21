@@ -37,26 +37,25 @@ let handle_idle _t = function
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.ERROR "No stream"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "No stream"]
-  | ROSTER_SET _ ->
-    {state = CLOSED}, [Actions.ERROR "No stream"]
+  | ROSTER_SET _ -> {state = CLOSED}, [Actions.ERROR "No stream"]
 ;;
 
 let handle_negotiating _t = function
   | STREAM_HEADER _s -> {state = CLOSED}, [Actions.ERROR "Not expecting stream header"]
   | RESOURCE_BIND_SERVER_GEN id ->
     {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id]
-  | RESOURCE_BIND_CLIENT_GEN (id, res) ->
-    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE (id, res)]
+  | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
+    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource}]
   | STREAM_CLOSE ->
     (* the stream can close during negotiation so close our direction too *)
     {state = CLOSED}, [Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET {from; id} ->
-          {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER {from; id}]
-  | ROSTER_SET {id; from; target; handle; subscription; groups } ->
+    {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER {from; id}]
+  | ROSTER_SET {id; from; target; handle; subscription; groups} ->
     ( {state = CONNECTED}
     , [ Actions.ADD_TO_CONNECTIONS
-      ; Actions.SET_ROSTER { id; from; target; handle; subscription; groups }
+      ; Actions.SET_ROSTER {id; from; target; handle; subscription; groups}
       ; Actions.PUSH_ROSTER (Jid.to_bare from, target) ] )
 ;;
 
@@ -69,9 +68,9 @@ let handle_connected _t = function
   | STREAM_CLOSE -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE]
   | ERROR e -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR e]
   | ROSTER_GET {from; id} -> {state = CONNECTED}, [Actions.GET_ROSTER {from; id}]
-  | ROSTER_SET { id; from; target; handle; subscription; groups } ->
+  | ROSTER_SET {id; from; target; handle; subscription; groups} ->
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER { id; from; target; handle; subscription; groups }
+    , [ Actions.SET_ROSTER {id; from; target; handle; subscription; groups}
       ; Actions.PUSH_ROSTER (Jid.to_bare from, target) ] )
 ;;
 
@@ -84,8 +83,7 @@ let handle_closed _t = function
     {state = CLOSED}, [Actions.ERROR "Not expecting a close"]
   | ERROR e -> {state = CLOSED}, [Actions.ERROR e]
   | ROSTER_GET _ -> {state = CLOSED}, [Actions.ERROR "already closed"]
-  | ROSTER_SET _ ->
-    {state = CLOSED}, [Actions.ERROR "already closed"]
+  | ROSTER_SET _ -> {state = CLOSED}, [Actions.ERROR "already closed"]
 ;;
 
 let handle t event =
@@ -224,13 +222,15 @@ let%expect_test "bind resource client" =
     SET_JID: juliet@im.example.com
     SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
     SEND_STREAM_FEATURES |}];
-  let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
+  let fsm, actions =
+    handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
+  in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    SET_JID_RESOURCE: id=id res=client-res |}];
+    SET_JID_RESOURCE: id=id resource=client-res |}];
   let fsm, actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| {state: closed} |}];
@@ -257,13 +257,17 @@ let%expect_test "roster get" =
     SET_JID: juliet@im.example.com
     SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
     SEND_STREAM_FEATURES |}];
-  let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
+  let fsm, actions =
+    handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
+  in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| SET_JID_RESOURCE: id=id res=client-res |}];
+  [%expect {| SET_JID_RESOURCE: id=id resource=client-res |}];
   let fsm, actions =
-    handle fsm (Events.ROSTER_GET {id="some_id"; from=Jid.of_string "juliet@example.com"})
+    handle
+      fsm
+      (Events.ROSTER_GET {id = "some_id"; from = Jid.of_string "juliet@example.com"})
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];
@@ -299,13 +303,17 @@ let%expect_test "roster set" =
     SET_JID: juliet@im.example.com
     SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
     SEND_STREAM_FEATURES |}];
-  let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
+  let fsm, actions =
+    handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
+  in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| SET_JID_RESOURCE: id=id res=client-res |}];
+  [%expect {| SET_JID_RESOURCE: id=id resource=client-res |}];
   let fsm, actions =
-    handle fsm (Events.ROSTER_GET {id="some_id"; from=Jid.of_string "juliet@example.com"})
+    handle
+      fsm
+      (Events.ROSTER_GET {id = "some_id"; from = Jid.of_string "juliet@example.com"})
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];
@@ -318,12 +326,12 @@ let%expect_test "roster set" =
     handle
       fsm
       (Events.ROSTER_SET
-         { id="some_id"
-         ; from=Jid.of_string "juliet@example.com"
-         ; target=Jid.of_string "nurse@example.com"
-         ; handle="Nurse"
-         ; subscription="none"
-         ; groups=["Servants"] })
+         { id = "some_id"
+         ; from = Jid.of_string "juliet@example.com"
+         ; target = Jid.of_string "nurse@example.com"
+         ; handle = "Nurse"
+         ; subscription = "none"
+         ; groups = ["Servants"] })
   in
   print_endline (to_string fsm);
   [%expect {| {state: connected} |}];

@@ -40,8 +40,8 @@ let handle_action t stream =
         | SET_JID j ->
           t.jid <- j;
           false
-        | SET_JID_RESOURCE (id, res) ->
-          t.jid <- Jid.set_resource res t.jid;
+        | SET_JID_RESOURCE {id; resource} ->
+          t.jid <- Jid.set_resource resource t.jid;
           (* send the packet *)
           t.callback
             (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())));
@@ -52,8 +52,13 @@ let handle_action t stream =
             (Some
                (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)));
           false
-        | SET_ROSTER { id; from; target; handle; subscription; groups } ->
-          Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscription ~groups;
+        | SET_ROSTER {id; from; target; handle; subscription; groups} ->
+          Rosters.set_item
+            ~user_jid:from
+            ~target_jid:target
+            ~handle
+            ~subscription
+            ~groups;
           t.callback
             (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)));
           false

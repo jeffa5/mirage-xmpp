@@ -6,9 +6,15 @@ type t =
   | CLOSE
   | ERROR of string
   | SET_JID of Jid.t
-  | SET_JID_RESOURCE of string * string
-  | GET_ROSTER of {from:Jid.t; id:string}
-  | SET_ROSTER of {id:string; from:Jid.t; target:Jid.t; handle:string; subscription:string; groups:string list}
+  | SET_JID_RESOURCE of {id : string; resource : string}
+  | GET_ROSTER of {from : Jid.t; id : string}
+  | SET_ROSTER of
+      { id : string
+      ; from : Jid.t
+      ; target : Jid.t
+      ; handle : string
+      ; subscription : string
+      ; groups : string list }
   | PUSH_ROSTER of Jid.t * Jid.t
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
@@ -22,9 +28,10 @@ let to_string = function
   | CLOSE -> "CLOSE"
   | ERROR s -> "ERROR: " ^ s
   | SET_JID j -> "SET_JID: " ^ Jid.to_string j
-  | SET_JID_RESOURCE (id, res) -> "SET_JID_RESOURCE: id=" ^ id ^ " res=" ^ res
+  | SET_JID_RESOURCE {id; resource} ->
+    "SET_JID_RESOURCE: id=" ^ id ^ " resource=" ^ resource
   | GET_ROSTER {id; from} -> "GET_ROSTER: id=" ^ id ^ " from=" ^ Jid.to_string from
-  | SET_ROSTER { id; from; target; handle; subscription; groups } ->
+  | SET_ROSTER {id; from; target; handle; subscription; groups} ->
     "SET_ROSTER: id="
     ^ id
     ^ " from="
