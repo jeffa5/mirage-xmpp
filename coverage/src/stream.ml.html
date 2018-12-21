@@ -123,14 +123,14 @@ let features =
 ;;
 
 let create_header
-    ?(version = <span data-count="17">"</span>1.0")
-    ?(lang = <span data-count="17">"</span>en")
-    ?(xmlns = <span data-count="17">"</span>jabber:client")
-    ?(stream_ns = <span data-count="24">"</span>http://etherx.jabber.org/streams")
-    ?(attributes = <span data-count="24">[</span>])
+    ?(version = <span data-count="10">"</span>1.0")
+    ?(lang = <span data-count="10">"</span>en")
+    ?(xmlns = <span data-count="10">"</span>jabber:client")
+    ?(stream_ns = <span data-count="10">"</span>http://etherx.jabber.org/streams")
+    ?(attributes = <span data-count="10">[</span>])
     from
     dest =
-  <span data-count="24">(</span> ("stream", "stream")
+  <span data-count="10">(</span> ("stream", "stream")
   , [ "", Xml.From from
     ; "", Xml.Id (Stanza.gen_id ())
     ; "", Xml.To dest
@@ -143,7 +143,7 @@ let create_header
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-21 10:08:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-21 11:17:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

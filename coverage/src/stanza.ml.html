@@ -362,7 +362,7 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
-let gen_id () = <span data-count="25">U</span>uidm.(to_string (create `V4))
+let gen_id () = <span data-count="11">U</span>uidm.(to_string (create `V4))
 
 let create_iq ?(attributes = <span data-count="7">[</span>]) ?ato ~atype ~id children =
   <span data-count="7">l</span>et attributes =
@@ -430,14 +430,14 @@ let rec get_id = <span data-count="2">f</span>unction
 
 let rec get_from = <span data-count="2">f</span>unction
   | <span data-count="0">[</span>] -&gt; raise Not_found
-  | <span data-count="18">(</span>_, Xml.From jid) :: _ -&gt; jid
+  | <span data-count="11">(</span>_, Xml.From jid) :: _ -&gt; jid
   | <span data-count="5">_</span> :: attrs -&gt; get_from attrs
 ;;
 
 let rec get_to = <span data-count="2">f</span>unction
   | <span data-count="0">[</span>] -&gt; raise Not_found
-  | <span data-count="12">(</span>_, Xml.To jid) :: _ -&gt; jid
-  | <span data-count="24">_</span> :: attrs -&gt; get_to attrs
+  | <span data-count="5">(</span>_, Xml.To jid) :: _ -&gt; jid
+  | <span data-count="10">_</span> :: attrs -&gt; get_to attrs
 ;;
 
 let rec get_type = <span data-count="2">f</span>unction
@@ -448,8 +448,8 @@ let rec get_type = <span data-count="2">f</span>unction
 
 let rec get_version = <span data-count="2">f</span>unction
   | <span data-count="0">[</span>] -&gt; raise Not_found
-  | <span data-count="12">(</span>_, Xml.Version v) :: _ -&gt; v
-  | <span data-count="36">_</span> :: attrs -&gt; get_version attrs
+  | <span data-count="5">(</span>_, Xml.Version v) :: _ -&gt; v
+  | <span data-count="15">_</span> :: attrs -&gt; get_version attrs
 ;;
 
 let rec get_jid = <span data-count="2">f</span>unction
@@ -518,7 +518,7 @@ let%expect_test "create tag with attrs" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-21 10:08:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-21 11:17:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

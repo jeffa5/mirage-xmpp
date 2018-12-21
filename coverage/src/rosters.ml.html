@@ -319,7 +319,7 @@ module Jid_map = Map.Make (Jid)
 
 type item =
   { handle : string
-  ; subscribed : string
+  ; subscription : string
   ; groups : string list }
 
 type roster = item Jid_map.t
@@ -334,10 +334,10 @@ let create_roster ~jid =
   <span data-count="6">t</span> := Jid_map.add jid {presence_status = false; roster = Jid_map.empty} !t
 ;;
 
-let create_item ~handle ~subscribed ~groups () = <span data-count="13">{</span>handle; subscribed; groups}
+let create_item ~handle ~subscription ~groups () = <span data-count="13">{</span>handle; subscription; groups}
 
-let rec set_item ~user_jid ~target_jid ~handle ~subscribed ~groups =
-  <span data-count="13">l</span>et item = <span data-count="13">c</span>reate_item ~handle ~subscribed ~groups () in
+let rec set_item ~user_jid ~target_jid ~handle ~subscription ~groups =
+  <span data-count="13">l</span>et item = <span data-count="13">c</span>reate_item ~handle ~subscription ~groups () in
   <span data-count="13">m</span>atch Jid_map.find user_jid !t with
   | <span data-count="7">S</span>ome {presence_status; roster} -&gt;
     t :=
@@ -347,22 +347,22 @@ let rec set_item ~user_jid ~target_jid ~handle ~subscribed ~groups =
         !t
   | <span data-count="6">N</span>one -&gt;
     create_roster ~jid:user_jid;
-    <span data-count="6">s</span>et_item ~user_jid ~target_jid ~handle ~subscribed ~groups
+    <span data-count="6">s</span>et_item ~user_jid ~target_jid ~handle ~subscription ~groups
 ;;
 
 let get user_jid =
   <span data-count="2">m</span>atch Jid_map.find user_jid !t with
   | <span data-count="1">S</span>ome {roster; _} -&gt;
     Jid_map.to_list roster
-    |&gt; <span data-count="1">L</span>ist.map (fun (jid, {handle; subscribed; groups}) -&gt;
-           <span data-count="1">j</span>id, handle, subscribed, groups )
+    |&gt; <span data-count="1">L</span>ist.map (fun (jid, {handle; subscription; groups}) -&gt;
+           <span data-count="1">j</span>id, handle, subscription, groups )
   | <span data-count="1">N</span>one -&gt; []
 ;;
 
 let groups_to_string groups = <span data-count="6">"</span>[" ^ String.concat "," groups ^ "]"
 
-let item_to_string {handle; subscribed; groups} =
-  <span data-count="6">"</span>{" ^ String.concat "; " [handle; subscribed; groups_to_string groups] ^ "}"
+let item_to_string {handle; subscription; groups} =
+  <span data-count="6">"</span>{" ^ String.concat "; " [handle; subscription; groups_to_string groups] ^ "}"
 ;;
 
 let roster_to_string roster =
@@ -397,7 +397,7 @@ let%expect_test "add one jid" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:[];
   print_endline (to_string ());
   [%expect
@@ -410,7 +410,7 @@ let%expect_test "add one jid with groups" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:["Group1"; "Group2"];
   print_endline (to_string ());
   [%expect
@@ -423,13 +423,13 @@ let%expect_test "add same jid multiple times" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:["Group1"; "Group2"];
   set_item
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:["Group1"; "Group2"];
   print_endline (to_string ());
   [%expect
@@ -442,13 +442,13 @@ let%expect_test "add same jid multiple times" =
     ~user_jid:(Jid.of_string "juliet@im.example.com")
     ~target_jid:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:["Group1"; "Group2"];
   set_item
     ~user_jid:(Jid.of_string "lord@im.example.com")
     ~target_jid:(Jid.of_string "king@im.example.com")
     ~handle:"king1"
-    ~subscribed:"none"
+    ~subscription:"none"
     ~groups:["Kings1"; "Rulers"; "Others"];
   print_endline (to_string ());
   [%expect
@@ -459,7 +459,7 @@ let%expect_test "add same jid multiple times" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-21 10:08:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-21 11:17:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
