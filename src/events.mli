@@ -2,7 +2,7 @@
 
 (** The type of events, examples for now *)
 type t =
-  | STREAM_HEADER of Xml.tag
+  | STREAM_HEADER of {from : Jid.t; ato : Jid.t; version : string}
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | STREAM_CLOSE

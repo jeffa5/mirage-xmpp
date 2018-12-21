@@ -1,5 +1,5 @@
 type t =
-  | STREAM_HEADER of Xml.tag
+  | STREAM_HEADER of {from : Jid.t; ato : Jid.t; version : string}
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of string * string
   | STREAM_CLOSE
@@ -8,7 +8,13 @@ type t =
   | ROSTER_SET of string * Jid.t * Jid.t * string * string * string list
 
 let to_string = function
-  | STREAM_HEADER tag -> "STREAM_HEADER: " ^ Xml.tag_to_string ~empty:true tag
+  | STREAM_HEADER {from; ato; version} ->
+    "STREAM_HEADER: from="
+    ^ Jid.to_string from
+    ^ " to="
+    ^ Jid.to_string ato
+    ^ " version="
+    ^ version
   | RESOURCE_BIND_SERVER_GEN _id -> "RESOURCE_BIND_SERVER_GEN: id"
   | RESOURCE_BIND_CLIENT_GEN (id, jid) ->
     "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " jid=" ^ jid
@@ -90,7 +96,11 @@ let lift parse_result =
     | _ -> ERROR "Not expecing text elements")
   | Stream_Element stream_element ->
     (match stream_element with
-    | Header tag -> STREAM_HEADER tag
+    | Header (_name, attributes) ->
+      let from = Stanza.get_from attributes in
+      let ato = Stanza.get_to attributes in
+      let version = Stanza.get_version attributes in
+      STREAM_HEADER {from; ato; version}
     | Features -> not_implemented
     | Error -> not_implemented
     | Close -> STREAM_CLOSE)

@@ -12,11 +12,11 @@ let handle_action t stream =
       let open Actions in
       let closed =
         match action with
-        | SEND_STREAM_HEADER tag ->
-          t.callback (Some (Stream.to_string (Header tag)));
+        | SEND_STREAM_HEADER {from; ato} ->
+          t.callback (Some (Stream.to_string (Header (Stream.create_header ato from))));
           false
-        | SEND_STREAM_FEATURES xml ->
-          t.callback (Some (Xml.to_string xml));
+        | SEND_STREAM_FEATURES ->
+          t.callback (Some (Xml.to_string Stream.features));
           false
         | REPLY_STANZA s ->
           t.callback (Some (Stanza.to_string s));

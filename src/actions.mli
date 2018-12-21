@@ -2,8 +2,8 @@
 
 (** The type of actions, examples for now *)
 type t =
-  | SEND_STREAM_HEADER of Xml.tag
-  | SEND_STREAM_FEATURES of Xml.t
+  | SEND_STREAM_HEADER of {from : Jid.t; ato : Jid.t}
+  | SEND_STREAM_FEATURES
   | REPLY_STANZA of Stanza.t
   | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | CLOSE

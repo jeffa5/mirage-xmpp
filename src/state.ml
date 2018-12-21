@@ -21,20 +21,16 @@ let to_string t = "{state: " ^ state_to_string t.state ^ "}"
 let closed t = t.state = CLOSED
 
 let handle_idle _t = function
-  | STREAM_HEADER (_name, attrs) ->
+  | STREAM_HEADER {from; ato; version} ->
     (* new incoming connection *)
     (* construct reply *)
-    let from = Stanza.get_from attrs in
-    let dest = Stanza.get_to attrs in
-    let header = Stream.create_header dest from in
     (* check the version attribute *)
-    let version = Stanza.get_version attrs in
     if float_of_string version >= 1.0
     then
       ( {state = NEGOTIATING}
       , [ Actions.SET_JID from
-        ; Actions.SEND_STREAM_HEADER header
-        ; Actions.SEND_STREAM_FEATURES Stream.features ] )
+        ; Actions.SEND_STREAM_HEADER {from; ato}
+        ; Actions.SEND_STREAM_FEATURES ] )
     else assert false
   | RESOURCE_BIND_SERVER_GEN _ -> assert false
   | RESOURCE_BIND_CLIENT_GEN _ -> assert false
@@ -108,15 +104,14 @@ let%expect_test "create" =
 
 let%expect_test "idle to negotiating" =
   let fsm = create () in
-  let header =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER header) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
@@ -124,21 +119,20 @@ let%expect_test "idle to negotiating" =
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}]
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}]
 ;;
 
 let%expect_test "idle to negotiating with > 1.0" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"2.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "2.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
@@ -146,21 +140,20 @@ let%expect_test "idle to negotiating with > 1.0" =
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}]
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}]
 ;;
 
 let%expect_test "negotiating to closing" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
@@ -168,8 +161,8 @@ let%expect_test "negotiating to closing" =
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}];
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}];
   let fsm, actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| {state: closed} |}];
@@ -180,15 +173,14 @@ let%expect_test "negotiating to closing" =
 
 let%expect_test "bind resource" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
@@ -196,8 +188,8 @@ let%expect_test "bind resource" =
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}];
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}];
   let fsm, actions = handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id") in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
@@ -215,15 +207,14 @@ let%expect_test "bind resource" =
 
 let%expect_test "bind resource client" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
@@ -231,8 +222,8 @@ let%expect_test "bind resource client" =
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}];
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}];
   let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
@@ -250,23 +241,22 @@ let%expect_test "bind resource client" =
 
 let%expect_test "roster get" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}];
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}];
   let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
@@ -293,23 +283,22 @@ let%expect_test "roster get" =
 
 let%expect_test "roster set" =
   let fsm = create () in
-  let stanza =
-    Stream.create_header
-      ~version:"1.0"
-      ~lang:"en"
-      ~xmlns:"jabber:client"
-      (Jid.of_string "juliet@im.example.com")
-      (Jid.of_string "im.example.com")
+  let fsm, actions =
+    handle
+      fsm
+      (Events.STREAM_HEADER
+         { from = Jid.of_string "juliet@im.example.com"
+         ; ato = Jid.of_string "im.example.com"
+         ; version = "1.0" })
   in
-  let fsm, actions = handle fsm (Events.STREAM_HEADER stanza) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
     SET_JID: juliet@im.example.com
-    SEND_STREAM_HEADER: <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'/>
-    SEND_STREAM_FEATURES: <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features> |}];
+    SEND_STREAM_HEADER: from=juliet@im.example.com to=im.example.com
+    SEND_STREAM_FEATURES |}];
   let fsm, actions = handle fsm (Events.RESOURCE_BIND_CLIENT_GEN ("id", "client-res")) in
   print_endline (to_string fsm);
   [%expect {| {state: negotiating} |}];

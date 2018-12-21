@@ -1,6 +1,6 @@
 type t =
-  | SEND_STREAM_HEADER of Xml.tag
-  | SEND_STREAM_FEATURES of Xml.t
+  | SEND_STREAM_HEADER of {from : Jid.t; ato : Jid.t}
+  | SEND_STREAM_FEATURES
   | REPLY_STANZA of Stanza.t
   | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | CLOSE
@@ -14,9 +14,9 @@ type t =
   | REMOVE_FROM_CONNECTIONS
 
 let to_string = function
-  | SEND_STREAM_HEADER tag ->
-    "SEND_STREAM_HEADER: " ^ Utils.mask_id (Xml.tag_to_string ~empty:true tag)
-  | SEND_STREAM_FEATURES xml -> "SEND_STREAM_FEATURES: " ^ Xml.to_string xml
+  | SEND_STREAM_HEADER {from; ato} ->
+    "SEND_STREAM_HEADER: from=" ^ Jid.to_string from ^ " to=" ^ Jid.to_string ato
+  | SEND_STREAM_FEATURES -> "SEND_STREAM_FEATURES"
   | REPLY_STANZA s -> "REPLY_STANZA: " ^ Utils.mask_id (Stanza.to_string s)
   | SERVER_GEN_RESOURCE_IDENTIFIER s -> "SERVER_GEN_RESOURCE_IDENTIFIER: " ^ s
   | CLOSE -> "CLOSE"
