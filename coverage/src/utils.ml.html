@@ -11,20 +11,18 @@
           <span class="dirname">src/</span>utils.ml
         </a>
       </h1>
-      <h2>50.00%</h2>
+      <h2>100.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:27.27%"></span>
-      <span class="unvisited" style="top:45.45%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
         <pre>
 <a id="L1"></a><span > </span>
 <a id="L2"></a><span class="visited"> </span>
-<a id="L3"></a><span class="unvisited"> </span>
+<a id="L3"></a><span class="visited"> </span>
 <a id="L4"></a><span > </span>
-<a id="L5"></a><span class="unvisited"> </span>
+<a id="L5"></a><span class="visited"> </span>
 <a id="L6"></a><span > </span>
 <a id="L7"></a><span > </span>
 <a id="L8"></a><span > </span>
@@ -49,20 +47,20 @@
 </pre>
         <pre id="code">
 let mask_id s =
-  <span data-count="9">m</span>atch Astring.String.find_sub ~sub:"id='" s with
-  | <span data-count="0">S</span>ome i -&gt;
+  <span data-count="31">m</span>atch Astring.String.find_sub ~sub:"id='" s with
+  | <span data-count="12">S</span>ome i -&gt;
     (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-    | <span data-count="0">S</span>ome j -&gt;
+    | <span data-count="12">S</span>ome j -&gt;
       Astring.String.with_index_range ~first:0 ~last:(i + 3) s
       ^ "&lt;redacted_for_testing&gt;"
       ^ Astring.String.with_index_range ~first:j s
     | None -&gt; assert false)
-  | <span data-count="9">N</span>one -&gt; s
+  | <span data-count="19">N</span>one -&gt; s
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-21 11:17:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-22 11:08:23 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

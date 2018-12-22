@@ -206,11 +206,11 @@ let to_bare = <span data-count="2">f</span>unction
 ;;
 
 let of_string str =
-  <span data-count="71">m</span>atch String.cut ~sep:"@" str with
-  | <span data-count="52">S</span>ome (user, domres) -&gt;
+  <span data-count="73">m</span>atch String.cut ~sep:"@" str with
+  | <span data-count="54">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
-    | <span data-count="10">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
-    | <span data-count="42">N</span>one -&gt; Bare_JID (user, domres))
+    | <span data-count="11">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
+    | <span data-count="43">N</span>one -&gt; Bare_JID (user, domres))
   | <span data-count="19">N</span>one -&gt; Domain str
 ;;
 
@@ -245,8 +245,8 @@ let set_resource new_resource = <span data-count="3">f</span>unction
 ;;
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="17">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
-  | <span data-count="52">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
+  | <span data-count="20">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
+  | <span data-count="53">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
   | <span data-count="19">D</span>omain domain -&gt; domain
   | <span data-count="1">E</span>mpty -&gt; "empty"
 ;;
@@ -265,7 +265,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-21 11:17:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-22 11:08:23 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
