@@ -45,7 +45,7 @@ let handle_action t stream =
         Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscription ~groups;
         t.callback
           (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)))
-      | PUSH_ROSTER {jid; updated_jid} ->
+      | PUSH_ROSTER {jid; target; handle; subscription; groups} ->
         (match jid with
         | Full_JID _fjid as full_jid ->
           t.callback
@@ -54,11 +54,14 @@ let handle_action t stream =
                   (Stanza.create_roster_push
                      ~id:(Stanza.gen_id ())
                      ~ato:full_jid
-                     ~jid:updated_jid)))
+                     (target, handle, subscription, groups))))
         | Bare_JID _bjid as bare_jid ->
           Connections.find_all bare_jid
-          |> List.iter (fun (target_jid, actions_push) ->
-                 actions_push (Some (PUSH_ROSTER {jid = target_jid; updated_jid})) )
+          |> List.iter (fun (full_jid, actions_push) ->
+                 actions_push
+                   (Some
+                      (PUSH_ROSTER {jid = full_jid; target; handle; subscription; groups}))
+             )
         | _ -> assert false)
       | ADD_TO_CONNECTIONS -> Connections.add t.jid t.actions_push
       | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid);
@@ -165,7 +168,7 @@ let%expect_test "initial stanza with version" =
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     </stream:stream>
     |}];
@@ -202,7 +205,7 @@ let%expect_test "error in initial stanza" =
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     </stream:stream> |}];
   print_endline (to_string handler);
@@ -243,9 +246,9 @@ let%expect_test "bind resource" =
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+    <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
     </stream:stream> |}];
   print_endline (to_string handler);
   [%expect
@@ -296,10 +299,10 @@ let%expect_test "roster get" =
   let handler = test_stanza stanza in
   [%expect
     {|
-      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-      <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
+      <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+      <iq id='<redacted_for_testing>' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       </stream:stream>
     |}];
   print_endline (to_string handler);
@@ -343,7 +346,7 @@ let%expect_test "roster set" =
         (Xml.create
            ( ("", "iq")
            , [ "", Xml.Id "ph1xaz53"
-             ; "", Xml.From (Jid.of_string "juliet@example.com/balcony")
+             ; "", Xml.From (Jid.of_string "juliet@im.example.com/balcony")
              ; "", Xml.Type "set" ] )
            ~children:
              [ Xml.create
@@ -361,7 +364,7 @@ let%expect_test "roster set" =
            ( ("", "iq")
            , [ "", Xml.Id "some_id"
              ; "", Xml.Type "get"
-             ; "", Xml.From (Jid.of_string "juliet@example.com/balcony") ] )
+             ; "", Xml.From (Jid.of_string "juliet@im.example.com/balcony") ] )
            ~children:
              [Xml.create (("", "query"), ["", Xml.Xmlns "jabber:iq:roster"]) ~children:[]])
     ^ "</stream:stream>"
@@ -369,11 +372,12 @@ let%expect_test "roster set" =
   let handler = test_stanza stanza in
   [%expect
     {|
-      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-      <iq id='redacted_for_testing' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'/>
-      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
+      <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
+      <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'/>
+      <iq id='<redacted_for_testing>' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
+      <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
       </stream:stream>
     |}];
   print_endline (to_string handler);
@@ -381,7 +385,7 @@ let%expect_test "roster set" =
     {|
       {
       rosters:
-      [juliet@example.com/balcony: false; nurse@example.com: {Nurse; none; [Servants]}]
+      [juliet@im.example.com/balcony: false; nurse@example.com: {Nurse; none; [Servants]}]
       connections:
       []
       parser:

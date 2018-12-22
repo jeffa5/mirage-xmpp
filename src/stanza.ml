@@ -57,12 +57,20 @@ let create_roster_get_result ~id ~ato items =
 
 let create_roster_set_result ~id ~ato = create_iq ~id ~atype:"result" ~ato []
 
-let create_roster_push ~id ~ato ~jid =
+let create_roster_push ~id ~ato (jid, handle, subscription, groups) =
   create_iq
     ~id
     ~ato
     ~atype:"set"
-    [create_query [Xml.create (("", "item"), ["", Xml.Jid jid])]]
+    [ create_query
+        [ Xml.create
+            ( ("", "item")
+            , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscription]
+            )
+            ~children:
+              (List.map
+                 (fun group -> Xml.create (("", "group"), []) ~children:[Xml.Text group])
+                 groups) ] ]
 ;;
 
 let rec get_id = function

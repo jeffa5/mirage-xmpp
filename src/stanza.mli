@@ -22,7 +22,9 @@ val create_roster_get_result :
   id:string -> ato:Jid.t -> (Jid.t * string * string * string list) list -> t
 
 val create_roster_set_result : id:string -> ato:Jid.t -> t
-val create_roster_push : id:string -> ato:Jid.t -> jid:Jid.t -> t
+
+val create_roster_push :
+  id:string -> ato:Jid.t -> Jid.t * string * string * string list -> t
 
 (** [to_string t] takes a stanza [t] and returns the string representation of it *)
 val to_string : t -> string

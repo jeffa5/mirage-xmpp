@@ -54,3 +54,14 @@ let%expect_test "add two connection" =
       [romeo@home.elsewhere.com
       juliet@im.example.com] |}]
 ;;
+
+let%expect_test "find all matches bare jid" =
+  clear ();
+  add (Jid.of_string "juliet@im.example.com/balcony") (fun _ -> ());
+  print_endline (to_string ());
+  [%expect {| [juliet@im.example.com/balcony] |}];
+  find_all (Jid.of_string "juliet@im.example.com")
+  |> List.iter (fun (target_jid, _actions_push) ->
+         print_endline (Jid.to_string target_jid) );
+  [%expect {| juliet@im.example.com/balcony |}]
+;;
