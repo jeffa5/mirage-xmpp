@@ -39,12 +39,7 @@ integration: mirage
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
-	sudo mirage/xmpp -l "*:debug" > unikernel.log 2>&1
-# configure the tap for connecting
-.PHONY: tap
-tap:
-	sudo ip addr add 10.0.0.1/16 dev tap0
-	sudo ip link set tap0 up
+	mirage/xmpp -l "*:debug" > unikernel.log 2>&1
 
 .PHONY: demo
 demo:

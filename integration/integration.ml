@@ -1,4 +1,4 @@
-let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str =
+let send ?(timeout = 10.) ?(host = "127.0.0.1") ?(port = 5222) str =
   let timeout_t =
     let%lwt () = Lwt_unix.sleep timeout in
     Lwt.return "Timeout"
@@ -14,7 +14,7 @@ let send ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str =
   print_endline s
 ;;
 
-let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str_list =
+let send_recv ?(timeout = 10.) ?(host = "127.0.0.1") ?(port = 5222) str_list =
   let timeout_t =
     let%lwt () = Lwt_unix.sleep timeout in
     Lwt.return "Timeout"
@@ -36,9 +36,12 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str_list =
       with_connection addr (fun (i, o) ->
           let rec reader () =
             (* Repeatedly read data from the connection and print it *)
+              try%lwt
             let%lwt s = read_line i in
             print_endline ("Receive:\n" ^ mask_id s);
             if s = "</stream:stream>" then Lwt.return "Finished" else reader ()
+              with
+              End_of_file -> Lwt.return "Didn't close the stream before exiting"
           in
           let rec writer = function
             (* Send all the data in the list to the server *)
@@ -46,7 +49,7 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str_list =
             | x :: xs ->
               print_endline ("Send:\n" ^ x);
               let%lwt () = write o x in
-              let%lwt () = Lwt_unix.sleep 1. in
+              let%lwt () = Lwt_unix.sleep 0.1 in
               writer xs
           in
           Lwt.async (fun () -> writer str_list);
@@ -56,28 +59,19 @@ let send_recv ?(timeout = 10.) ?(host = "10.0.0.2") ?(port = 5222) str_list =
   print_endline s
 ;;
 
-let configure_tap () =
-  print_endline "Configuring tap0";
-  let command =
-    Lwt_process.shell "sudo ip addr add 10.0.0.1/16 dev tap0 && sudo ip link set tap0 up"
-  in
-  match Lwt_main.run (Lwt_process.exec command) with _ -> ()
-;;
-
 let start_unikernel () =
   print_endline "Starting unikernel";
   let command =
-    Lwt_process.shell
-      "cd ../../../; sudo mirage/xmpp -l \"*:debug\" > unikernel.log 2>&1"
+    Lwt_process.shell "cd ../../../; mirage/xmpp -l \"*:debug\" > unikernel.log 2>&1"
   in
   let _process = Lwt_process.open_process_none command in
-  Unix.sleep 1;
-  configure_tap ()
+  Unix.sleepf 0.1
 ;;
 
 let stop_unikernel () =
   print_endline "Stopping unikernel";
-  send ~port:8081 "exit"
+  send ~port:8081 "exit";
+  Unix.sleepf 0.2
 ;;
 
 let test_unikernel f =
@@ -91,7 +85,6 @@ let%expect_test "start stop" =
   [%expect
     {|
     Starting unikernel
-    Configuring tap0
     Stopping unikernel
     Success |}]
 ;;
@@ -105,7 +98,6 @@ let%expect_test "initial stanza in list" =
   [%expect
     {|
     Starting unikernel
-    Configuring tap0
     Send:
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
@@ -127,7 +119,6 @@ let%expect_test "close stream" =
   [%expect
     {|
     Starting unikernel
-    Configuring tap0
     Send:
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
@@ -138,9 +129,7 @@ let%expect_test "close stream" =
     </stream:stream>
     Receive:
     Closing the connection
-    Receive:
-    </stream:stream>
-    Finished
+    Didn't close the stream before exiting
     Stopping unikernel
     Success |}]
 ;;
@@ -157,7 +146,6 @@ let%expect_test "open stream with iq bind" =
   [%expect
     {|
       Starting unikernel
-      Configuring tap0
       Send:
       <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       Receive:
@@ -172,9 +160,7 @@ let%expect_test "open stream with iq bind" =
       </stream:stream>
       Receive:
       Closing the connection
-      Receive:
-      </stream:stream>
-      Finished
+      Didn't close the stream before exiting
       Stopping unikernel
       Success |}]
 ;;
@@ -193,7 +179,6 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
   [%expect
     {|
       Starting unikernel
-      Configuring tap0
       Send:
       <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       Receive:
@@ -212,9 +197,7 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       </stream:stream>
       Receive:
       Closing the connection
-      Receive:
-      </stream:stream>
-      Finished
+      Didn't close the stream before exiting
       Stopping unikernel
       Success |}]
 ;;
@@ -236,7 +219,6 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
   [%expect
     {|
     Starting unikernel
-    Configuring tap0
     Send:
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
@@ -259,9 +241,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     </stream:stream>
     Receive:
     Closing the connection
-    Receive:
-    </stream:stream>
-    Finished
+    Didn't close the stream before exiting
     Stopping unikernel
     Success |}]
 ;;

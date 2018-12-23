@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # build
-mirage configure -t unix --dhcp false --net direct
-# maybe use --net socket
+mirage configure -t unix --net socket
 
 # continue building
 if [ -z ${TRAVIS_BUILD} ]; then

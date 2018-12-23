@@ -65,7 +65,7 @@ let handle_action t stream =
         | _ -> assert false)
       | ADD_TO_CONNECTIONS -> Connections.add t.jid t.actions_push
       | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid);
-      if t.closed then Lwt.return_unit else aux ()
+      if t.closed then (t.callback None;Lwt.return_unit) else aux ()
     | None ->
       t.callback None;
       Lwt.return_unit
@@ -119,7 +119,7 @@ let make_test_handler s =
   let callback so =
     match so with
     | Some s -> print_endline (Utils.mask_id s)
-    | None -> print_endline "received None in callback"
+    | None -> print_endline "Out stream closed"
   in
   create ~stream ~callback
 ;;
@@ -171,6 +171,7 @@ let%expect_test "initial stanza with version" =
     <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     </stream:stream>
+    Out stream closed
     |}];
   print_endline (to_string handler);
   [%expect
@@ -207,7 +208,8 @@ let%expect_test "error in initial stanza" =
     {|
     <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    </stream:stream> |}];
+    </stream:stream>
+    Out stream closed |}];
   print_endline (to_string handler);
   [%expect
     {|
@@ -249,7 +251,8 @@ let%expect_test "bind resource" =
     <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-    </stream:stream> |}];
+    </stream:stream>
+    Out stream closed |}];
   print_endline (to_string handler);
   [%expect
     {|
@@ -304,6 +307,7 @@ let%expect_test "roster get" =
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       </stream:stream>
+      Out stream closed
     |}];
   print_endline (to_string handler);
   [%expect
@@ -379,6 +383,7 @@ let%expect_test "roster set" =
       <iq id='<redacted_for_testing>' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
       </stream:stream>
+      Out stream closed
     |}];
   print_endline (to_string handler);
   [%expect
