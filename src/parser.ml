@@ -108,7 +108,9 @@ let rec parse parser =
       (match String.trim (String.concat "" ss) with
       | "" -> parse parser
       | _ -> Lwt.return (Error ("Unexpected Text: " ^ String.concat "\n" ss)))
-    | `Xml _declaration -> Lwt.return (Error "Unexpected Xml declaration")
+    | `Xml _declaration ->
+      (* Xml declaration is optional so we can just ignore it as there is nothing to do with it *)
+      parse parser
     | `Doctype _doctype -> Lwt.return (Error "Unexpected Doctype")
     | `PI (s1, s2) -> Lwt.return (Error ("Unexpected PI: " ^ s1 ^ ", " ^ s2))
     | `Comment s -> Lwt.return (Error ("Unexpected Comment: " ^ s)))
