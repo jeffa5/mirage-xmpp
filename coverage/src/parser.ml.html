@@ -14,22 +14,22 @@
       <h2>82.61%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:14.40%"></span>
-      <span class="unvisited" style="top:24.28%"></span>
-      <span class="unvisited" style="top:24.69%"></span>
-      <span class="unvisited" style="top:27.16%"></span>
-      <span class="unvisited" style="top:27.98%"></span>
-      <span class="unvisited" style="top:30.04%"></span>
-      <span class="unvisited" style="top:38.68%"></span>
-      <span class="unvisited" style="top:39.09%"></span>
-      <span class="unvisited" style="top:39.51%"></span>
-      <span class="unvisited" style="top:39.92%"></span>
-      <span class="unvisited" style="top:40.74%"></span>
-      <span class="unvisited" style="top:41.15%"></span>
-      <span class="unvisited" style="top:45.68%"></span>
-      <span class="unvisited" style="top:46.09%"></span>
-      <span class="unvisited" style="top:46.50%"></span>
-      <span class="unvisited" style="top:46.91%"></span>
+      <span class="unvisited" style="top:14.29%"></span>
+      <span class="unvisited" style="top:24.08%"></span>
+      <span class="unvisited" style="top:24.49%"></span>
+      <span class="unvisited" style="top:26.94%"></span>
+      <span class="unvisited" style="top:27.76%"></span>
+      <span class="unvisited" style="top:29.80%"></span>
+      <span class="unvisited" style="top:38.37%"></span>
+      <span class="unvisited" style="top:38.78%"></span>
+      <span class="unvisited" style="top:39.18%"></span>
+      <span class="unvisited" style="top:39.59%"></span>
+      <span class="unvisited" style="top:40.41%"></span>
+      <span class="unvisited" style="top:40.82%"></span>
+      <span class="unvisited" style="top:45.31%"></span>
+      <span class="unvisited" style="top:46.53%"></span>
+      <span class="unvisited" style="top:46.94%"></span>
+      <span class="unvisited" style="top:47.35%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -145,29 +145,29 @@
 <a id="L109"></a><span class="visited"> </span>
 <a id="L110"></a><span class="visited"> </span>
 <a id="L111"></a><span class="unvisited"> </span>
-<a id="L112"></a><span class="unvisited"> </span>
-<a id="L113"></a><span class="unvisited"> </span>
+<a id="L112"></a><span > </span>
+<a id="L113"></a><span > </span>
 <a id="L114"></a><span class="unvisited"> </span>
-<a id="L115"></a><span class="visited"> </span>
-<a id="L116"></a><span > </span>
-<a id="L117"></a><span > </span>
+<a id="L115"></a><span class="unvisited"> </span>
+<a id="L116"></a><span class="unvisited"> </span>
+<a id="L117"></a><span class="visited"> </span>
 <a id="L118"></a><span > </span>
-<a id="L119"></a><span class="visited"> </span>
-<a id="L120"></a><span class="visited"> </span>
+<a id="L119"></a><span > </span>
+<a id="L120"></a><span > </span>
 <a id="L121"></a><span class="visited"> </span>
 <a id="L122"></a><span class="visited"> </span>
-<a id="L123"></a><span > </span>
+<a id="L123"></a><span class="visited"> </span>
 <a id="L124"></a><span class="visited"> </span>
-<a id="L125"></a><span class="visited"> </span>
-<a id="L126"></a><span > </span>
+<a id="L125"></a><span > </span>
+<a id="L126"></a><span class="visited"> </span>
 <a id="L127"></a><span class="visited"> </span>
-<a id="L128"></a><span class="visited"> </span>
-<a id="L129"></a><span > </span>
+<a id="L128"></a><span > </span>
+<a id="L129"></a><span class="visited"> </span>
 <a id="L130"></a><span class="visited"> </span>
 <a id="L131"></a><span > </span>
 <a id="L132"></a><span class="visited"> </span>
 <a id="L133"></a><span > </span>
-<a id="L134"></a><span > </span>
+<a id="L134"></a><span class="visited"> </span>
 <a id="L135"></a><span > </span>
 <a id="L136"></a><span > </span>
 <a id="L137"></a><span > </span>
@@ -277,6 +277,8 @@
 <a id="L241"></a><span > </span>
 <a id="L242"></a><span > </span>
 <a id="L243"></a><span > </span>
+<a id="L244"></a><span > </span>
+<a id="L245"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -524,6 +526,8 @@
 <a href="#L241">241</a>
 <a href="#L242">242</a>
 <a href="#L243">243</a>
+<a href="#L244">244</a>
+<a href="#L245">245</a>
 </pre>
         <pre id="code">
 type t =
@@ -636,7 +640,9 @@ let rec parse parser =
       (match String.trim (String.concat "" ss) with
       | <span data-count="1">"</span>" -&gt; parse parser
       | <span data-count="1">_</span> -&gt; Lwt.return (Error ("Unexpected Text: " ^ String.concat "\n" ss)))
-    | <span data-count="0">`</span>Xml _declaration -&gt; Lwt.return (Error "Unexpected Xml declaration")
+    | <span data-count="0">`</span>Xml _declaration -&gt;
+      (* Xml declaration is optional so we can just ignore it as there is nothing to do with it *)
+      parse parser
     | <span data-count="0">`</span>Doctype _doctype -&gt; Lwt.return (Error "Unexpected Doctype")
     | <span data-count="0">`</span>PI (s1, s2) -&gt; Lwt.return (Error ("Unexpected PI: " ^ s1 ^ ", " ^ s2))
     | <span data-count="0">`</span>Comment s -&gt; Lwt.return (Error ("Unexpected Comment: " ^ s)))
@@ -772,7 +778,7 @@ let%expect_test "non-whitespace between elements" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-22 11:08:23 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2018-12-23 11:49:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
