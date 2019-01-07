@@ -1,9 +1,10 @@
 type t =
-  { parser : Parser.t
+  { mutable parser : Parser.t
   ; callback : string option -> unit
   ; mutable jid : Jid.t
   ; mutable fsm : State.t
   ; actions_push : Actions.t option -> unit
+  ; hostname : string
   ; mutable closed : bool }
 
 let handle_action t stream =
@@ -12,18 +13,30 @@ let handle_action t stream =
     | Some action ->
       let open Actions in
       (match action with
-      | SEND_STREAM_HEADER {from; ato} ->
-        t.callback (Some (Stream.to_string (Header (Stream.create_header ato from))))
+      | SEND_STREAM_HEADER ->
+        t.callback
+          (Some
+             (Stream.to_string
+                (Header (Stream.create_header ~from:(Jid.of_string t.hostname) ()))))
+      | SEND_STREAM_FEATURES_SASL ->
+        t.callback (Some (Xml.to_string Stream.features_sasl_mechanisms))
+      | SEND_SASL_SUCCESS ->
+        t.callback
+          (Some
+             (Xml.to_string
+                (Xml.create
+                   (("", "success"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]))))
       | SEND_STREAM_FEATURES -> t.callback (Some (Xml.to_string Stream.features))
       | REPLY_STANZA s -> t.callback (Some (Stanza.to_string s))
       | SERVER_GEN_RESOURCE_IDENTIFIER id ->
+        let resource = Jid.create_resource () in
+        let jid_with_resource = Jid.set_resource resource t.jid in
+        t.jid <- jid_with_resource;
         t.callback
           (Some
-             (Stanza.to_string
-                (Stanza.create_bind_result
-                   ~id
-                   ~jid:(Jid.set_resource (Jid.create_resource ()) t.jid)
-                   ())))
+             (Stanza.to_string (Stanza.create_bind_result ~id ~jid:jid_with_resource ())))
+      | SESSION_START_SUCCESS id ->
+        t.callback (Some (Stanza.to_string (Stanza.create_iq ~atype:"result" ~id [])))
       | CLOSE ->
         (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
         t.callback (Some "</stream:stream>");
@@ -31,23 +44,23 @@ let handle_action t stream =
       | ERROR e ->
         t.callback (Some e);
         t.closed <- true
-      | SET_JID j -> t.jid <- j
+      | SET_JID j -> t.jid <- Jid.of_string (j ^ "@" ^ t.hostname)
       | SET_JID_RESOURCE {id; resource} ->
         t.jid <- Jid.set_resource resource t.jid;
         (* send the packet *)
         t.callback
           (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())))
-      | GET_ROSTER {id; from} ->
-        let items = Rosters.get from in
+      | GET_ROSTER id ->
+        let items = Rosters.get t.jid in
         t.callback
-          (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:from items)))
-      | SET_ROSTER {id; from; target; handle; subscription; groups} ->
-        Rosters.set_item ~user_jid:from ~target_jid:target ~handle ~subscription ~groups;
+          (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:t.jid items)))
+      | SET_ROSTER {id; target; handle; subscription; groups} ->
+        Rosters.set_item ~user_jid:t.jid ~target_jid:target ~handle ~subscription ~groups;
         t.callback
-          (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:from)))
+          (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:t.jid)))
       | PUSH_ROSTER {jid; target; handle; subscription; groups} ->
         (match jid with
-        | Full_JID _fjid as full_jid ->
+        | Some (Full_JID _fjid as full_jid) ->
           t.callback
             (Some
                (Stanza.to_string
@@ -55,17 +68,35 @@ let handle_action t stream =
                      ~id:(Stanza.gen_id ())
                      ~ato:full_jid
                      (target, handle, subscription, groups))))
-        | Bare_JID _bjid as bare_jid ->
-          Connections.find_all bare_jid
+        | None ->
+          Connections.find_all (Jid.to_bare t.jid)
           |> List.iter (fun (full_jid, actions_push) ->
                  actions_push
                    (Some
-                      (PUSH_ROSTER {jid = full_jid; target; handle; subscription; groups}))
-             )
+                      (PUSH_ROSTER
+                         {jid = Some full_jid; target; handle; subscription; groups})) )
         | _ -> assert false)
       | ADD_TO_CONNECTIONS -> Connections.add t.jid t.actions_push
-      | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid);
-      if t.closed then (t.callback None;Lwt.return_unit) else aux ()
+      | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid
+      | SUBSCRIPTION_REQUEST {id; ato} ->
+        t.callback
+          (Some
+             (Stanza.to_string
+                (Stanza.create_presence ~from:t.jid ~id ~ato ~atype:"subscribe" [])))
+      | UPDATE_PRESENCE availability ->
+        Rosters.set_presence ~jid:t.jid availability;
+        Rosters.get_subscribers t.jid
+        |> List.iter (fun jid ->
+               match Connections.find jid with
+               | Some f -> f (Some (SEND_PRESENCE_UPDATE t.jid))
+               | None -> () )
+      | SEND_PRESENCE_UPDATE from ->
+        t.callback (Some (Stanza.to_string (Stanza.create_presence ~from ~ato:t.jid []))));
+      if t.closed
+      then (
+        t.callback None;
+        Lwt.return_unit )
+      else aux ()
     | None ->
       t.callback None;
       Lwt.return_unit
@@ -73,12 +104,12 @@ let handle_action t stream =
   aux ()
 ;;
 
-let create ~stream ~callback =
+let create ~stream ~callback ~hostname =
   let parser = Parser.create stream in
   let jid = Jid.empty in
   let fsm = State.create () in
   let actions_stream, actions_push = Lwt_stream.create () in
-  let t = {parser; callback; jid; fsm; actions_push; closed = false} in
+  let t = {parser; callback; jid; fsm; actions_push; hostname; closed = false} in
   Lwt.async (fun () -> handle_action t actions_stream);
   t
 ;;
@@ -87,8 +118,11 @@ let handle t =
   let rec aux () =
     let%lwt parse_result = Parser.parse t.parser in
     let event = Events.lift parse_result in
-    let new_fsm, actions = State.handle t.fsm event in
+    let new_fsm, actions, handler_actions = State.handle t.fsm event in
     t.fsm <- new_fsm;
+    List.iter
+      (function Actions.RESET_PARSER -> t.parser <- Parser.reset t.parser)
+      handler_actions;
     List.iter (fun action -> t.actions_push (Some action)) actions;
     if State.closed t.fsm then Lwt.return_unit else aux ()
   in
@@ -121,7 +155,7 @@ let make_test_handler s =
     | Some s -> print_endline (Utils.mask_id s)
     | None -> print_endline "Out stream closed"
   in
-  create ~stream ~callback
+  create ~stream ~callback ~hostname:"im.example.com"
 ;;
 
 let test_stanza stanza =
@@ -148,7 +182,7 @@ let%expect_test "creation of handler" =
     jid:
     empty
     fsm:
-    {state: idle}
+    {state: IDLE}
     closed:
     false
     } |}]
@@ -159,18 +193,15 @@ let%expect_test "initial stanza with version" =
   Connections.clear ();
   let stanza =
     Stream.to_string
-      (Header
-         (Stream.create_header
-            (Jid.of_string "juliet@im.example.com")
-            (Jid.of_string "im.example.com")))
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    </stream:stream>
+    <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    Unexpected stream close during sasl negotiation
     Out stream closed
     |}];
   print_endline (to_string handler);
@@ -184,9 +215,9 @@ let%expect_test "initial stanza with version" =
     parser:
     callback
     jid:
-    juliet@im.example.com
+    empty
     fsm:
-    {state: closed}
+    {state: CLOSED}
     closed:
     true
     } |}]
@@ -197,18 +228,15 @@ let%expect_test "error in initial stanza" =
   Connections.clear ();
   let stanza =
     Stream.to_string
-      (Header
-         (Stream.create_header
-            (Jid.of_string "juliet@im.example.com")
-            (Jid.of_string "im.example.com")))
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ "</stream:stream>"
   in
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    </stream:stream>
+    <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    Unexpected stream close during sasl negotiation
     Out stream closed |}];
   print_endline (to_string handler);
   [%expect
@@ -221,9 +249,9 @@ let%expect_test "error in initial stanza" =
     parser:
     callback
     jid:
-    juliet@im.example.com
+    empty
     fsm:
-    {state: closed}
+    {state: CLOSED}
     closed:
     true
     } |}]
@@ -234,10 +262,15 @@ let%expect_test "bind resource" =
   Connections.clear ();
   let stanza =
     Stream.to_string
-      (Header
-         (Stream.create_header
-            (Jid.of_string "juliet@im.example.com")
-            (Jid.of_string "im.example.com")))
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+    ^ Xml.to_string
+        (Xml.create
+           ( ("", "auth")
+           , ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"; "", Xml.Mechanism "PLAIN"]
+           )
+           ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
+    ^ Stream.to_string
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Stanza.to_string
         (Stanza.create_iq
            ~id:(Stanza.gen_id ())
@@ -248,7 +281,10 @@ let%expect_test "bind resource" =
   let handler = test_stanza stanza in
   [%expect
     {|
-    <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+    <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
     </stream:stream>
@@ -266,7 +302,7 @@ let%expect_test "bind resource" =
     jid:
     juliet@im.example.com/balcony
     fsm:
-    {state: closed}
+    {state: CLOSED}
     closed:
     true
     } |}]
@@ -277,10 +313,15 @@ let%expect_test "roster get" =
   Connections.clear ();
   let stanza =
     Stream.to_string
-      (Header
-         (Stream.create_header
-            (Jid.of_string "juliet@im.example.com")
-            (Jid.of_string "im.example.com")))
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+    ^ Xml.to_string
+        (Xml.create
+           ( ("", "auth")
+           , ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"; "", Xml.Mechanism "PLAIN"]
+           )
+           ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
+    ^ Stream.to_string
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Xml.to_string
         (Xml.create
            (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
@@ -302,10 +343,13 @@ let%expect_test "roster get" =
   let handler = test_stanza stanza in
   [%expect
     {|
-      <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+      <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
-      <iq id='<redacted_for_testing>' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
+      <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       </stream:stream>
       Out stream closed
     |}];
@@ -322,7 +366,7 @@ let%expect_test "roster get" =
       jid:
       juliet@im.example.com/balcony
       fsm:
-      {state: closed}
+      {state: CLOSED}
       closed:
       true
       }
@@ -334,10 +378,15 @@ let%expect_test "roster set" =
   Connections.clear ();
   let stanza =
     Stream.to_string
-      (Header
-         (Stream.create_header
-            (Jid.of_string "juliet@im.example.com")
-            (Jid.of_string "im.example.com")))
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+    ^ Xml.to_string
+        (Xml.create
+           ( ("", "auth")
+           , ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"; "", Xml.Mechanism "PLAIN"]
+           )
+           ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
+    ^ Stream.to_string
+      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Xml.to_string
         (Xml.create
            (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
@@ -376,7 +425,10 @@ let%expect_test "roster set" =
   let handler = test_stanza stanza in
   [%expect
     {|
-      <stream:stream from='im.example.com' id='<redacted_for_testing>' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+      <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'/>
@@ -390,7 +442,7 @@ let%expect_test "roster set" =
     {|
       {
       rosters:
-      [juliet@im.example.com/balcony: false; nurse@example.com: {Nurse; none; [Servants]}]
+      [juliet@im.example.com/balcony: Offline; nurse@example.com: {Nurse; none; [Servants]}]
       connections:
       []
       parser:
@@ -398,7 +450,7 @@ let%expect_test "roster set" =
       jid:
       juliet@im.example.com/balcony
       fsm:
-      {state: closed}
+      {state: CLOSED}
       closed:
       true
       }

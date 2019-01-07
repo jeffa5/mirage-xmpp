@@ -48,7 +48,7 @@ let compare jid1 jid2 =
   if d = 0 then if u = 0 then r else u else d
 ;;
 
-let create_resource () = "not-implemented"
+let create_resource () = Uuidm.(to_string (create `V4))
 
 let set_resource new_resource = function
   | Full_JID ((user, domain), _resource) -> Full_JID ((user, domain), new_resource)

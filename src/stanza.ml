@@ -7,6 +7,18 @@ type t =
 
 let gen_id () = Uuidm.(to_string (create `V4))
 
+let create_presence ?(attributes = []) ?atype ?id ~ato ~from children =
+  let attributes =
+    match atype with Some t -> ("", Xml.Type t) :: attributes | None -> attributes
+  in
+  let attributes =
+    match id with Some i -> ("", Xml.Id i) :: attributes | None -> attributes
+  in
+  Presence
+    (Element
+       ((("", "presence"), ["", Xml.To ato; "", Xml.From from] @ attributes), children))
+;;
+
 let create_iq ?(attributes = []) ?ato ~atype ~id children =
   let attributes =
     match ato with Some ato -> ("", Xml.To ato) :: attributes | None -> attributes
@@ -42,10 +54,10 @@ let create_roster_get_result ~id ~ato items =
     ~ato
     [ create_query
         (List.map
-           (fun (jid, handle, subscribed, groups) ->
+           (fun (jid, handle, subscription, groups) ->
              Xml.create
                ( ("", "item")
-               , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscribed]
+               , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscription]
                )
                ~children:
                  (List.map
@@ -92,8 +104,8 @@ let rec get_to = function
 ;;
 
 let rec get_type = function
-  | [] -> raise Not_found
-  | (_, Xml.Type t) :: _ -> t
+  | [] -> None
+  | (_, Xml.Type t) :: _ -> Some t
   | _ :: attrs -> get_type attrs
 ;;
 

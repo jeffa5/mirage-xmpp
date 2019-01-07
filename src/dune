@@ -1,6 +1,6 @@
 (library
  (name mirage_xmpp)
  (public_name mirage-xmpp)
- (libraries lwt lwt.unix markup-lwt astring asetmap uuidm)
+ (libraries lwt lwt.unix markup-lwt astring asetmap uuidm base64)
  (inline_tests (flags -show-counts -strict))
  (preprocess (pps ppx_expect lwt_ppx bisect_ppx -conditional)))

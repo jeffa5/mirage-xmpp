@@ -36,12 +36,11 @@ let send_recv ?(timeout = 10.) ?(host = "127.0.0.1") ?(port = 5222) str_list =
       with_connection addr (fun (i, o) ->
           let rec reader () =
             (* Repeatedly read data from the connection and print it *)
-              try%lwt
-            let%lwt s = read_line i in
-            print_endline ("Receive:\n" ^ mask_id s);
-            if s = "</stream:stream>" then Lwt.return "Finished" else reader ()
-              with
-              End_of_file -> Lwt.return "Didn't close the stream before exiting"
+            try%lwt
+                  let%lwt s = read_line i in
+                  print_endline ("Receive:\n" ^ mask_id s);
+                  if s = "</stream:stream>" then Lwt.return "Finished" else reader ()
+            with End_of_file -> Lwt.return "Didn't close the stream before exiting"
           in
           let rec writer = function
             (* Send all the data in the list to the server *)
@@ -62,7 +61,9 @@ let send_recv ?(timeout = 10.) ?(host = "127.0.0.1") ?(port = 5222) str_list =
 let start_unikernel () =
   print_endline "Starting unikernel";
   let command =
-    Lwt_process.shell "cd ../../../; mirage/xmpp -l \"*:debug\" > unikernel.log 2>&1"
+    Lwt_process.shell
+      "cd ../../../; mirage/xmpp --hostname=\"im.example.com\" -l \"*:debug\" > \
+       unikernel.log 2>&1"
   in
   let _process = Lwt_process.open_process_none command in
   Unix.sleepf 0.1
@@ -82,34 +83,13 @@ let test_unikernel f =
 
 let%expect_test "start stop" =
   test_unikernel (fun () -> ());
-  [%expect
-    {|
+  [%expect {|
     Starting unikernel
     Stopping unikernel
     Success |}]
 ;;
 
-let%expect_test "initial stanza in list" =
-  test_unikernel (fun () ->
-      send_recv
-        [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
-           version='1.0' xml:lang='en' xmlns='jabber:client' \
-           xmlns:stream='http://etherx.jabber.org/streams'>" ] );
-  [%expect
-    {|
-    Starting unikernel
-    Send:
-    <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    Receive:
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-    Receive:
-    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
-    Timeout
-    Stopping unikernel
-    Success |}]
-;;
-
-let%expect_test "close stream" =
+let%expect_test "open and close stream" =
   test_unikernel (fun () ->
       send_recv
         [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
@@ -122,11 +102,13 @@ let%expect_test "close stream" =
     Send:
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
     Receive:
-    <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
     Send:
     </stream:stream>
+    Receive:
+    Unexpected stream close during sasl negotiation
     Receive:
     Closing the connection
     Didn't close the stream before exiting
@@ -140,6 +122,11 @@ let%expect_test "open stream with iq bind" =
         [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' \
+           mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>"
+        ; "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
         ; "<iq id='yhc13a95' type='set'><bind \
            xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>"
         ; "</stream:stream>" ] );
@@ -149,7 +136,17 @@ let%expect_test "open stream with iq bind" =
       Send:
       <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       Receive:
-      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+      Receive:
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      Send:
+      <auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>
+      Receive:
+      <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+      Send:
+      <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       Receive:
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       Send:
@@ -159,8 +156,8 @@ let%expect_test "open stream with iq bind" =
       Send:
       </stream:stream>
       Receive:
-      Closing the connection
-      Didn't close the stream before exiting
+      </stream:stream>
+      Finished
       Stopping unikernel
       Success |}]
 ;;
@@ -169,6 +166,11 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
   test_unikernel (fun () ->
       send_recv
         [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' \
+           mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>"
+        ; "<stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'>"
         ; "<iq id='yhc13a95' type='set'><bind \
@@ -182,7 +184,17 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       Send:
       <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       Receive:
-      <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+      Receive:
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      Send:
+      <auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>
+      Receive:
+      <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+      Send:
+      <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+      Receive:
+      <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       Receive:
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       Send:
@@ -192,12 +204,12 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       Send:
       <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
       Receive:
-      <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
+      <iq id='redacted_for_testing' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
       Send:
       </stream:stream>
       Receive:
-      Closing the connection
-      Didn't close the stream before exiting
+      </stream:stream>
+      Finished
       Stopping unikernel
       Success |}]
 ;;
@@ -206,6 +218,11 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
   test_unikernel (fun () ->
       send_recv
         [ "<stream:stream from='juliet@im.example.com' to='im.example.com' \
+           version='1.0' xml:lang='en' xmlns='jabber:client' \
+           xmlns:stream='http://etherx.jabber.org/streams'>"
+        ; "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' \
+           mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>"
+        ; "<stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'>"
         ; "<iq id='yhc13a95' type='set'><bind \
@@ -222,7 +239,17 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Send:
     <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
     Receive:
-    <stream:stream from='im.example.com' id='redacted_for_testing' to='juliet@im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
+    Receive:
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    Send:
+    <auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AGp1bGlldABwYXNzd29yZA==</auth>
+    Receive:
+    <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
+    Send:
+    <stream:stream from='juliet@im.example.com' to='im.example.com' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+    Receive:
+    <stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
     Receive:
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
     Send:
@@ -232,16 +259,18 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Send:
     <iq from='juliet@example.com/balcony' id='ph1xaz53' type='set'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse'><group>Servants</group></item></query></iq>
     Receive:
-    <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'/>
+    <iq id='redacted_for_testing' type='result' to='juliet@im.example.com/balcony'/>
+    Receive:
+    <iq id='redacted_for_testing' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
     Send:
     <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
     Receive:
-    <iq id='redacted_for_testing' type='result' to='juliet@example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
+    <iq id='redacted_for_testing' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
     Send:
     </stream:stream>
     Receive:
-    Closing the connection
-    Didn't close the stream before exiting
+    </stream:stream>
+    Finished
     Stopping unikernel
     Success |}]
 ;;

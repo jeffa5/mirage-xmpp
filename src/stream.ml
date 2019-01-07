@@ -11,6 +11,15 @@ let to_string = function
   | Close -> "</stream:stream>"
 ;;
 
+let features_sasl_mechanisms =
+  Xml.create
+    (("stream", "features"), [])
+    ~children:
+      [ Xml.create
+          (("", "mechanisms"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"])
+          ~children:[Xml.create (("", "mechanism"), []) ~children:[Xml.Text "PLAIN"]] ]
+;;
+
 let features =
   Xml.create
     (("stream", "features"), [])
@@ -24,12 +33,17 @@ let create_header
     ?(xmlns = "jabber:client")
     ?(stream_ns = "http://etherx.jabber.org/streams")
     ?(attributes = [])
-    from
-    dest =
+    ?ato
+    ?from
+    () =
+  let attributes =
+    match ato with Some v -> ("", Xml.To v) :: attributes | None -> attributes
+  in
+  let attributes =
+    match from with Some v -> ("", Xml.From v) :: attributes | None -> attributes
+  in
   ( ("stream", "stream")
-  , [ "", Xml.From from
-    ; "", Xml.Id (Stanza.gen_id ())
-    ; "", Xml.To dest
+  , [ "", Xml.Id (Stanza.gen_id ())
     ; "", Xml.Version version
     ; "xml", Xml.Lang lang
     ; "", Xml.Xmlns xmlns

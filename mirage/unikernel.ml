@@ -21,12 +21,14 @@ module Main (S : Mirage_stack_lwt.V4) = struct
       | Ok `Eof | Error _ -> Lwt.return_unit
       | Ok (`Data b) ->
         let s = Cstruct.to_string b in
-        Logs.info (fun f -> f "Data read from connection:\n%s" s);
+        Logs.info (fun f -> f "Data read from connection: %s" s);
         String.iter (fun c -> pushf (Some c)) s;
         aux ()
     in
     aux ()
   ;;
+
+  let mvar = Lwt_mvar.create_empty ()
 
   let write flow out_stream =
     let rec aux () =
@@ -36,13 +38,14 @@ module Main (S : Mirage_stack_lwt.V4) = struct
         let%lwt () = write_string flow s in
         aux ()
       | None ->
+        let%lwt () = Lwt_mvar.put mvar true in
         Logs.info (fun f -> f "Out stream closed");
         Lwt.return_unit
     in
     aux ()
   ;;
 
-  let on_connect flow =
+  let on_connect hostname flow =
     let dst, dst_port = S.TCPV4.dst flow in
     Logs.info (fun f ->
         f "New tcp connection from IP %s on port %d" (Ipaddr.V4.to_string dst) dst_port
@@ -51,8 +54,9 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Lwt.async (fun () -> read flow pushf);
     let outstream, outfun = Lwt_stream.create () in
     Lwt.async (fun () -> write flow outstream);
-    let handler = Mirage_xmpp.Handler.create ~stream ~callback:outfun in
+    let handler = Mirage_xmpp.Handler.create ~stream ~callback:outfun ~hostname in
     let%lwt () = Mirage_xmpp.Handler.handle handler in
+    let%lwt _ = Lwt_mvar.take mvar in
     Logs.info (fun f -> f "Closing the connection");
     let%lwt () = write_string flow "Closing the connection" in
     S.TCPV4.close flow
@@ -61,8 +65,10 @@ module Main (S : Mirage_stack_lwt.V4) = struct
   let start s =
     Logs.info (fun f -> f "Started Unikernel");
     let port = Key_gen.port () in
+    let hostname = Key_gen.hostname () in
     Logs.info (fun f -> f "Port is: %d" port);
-    S.listen_tcpv4 s ~port on_connect;
+    Logs.info (fun f -> f "Hostname is: %s" hostname);
+    S.listen_tcpv4 s ~port (on_connect hostname);
     S.listen_tcpv4 s ~port:8081 (fun _flow ->
         Logs.info (fun f -> f "Received exit signal");
         exit 0 );

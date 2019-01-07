@@ -7,7 +7,7 @@ type t
 val create : unit -> t
 
 (** [handle t e] updates the state machine [t] with the event [e] to give the resulting state machine in a new state and the list of actions to be performed *)
-val handle : t -> Events.t -> t * Actions.t list
+val handle : t -> Events.t -> t * Actions.t list * Actions.handler_actions list
 
 val to_string : t -> string
 val closed : t -> bool

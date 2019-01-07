@@ -1,46 +1,50 @@
+open Astring
+
 type t =
-  | STREAM_HEADER of {from : Jid.t; ato : Jid.t; version : string}
+  | STREAM_HEADER of {ato : Jid.t; version : string}
+  | SASL_AUTH of {user : string; password : string}
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
+  | SESSION_START of string
   | STREAM_CLOSE
   | ERROR of string
-  | ROSTER_GET of {from : Jid.t; id : string}
+  | ROSTER_GET of string
   | ROSTER_SET of
       { id : string
-      ; from : Jid.t
       ; target : Jid.t
       ; handle : string
-      ; subscription : string
+      ; subscription : Rosters.subscription
       ; groups : string list }
+  | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
+  | PRESENCE_UPDATE of Rosters.availability
 
 let to_string = function
-  | STREAM_HEADER {from; ato; version} ->
-    "STREAM_HEADER: from="
-    ^ Jid.to_string from
-    ^ " to="
-    ^ Jid.to_string ato
-    ^ " version="
-    ^ version
+  | STREAM_HEADER {ato; version} ->
+    "STREAM_HEADER: to=" ^ Jid.to_string ato ^ " version=" ^ version
+  | SASL_AUTH {user; password} -> "SASL_AUTH: user=" ^ user ^ " password=" ^ password
   | RESOURCE_BIND_SERVER_GEN _id -> "RESOURCE_BIND_SERVER_GEN: id"
   | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
     "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " resource=" ^ resource
+  | SESSION_START id -> "SESSION_START: id=" ^ id
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
-  | ROSTER_GET {from; id} -> "ROSTER_GET: id=" ^ id ^ " from=" ^ Jid.to_string from
-  | ROSTER_SET {id; from; target; handle; subscription; groups} ->
+  | ROSTER_GET id -> "ROSTER_GET: id=" ^ id
+  | ROSTER_SET {id; target; handle; subscription; groups} ->
     "ROSTER_SET: id="
     ^ id
-    ^ " from="
-    ^ Jid.to_string from
     ^ " target="
     ^ Jid.to_string target
     ^ " handle="
     ^ handle
     ^ " subscribed="
-    ^ subscription
+    ^ Rosters.subscription_to_string subscription
     ^ " groups=["
-    ^ String.concat " " groups
+    ^ String.concat ~sep:" " groups
     ^ "]"
+  | SUBSCRIPTION_REQUEST {id; ato} ->
+    "SUBSCRIPTION_REQUEST: id=" ^ id ^ " to=" ^ Jid.to_string ato
+  | PRESENCE_UPDATE availability ->
+    "PRESENCE_UPDATE: availability=" ^ Rosters.availability_to_string availability
 ;;
 
 let not_implemented = ERROR "not implemented"
@@ -48,7 +52,7 @@ let not_implemented = ERROR "not implemented"
 let lift_iq = function
   | Xml.Element (((_prefix, _name), attributes), children) ->
     (match Stanza.get_type attributes with
-    | "set" ->
+    | Some "set" ->
       (match children with
       | [Xml.Element (((_p, "bind"), _attrs), [])] ->
         (* resource bind with server-generated resource identifier (7.6) *)
@@ -73,18 +77,29 @@ let lift_iq = function
         let handle = Stanza.get_name attrs in
         ROSTER_SET
           { id = Stanza.get_id attributes
-          ; from = Stanza.get_from attributes
           ; target = jid
           ; handle
-          ; subscription = "none"
+          ; subscription = Rosters.None
           ; groups }
+      | [Xml.Element (((_, "session"), _), [])] ->
+        SESSION_START (Stanza.get_id attributes)
       | _ -> not_implemented)
-    | "get" ->
+    | Some "get" ->
       (match children with
       | [Xml.Element (((_, "query"), _), [])] ->
         (* roster get query *)
-        ROSTER_GET {from = Stanza.get_from attributes; id = Stanza.get_id attributes}
+        ROSTER_GET (Stanza.get_id attributes)
       | _ -> not_implemented)
+    | _ -> not_implemented)
+  | Xml.Text _t -> not_implemented
+;;
+
+let lift_presence = function
+  | Xml.Element (((_prefix, _name), attributes), _children) ->
+    (match Stanza.get_type attributes with
+    | Some "subscribe" ->
+      SUBSCRIPTION_REQUEST {id = Stanza.get_id attributes; ato = Stanza.get_to attributes}
+    | None -> PRESENCE_UPDATE Rosters.Online
     | _ -> not_implemented)
   | Xml.Text _t -> not_implemented
 ;;
@@ -95,18 +110,35 @@ let lift parse_result =
   | Stanza stanza ->
     (match stanza with
     | Stanza.Iq element -> lift_iq element
-    | Stanza.Presence (Element (((_prefix, _name), _attributes), _children) as _xml) ->
-      not_implemented
+    | Stanza.Presence element -> lift_presence element
     | Stanza.Message (Element (((_prefix, _name), _attributes), _children) as _xml) ->
       not_implemented
     | _ -> ERROR "Not expecing text elements")
+  | Sasl_auth xml ->
+    (match xml with
+    | Element ((_name, attributes), [Text b64_string]) ->
+      let rec get_mechanism = function
+        | [] -> raise Not_found
+        | (_, Xml.Mechanism mechanism) :: _ -> mechanism
+        | _ :: attrs -> get_mechanism attrs
+      in
+      if get_mechanism attributes = "PLAIN"
+      then
+        let decoded_string = B64.decode b64_string in
+        match String.cut ~sep:"\000" (String.trim decoded_string) with
+        | Some ("", userpass) ->
+          (match String.cut ~sep:"\000" userpass with
+          | Some (user, pass) -> SASL_AUTH {user; password = pass}
+          | None -> ERROR "SASL: couldn't find second 0 byte")
+        | _ -> ERROR "SASL: couldn't find first 0 byte"
+      else assert false
+    | _ -> assert false)
   | Stream_Element stream_element ->
     (match stream_element with
     | Header (_name, attributes) ->
-      let from = Stanza.get_from attributes in
       let ato = Stanza.get_to attributes in
       let version = Stanza.get_version attributes in
-      STREAM_HEADER {from; ato; version}
+      STREAM_HEADER {ato; version}
     | Features -> not_implemented
     | Error -> not_implemented
     | Close -> STREAM_CLOSE)
@@ -132,7 +164,7 @@ let%expect_test "iq get" =
                , [Xml.Element ((("", "query"), []), [])] ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_GET: id=h83vxa4c from=juliet@capulet.com/balcony |}]
+  [%expect {| ROSTER_GET: id=h83vxa4c |}]
 ;;
 
 let%expect_test "iq set" =
@@ -162,7 +194,7 @@ let%expect_test "roster get" =
                ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_GET: id=bv1bs71f from=juliet@example.com/balony |}]
+  [%expect {| ROSTER_GET: id=bv1bs71f |}]
 ;;
 
 let%expect_test "roster set" =
@@ -185,5 +217,5 @@ let%expect_test "roster set" =
   in
   print_endline (to_string event);
   [%expect
-    {| ROSTER_SET: id=rs1 from=juliet@example.com/balony target=nurse@example.com handle=Nurse subscribed=none groups=[] |}]
+    {| ROSTER_SET: id=rs1 target=nurse@example.com handle=Nurse subscribed=none groups=[] |}]
 ;;

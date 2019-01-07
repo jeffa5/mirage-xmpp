@@ -5,6 +5,7 @@ type t =
   | Close
 
 val to_string : t -> string
+val features_sasl_mechanisms : Xml.t
 val features : Xml.t
 
 val create_header :
@@ -13,6 +14,7 @@ val create_header :
   -> ?xmlns:string
   -> ?stream_ns:string
   -> ?attributes:Xml.attribute list
-  -> Jid.t
-  -> Jid.t
+  -> ?ato:Jid.t
+  -> ?from:Jid.t
+  -> unit
   -> Xml.tag

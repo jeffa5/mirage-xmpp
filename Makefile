@@ -39,7 +39,7 @@ integration: mirage
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
-	mirage/xmpp -l "*:debug" > unikernel.log 2>&1
+	mirage/xmpp --hostname="mirage-xmpp.dev" -l "*:debug" 2>&1 | tee unikernel.log
 
 .PHONY: demo
 demo:
@@ -94,7 +94,7 @@ docker-build:
 docker-ci: docker-build
 	docker container prune -f
 	@echo -en "travis_fold:start:docker-run\r"
-	docker run --privileged --name mirage-xmpp-ci jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
+	docker run --name mirage-xmpp-ci jeffas/mirage-xmpp-ci:latest docker/mirage-xmpp-ci/entrypoint.sh
 	@echo -en "travis_fold:end:docker-run\r"
 	@echo -en "travis_fold:start:docker-copy\r"
 	docker cp mirage-xmpp-ci:/home/opam/app/pages/docs pages

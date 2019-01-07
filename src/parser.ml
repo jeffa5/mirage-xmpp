@@ -1,9 +1,11 @@
 type t =
-  { stream : (Markup.signal, Markup.async) Markup.stream
+  { raw_stream : char Lwt_stream.t
+  ; stream : (Markup.signal, Markup.async) Markup.stream
   ; mutable depth : int }
 
 type parse_result =
   | Stanza of Stanza.t
+  | Sasl_auth of Xml.t
   | Stream_Element of Stream.t
   | Error of string
 
@@ -17,9 +19,15 @@ let make_parser stream =
     stream
 ;;
 
-let create stream =
-  let stream = Markup_lwt.lwt_stream stream |> make_parser |> Markup.signals in
-  {stream; depth = 0}
+let create raw_stream =
+  let stream = Markup_lwt.lwt_stream raw_stream |> make_parser |> Markup.signals in
+  {raw_stream; stream; depth = 0}
+;;
+
+let reset parser =
+  { raw_stream = parser.raw_stream
+  ; stream = Markup_lwt.lwt_stream parser.raw_stream |> make_parser |> Markup.signals
+  ; depth = 0 }
 ;;
 
 let convert_attribute ((namespace, name), value) =
@@ -37,7 +45,9 @@ let convert_attribute ((namespace, name), value) =
     | "lang" -> Lang value
     | "stream" -> Stream value
     | "name" -> Name value
-    | _ -> assert false )
+    | "subscription" -> Subscription (Rosters.subscription_of_string value)
+    | "mechanism" -> Mechanism value
+    | _ -> Other (name, value) )
 ;;
 
 let convert_attributes attributes =
@@ -78,8 +88,15 @@ let rec parse parser =
       (match parser.depth with
       | 0 ->
         (* start of stream *)
-        parser.depth <- parser.depth + 1;
-        Lwt.return (Stream_Element (Stream.Header tag))
+        (* check it actually is a stream tag *)
+        if name = "stream"
+        then (
+          parser.depth <- 1;
+          Lwt.return (Stream_Element (Stream.Header tag)) )
+        else
+          Lwt.return
+            (Error
+               ("Invalid initial stanza with name " ^ name ^ ", expected stream header."))
       | 1 ->
         (* parse stanza / error / feature *)
         (match name with
@@ -97,13 +114,20 @@ let rec parse parser =
           | Ok children ->
             Lwt.return (Stanza (Stanza.Presence (Xml.Element (tag, children))))
           | Error e -> Lwt.return (Error e))
+        | "auth" ->
+          (match%lwt parse_children parser with
+          | Ok children -> Lwt.return (Sasl_auth (Xml.Element (tag, children)))
+          | Error e -> Lwt.return (Error e))
+        | "stream" ->
+          parser.depth <- 1;
+          Lwt.return (Stream_Element (Stream.Header tag))
         | s -> Lwt.return (Error ("Unexpected tag with name: " ^ s)))
       | _ -> assert false)
     | `End_element ->
       (match parser.depth with
       | 1 -> (* End of the stream *)
              Lwt.return (Stream_Element Stream.Close)
-      | _ -> assert false)
+      | _ -> Lwt.return (Error "Unexpected end element in parser"))
     | `Text ss ->
       (match String.trim (String.concat "" ss) with
       | "" -> parse parser
@@ -123,6 +147,9 @@ let parse_string s =
     match%lwt parse parser with
     | Stanza s ->
       print_endline (Stanza.to_string s);
+      Lwt.return_unit
+    | Sasl_auth xml ->
+      print_endline ("Sasl_auth\n" ^ Xml.to_string xml);
       Lwt.return_unit
     | Stream_Element stream_element ->
       print_endline ("Stream_Element\n" ^ Stream.to_string stream_element);
