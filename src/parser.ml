@@ -70,10 +70,13 @@ let rec parse_children parser =
       | Error e -> Lwt.return_error e)
     | `End_element -> Lwt.return_ok []
     | `Text ss ->
-      let text = Xml.Text (String.concat "\n" ss) in
-      (match%lwt parse_children parser with
-      | Ok element_list -> Lwt.return_ok (text :: element_list)
-      | Error e -> Lwt.return_error e)
+      (match String.trim (String.concat "\n" ss) with
+      | "" -> parse_children parser
+      | _ ->
+        let text = Xml.Text (String.concat "\n" ss) in
+        (match%lwt parse_children parser with
+        | Ok element_list -> Lwt.return_ok (text :: element_list)
+        | Error e -> Lwt.return_error e))
     | _ -> assert false)
   | None -> Lwt.return_error "End of parsing stream"
 ;;
@@ -254,8 +257,7 @@ let%expect_test "whitespace between elements" =
       <stream> |}];
   pf ();
   [%expect {|
-    <iq>
-    </iq> |}]
+    <iq/> |}]
 ;;
 
 let%expect_test "non-whitespace between elements" =
