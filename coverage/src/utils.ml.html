@@ -47,20 +47,20 @@
 </pre>
         <pre id="code">
 let mask_id s =
-  <span data-count="31">m</span>atch Astring.String.find_sub ~sub:"id='" s with
-  | <span data-count="12">S</span>ome i -&gt;
+  <span data-count="37">m</span>atch Astring.String.find_sub ~sub:"id='" s with
+  | <span data-count="15">S</span>ome i -&gt;
     (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-    | <span data-count="12">S</span>ome j -&gt;
+    | <span data-count="15">S</span>ome j -&gt;
       Astring.String.with_index_range ~first:0 ~last:(i + 3) s
       ^ "&lt;redacted_for_testing&gt;"
       ^ Astring.String.with_index_range ~first:j s
     | None -&gt; assert false)
-  | <span data-count="19">N</span>one -&gt; s
+  | <span data-count="22">N</span>one -&gt; s
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-23 11:49:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-07 16:23:02 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

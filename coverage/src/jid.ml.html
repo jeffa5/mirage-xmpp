@@ -11,9 +11,10 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>83.33%</h2>
+      <h2>80.95%</h2>
     </div>
     <div id="navbar">
+      <span class="unvisited" style="top:22.08%"></span>
       <span class="unvisited" style="top:23.38%"></span>
       <span class="unvisited" style="top:45.45%"></span>
       <span class="unvisited" style="top:46.75%"></span>
@@ -41,7 +42,7 @@
 <a id="L14"></a><span > </span>
 <a id="L15"></a><span class="visited"> </span>
 <a id="L16"></a><span class="visited"> </span>
-<a id="L17"></a><span class="visited"> </span>
+<a id="L17"></a><span class="unvisited"> </span>
 <a id="L18"></a><span class="unvisited"> </span>
 <a id="L19"></a><span > </span>
 <a id="L20"></a><span > </span>
@@ -201,17 +202,17 @@ let empty = <span data-count="2">E</span>mpty
 
 let to_bare = <span data-count="2">f</span>unction
   | <span data-count="1">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
-  | <span data-count="1">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
+  | <span data-count="0">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
   | <span data-count="0">_</span> -&gt; raise Not_found
 ;;
 
 let of_string str =
-  <span data-count="73">m</span>atch String.cut ~sep:"@" str with
-  | <span data-count="54">S</span>ome (user, domres) -&gt;
+  <span data-count="71">m</span>atch String.cut ~sep:"@" str with
+  | <span data-count="37">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
     | <span data-count="11">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
-    | <span data-count="43">N</span>one -&gt; Bare_JID (user, domres))
-  | <span data-count="19">N</span>one -&gt; Domain str
+    | <span data-count="26">N</span>one -&gt; Bare_JID (user, domres))
+  | <span data-count="34">N</span>one -&gt; Domain str
 ;;
 
 let compare jid1 jid2 =
@@ -235,7 +236,7 @@ let compare jid1 jid2 =
   <span data-count="23">i</span>f d = 0 then <span data-count="22">i</span>f u = 0 then <span data-count="18">r</span> else <span data-count="4">u</span> else <span data-count="1">d</span>
 ;;
 
-let create_resource () = <span data-count="0">"</span>not-implemented"
+let create_resource () = <span data-count="0">U</span>uidm.(to_string (create `V4))
 
 let set_resource new_resource = <span data-count="3">f</span>unction
   | <span data-count="0">F</span>ull_JID ((user, domain), _resource) -&gt; Full_JID ((user, domain), new_resource)
@@ -245,10 +246,10 @@ let set_resource new_resource = <span data-count="3">f</span>unction
 ;;
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="20">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
-  | <span data-count="53">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
-  | <span data-count="19">D</span>omain domain -&gt; domain
-  | <span data-count="1">E</span>mpty -&gt; "empty"
+  | <span data-count="17">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
+  | <span data-count="23">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
+  | <span data-count="18">D</span>omain domain -&gt; domain
+  | <span data-count="3">E</span>mpty -&gt; "empty"
 ;;
 
 let%expect_test "make jid" =
@@ -265,7 +266,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-23 11:49:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-07 16:23:02 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

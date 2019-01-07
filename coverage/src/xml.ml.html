@@ -11,10 +11,11 @@
           <span class="dirname">src/</span>xml.ml
         </a>
       </h1>
-      <h2>97.37%</h2>
+      <h2>95.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:52.17%"></span>
+      <span class="unvisited" style="top:52.05%"></span>
+      <span class="unvisited" style="top:61.64%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -42,52 +43,56 @@
 <a id="L21"></a><span > </span>
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
-<a id="L24"></a><span class="visited"> </span>
+<a id="L24"></a><span > </span>
 <a id="L25"></a><span > </span>
-<a id="L26"></a><span > </span>
-<a id="L27"></a><span class="visited"> </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
-<a id="L29"></a><span > </span>
-<a id="L30"></a><span class="visited"> </span>
-<a id="L31"></a><span class="visited"> </span>
+<a id="L29"></a><span class="visited"> </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
 <a id="L32"></a><span class="visited"> </span>
 <a id="L33"></a><span class="visited"> </span>
 <a id="L34"></a><span class="visited"> </span>
 <a id="L35"></a><span class="visited"> </span>
-<a id="L36"></a><span class="unvisited"> </span>
+<a id="L36"></a><span class="visited"> </span>
 <a id="L37"></a><span class="visited"> </span>
-<a id="L38"></a><span class="visited"> </span>
+<a id="L38"></a><span class="unvisited"> </span>
 <a id="L39"></a><span class="visited"> </span>
 <a id="L40"></a><span class="visited"> </span>
 <a id="L41"></a><span class="visited"> </span>
-<a id="L42"></a><span > </span>
-<a id="L43"></a><span > </span>
-<a id="L44"></a><span > </span>
-<a id="L45"></a><span class="visited"> </span>
-<a id="L46"></a><span class="visited"> </span>
-<a id="L47"></a><span class="visited"> </span>
+<a id="L42"></a><span class="visited"> </span>
+<a id="L43"></a><span class="visited"> </span>
+<a id="L44"></a><span class="visited"> </span>
+<a id="L45"></a><span class="unvisited"> </span>
+<a id="L46"></a><span > </span>
+<a id="L47"></a><span > </span>
 <a id="L48"></a><span > </span>
 <a id="L49"></a><span class="visited"> </span>
 <a id="L50"></a><span class="visited"> </span>
-<a id="L51"></a><span > </span>
-<a id="L52"></a><span class="visited"> </span>
+<a id="L51"></a><span class="visited"> </span>
+<a id="L52"></a><span > </span>
 <a id="L53"></a><span class="visited"> </span>
-<a id="L54"></a><span > </span>
+<a id="L54"></a><span class="visited"> </span>
 <a id="L55"></a><span > </span>
 <a id="L56"></a><span class="visited"> </span>
 <a id="L57"></a><span class="visited"> </span>
-<a id="L58"></a><span class="visited"> </span>
+<a id="L58"></a><span > </span>
 <a id="L59"></a><span > </span>
 <a id="L60"></a><span class="visited"> </span>
 <a id="L61"></a><span class="visited"> </span>
-<a id="L62"></a><span > </span>
-<a id="L63"></a><span class="visited"> </span>
-<a id="L64"></a><span > </span>
-<a id="L65"></a><span > </span>
+<a id="L62"></a><span class="visited"> </span>
+<a id="L63"></a><span > </span>
+<a id="L64"></a><span class="visited"> </span>
+<a id="L65"></a><span class="visited"> </span>
 <a id="L66"></a><span > </span>
-<a id="L67"></a><span > </span>
+<a id="L67"></a><span class="visited"> </span>
 <a id="L68"></a><span > </span>
-<a id="L69"></a><span class="visited"> </span>
+<a id="L69"></a><span > </span>
+<a id="L70"></a><span > </span>
+<a id="L71"></a><span > </span>
+<a id="L72"></a><span > </span>
+<a id="L73"></a><span class="visited"> </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -161,6 +166,10 @@
 <a href="#L67">67</a>
 <a href="#L68">68</a>
 <a href="#L69">69</a>
+<a href="#L70">70</a>
+<a href="#L71">71</a>
+<a href="#L72">72</a>
+<a href="#L73">73</a>
 </pre>
         <pre id="code">
 type name = string * string
@@ -177,7 +186,9 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
-  | Subscription of string
+  | Subscription of Rosters.subscription
+  | Mechanism of string
+  | Other of string * string
 
 type attribute = string * attribute_value
 type tag = name * attribute list
@@ -186,56 +197,58 @@ type t =
   | Text of string
   | Element of tag * t list
 
-let name_to_string (prefix, name) = <span data-count="118">i</span>f prefix &lt;&gt; "" then <span data-count="32">p</span>refix ^ ":" ^ name else <span data-count="86">n</span>ame
+let name_to_string (prefix, name) = <span data-count="157">i</span>f prefix &lt;&gt; "" then <span data-count="44">p</span>refix ^ ":" ^ name else <span data-count="113">n</span>ame
 
 let attribute_to_string (namespace, nameval) =
-  <span data-count="143">(</span>if namespace &lt;&gt; "" then <span data-count="27">n</span>amespace ^ ":" else <span data-count="116">"</span>")
+  <span data-count="181">(</span>if namespace &lt;&gt; "" then <span data-count="39">n</span>amespace ^ ":" else <span data-count="142">"</span>")
   ^
   match nameval with
-  | <span data-count="15">F</span>rom jid -&gt; "from='" ^ Jid.to_string jid ^ "'"
-  | <span data-count="16">T</span>o jid -&gt; "to='" ^ Jid.to_string jid ^ "'"
-  | <span data-count="24">I</span>d s -&gt; "id='" ^ s ^ "'"
+  | <span data-count="13">F</span>rom jid -&gt; "from='" ^ Jid.to_string jid ^ "'"
+  | <span data-count="14">T</span>o jid -&gt; "to='" ^ Jid.to_string jid ^ "'"
+  | <span data-count="30">I</span>d s -&gt; "id='" ^ s ^ "'"
   | <span data-count="3">J</span>id jid -&gt; "jid='" ^ Jid.to_string jid ^ "'"
-  | <span data-count="30">X</span>mlns s -&gt; "xmlns='" ^ s ^ "'"
+  | <span data-count="45">X</span>mlns s -&gt; "xmlns='" ^ s ^ "'"
   | <span data-count="14">T</span>ype s -&gt; "type='" ^ s ^ "'"
   | <span data-count="0">V</span>er s -&gt; "ver='" ^ s ^ "'"
-  | <span data-count="12">V</span>ersion s -&gt; "version='" ^ s ^ "'"
-  | <span data-count="12">L</span>ang s -&gt; "lang='" ^ s ^ "'"
-  | <span data-count="12">S</span>tream s -&gt; "stream='" ^ s ^ "'"
+  | <span data-count="18">V</span>ersion s -&gt; "version='" ^ s ^ "'"
+  | <span data-count="18">L</span>ang s -&gt; "lang='" ^ s ^ "'"
+  | <span data-count="18">S</span>tream s -&gt; "stream='" ^ s ^ "'"
   | <span data-count="3">N</span>ame s -&gt; "name='" ^ s ^ "'"
-  | <span data-count="2">S</span>ubscription s -&gt; "subscription='" ^ s ^ "'"
+  | <span data-count="2">S</span>ubscription s -&gt; "subscription='" ^ Rosters.subscription_to_string s ^ "'"
+  | <span data-count="3">M</span>echanism s -&gt; "mechanism='" ^ s ^ "'"
+  | <span data-count="0">O</span>ther (name, value) -&gt; name ^ "='" ^ value ^ "'"
 ;;
 
 let tag_to_string ~empty (name, attributes) =
-  <span data-count="72">l</span>et sep = <span data-count="72">"</span> " in
-  <span data-count="72">l</span>et attr_string =
-    <span data-count="72">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="143">a</span>ttribute_to_string a) attributes)
+  <span data-count="95">l</span>et sep = <span data-count="95">"</span> " in
+  <span data-count="95">l</span>et attr_string =
+    <span data-count="95">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="181">a</span>ttribute_to_string a) attributes)
   in
-  <span data-count="72">l</span>et name_string = <span data-count="72">n</span>ame_to_string name in
-  <span data-count="72">"</span>&lt;"
+  <span data-count="95">l</span>et name_string = <span data-count="95">n</span>ame_to_string name in
+  <span data-count="95">"</span>&lt;"
   ^ name_string
-  ^ (if attr_string &lt;&gt; "" then <span data-count="47">s</span>ep ^ attr_string else <span data-count="25">"</span>")
-  ^ if empty then <span data-count="9">"</span>/&gt;" else <span data-count="63">"</span>&gt;"
+  ^ (if attr_string &lt;&gt; "" then <span data-count="62">s</span>ep ^ attr_string else <span data-count="33">"</span>")
+  ^ if empty then <span data-count="10">"</span>/&gt;" else <span data-count="85">"</span>&gt;"
 ;;
 
 let rec to_string = <span data-count="2">f</span>unction
-  | <span data-count="13">T</span>ext s -&gt; s
-  | <span data-count="55">E</span>lement (((name, _attributes) as tag), children) -&gt;
+  | <span data-count="21">T</span>ext s -&gt; s
+  | <span data-count="72">E</span>lement (((name, _attributes) as tag), children) -&gt;
     (match children with
-    | <span data-count="9">[</span>] -&gt; tag_to_string ~empty:true tag
-    | <span data-count="46">c</span>s -&gt;
+    | <span data-count="10">[</span>] -&gt; tag_to_string ~empty:true tag
+    | <span data-count="62">c</span>s -&gt;
       tag_to_string ~empty:false tag
-      ^ String.concat "" (List.map (fun c -&gt; <span data-count="46">t</span>o_string c) cs)
+      ^ String.concat "" (List.map (fun c -&gt; <span data-count="62">t</span>o_string c) cs)
       ^ "&lt;/"
       ^ name_to_string name
       ^ "&gt;")
 ;;
 
-let create ?(children = <span data-count="2">[</span>]) tag = <span data-count="33">E</span>lement (tag, children)
+let create ?(children = <span data-count="5">[</span>]) tag = <span data-count="45">E</span>lement (tag, children)
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2018-12-23 11:49:51 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-07 16:23:02 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
