@@ -648,7 +648,7 @@ let lift parse_result =
       then
         <span data-count="3">l</span>et decoded_string = <span data-count="3">B</span>64.decode b64_string in
         <span data-count="3">m</span>atch String.cut ~sep:"\000" (String.trim decoded_string) with
-        | <span data-count="3">S</span>ome ("", userpass) -&gt;
+        | <span data-count="3">S</span>ome (_userdom, userpass) -&gt;
           (match String.cut ~sep:"\000" userpass with
           | <span data-count="3">S</span>ome (user, pass) -&gt; SASL_AUTH {user; password = pass}
           | <span data-count="0">N</span>one -&gt; ERROR "SASL: couldn't find second 0 byte")
@@ -744,7 +744,7 @@ let%expect_test "roster set" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-08 11:14:53 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-08 12:21:24 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
