@@ -36,11 +36,11 @@ let handle_idle _t = function
         ( {state = SASL_NEGOTIATION}
         , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES_SASL]
         , [] )
-      else assert false
+      else closed_with_error "Must use version >= 1.0"
     else closed_with_error "Received empty to attribute"
-  | SASL_AUTH _ -> assert false
-  | RESOURCE_BIND_SERVER_GEN _ -> assert false
-  | RESOURCE_BIND_CLIENT_GEN _ -> assert false
+  | SASL_AUTH _ -> closed_with_error "No stream"
+  | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "No stream"
+  | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "No stream"
   | SESSION_START _id -> closed_with_error "No stream"
   | STREAM_CLOSE -> closed_with_error "No stream"
   | ERROR e -> closed_with_error e
@@ -58,8 +58,8 @@ let handle_sasl_negotiation _t = function
     ( {state = NEGOTIATING}
     , [Actions.SET_JID user; Actions.SEND_SASL_SUCCESS]
     , [Actions.RESET_PARSER] )
-  | RESOURCE_BIND_SERVER_GEN _ -> assert false
-  | RESOURCE_BIND_CLIENT_GEN _ -> assert false
+  | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Not finished SASL"
+  | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Not finished SASL"
   | SESSION_START _id ->
     closed_with_error "Unexpected session start stanza during sasl negotiation"
   | STREAM_CLOSE -> closed_with_error "Unexpected stream close during sasl negotiation"
@@ -83,7 +83,7 @@ let handle_negotiating _t = function
         ( {state = NEGOTIATING}
         , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES]
         , [] )
-      else assert false
+      else closed_with_error "Must use version >= 1.0"
     else closed_with_error "Received empty to attribute"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN id ->
@@ -117,8 +117,8 @@ let handle_connected _t = function
     , [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR "Not expecting stream header"]
     , [] )
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
-  | RESOURCE_BIND_SERVER_GEN _ -> assert false
-  | RESOURCE_BIND_CLIENT_GEN _ -> assert false
+  | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Already connected"
+  | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Already connected"
   | SESSION_START id -> {state = CONNECTED}, [Actions.SESSION_START_SUCCESS id], []
   | STREAM_CLOSE ->
     {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE], []
@@ -140,8 +140,8 @@ let handle_connected _t = function
 let handle_closed _t = function
   | STREAM_HEADER _s -> closed_with_error "Not expecting stream header"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
-  | RESOURCE_BIND_SERVER_GEN _ -> assert false
-  | RESOURCE_BIND_CLIENT_GEN _ -> assert false
+  | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Connection closed"
+  | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Connection closed"
   | SESSION_START _id -> closed_with_error "Not expecting session start"
   | STREAM_CLOSE ->
     (* shouldn't receive another close after being closed *)
