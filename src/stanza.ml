@@ -135,8 +135,8 @@ let rec get_jid = function
 ;;
 
 let rec get_name = function
-  | [] -> raise Not_found
-  | (_, Xml.Name name) :: _ -> name
+  | [] -> None
+  | (_, Xml.Name name) :: _ -> Some name
   | _ :: attrs -> get_name attrs
 ;;
 

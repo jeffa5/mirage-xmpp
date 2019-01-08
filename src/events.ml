@@ -82,7 +82,9 @@ let lift_iq = function
             group_elements
         in
         let jid = Stanza.get_jid attrs in
-        let handle = Stanza.get_name attrs in
+        let handle = (match Stanza.get_name attrs with
+            | Some name -> name
+            | None -> "") in
         ROSTER_SET
           { id = Stanza.get_id attributes
           ; target = jid

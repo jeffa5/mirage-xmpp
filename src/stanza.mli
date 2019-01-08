@@ -55,4 +55,4 @@ val get_to : Xml.attribute list -> Jid.t
 val get_type : Xml.attribute list -> string option
 val get_version : Xml.attribute list -> string
 val get_jid : Xml.attribute list -> Jid.t
-val get_name : Xml.attribute list -> string
+val get_name : Xml.attribute list -> string option
