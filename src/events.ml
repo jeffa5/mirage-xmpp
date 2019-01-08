@@ -134,7 +134,7 @@ let lift parse_result =
       then
         let decoded_string = B64.decode b64_string in
         match String.cut ~sep:"\000" (String.trim decoded_string) with
-        | Some ("", userpass) ->
+        | Some (_userdom, userpass) ->
           (match String.cut ~sep:"\000" userpass with
           | Some (user, pass) -> SASL_AUTH {user; password = pass}
           | None -> ERROR "SASL: couldn't find second 0 byte")
