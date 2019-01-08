@@ -61,7 +61,7 @@ let lift_iq = function
         (match child with
         | Xml.Element (((_, "resource"), []), [Xml.Text resource]) ->
           RESOURCE_BIND_CLIENT_GEN {id = Stanza.get_id attributes; resource}
-        | _ -> not_implemented)
+        | _ -> ERROR "Unexpected child of resource bind")
       | [ Xml.Element
             (((_, "query"), _), [Xml.Element (((_, "item"), attrs), group_elements)]) ]
       ->
@@ -83,15 +83,23 @@ let lift_iq = function
           ; groups }
       | [Xml.Element (((_, "session"), _), [])] ->
         SESSION_START (Stanza.get_id attributes)
-      | _ -> not_implemented)
+      | _ ->
+        ERROR
+          ( "No children matched for iq of type set\n"
+          ^ String.concat ~sep:"\nnext xml: "
+          @@ List.map
+               (function
+                 | Xml.Element _ as element -> "Element: " ^ Xml.to_string element
+                 | Xml.Text _ as text -> "Text: " ^ Xml.to_string text)
+               children ))
     | Some "get" ->
       (match children with
-      | [Xml.Element (((_, "query"), _), [])] ->
+      | [Xml.Element (((_, "query"), _), _)] ->
         (* roster get query *)
         ROSTER_GET (Stanza.get_id attributes)
-      | _ -> not_implemented)
-    | _ -> not_implemented)
-  | Xml.Text _t -> not_implemented
+      | _ -> ERROR "Child not implemented for get iq request")
+    | _ -> ERROR "Type of iq expected to be 'set' or 'get'")
+  | Xml.Text _t -> ERROR "Expected an iq stanza, not text"
 ;;
 
 let lift_presence = function
@@ -132,7 +140,7 @@ let lift parse_result =
           | None -> ERROR "SASL: couldn't find second 0 byte")
         | _ -> ERROR "SASL: couldn't find first 0 byte"
       else assert false
-    | _ -> assert false)
+    | _ -> ERROR "Unsuccessful SASL negotiation")
   | Stream_Element stream_element ->
     (match stream_element with
     | Header (_name, attributes) ->
