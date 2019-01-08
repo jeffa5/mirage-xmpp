@@ -70,8 +70,8 @@ let handle_sasl_negotiation _t = function
     closed_with_error "Unexpected subscription request during sasl negotiation"
   | PRESENCE_UPDATE _ ->
     closed_with_error "Unexpected presence update during sasl negotiation"
-  | IQ_ERROR {error_type; error_tag; ato; id} ->
-    {state = SASL_NEGOTIATION}, [Actions.IQ_ERROR {error_type; error_tag; ato; id}], []
+  | IQ_ERROR {error_type; error_tag; id} ->
+    {state = SASL_NEGOTIATION}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
 ;;
 
 let handle_negotiating _t = function
@@ -107,8 +107,8 @@ let handle_negotiating _t = function
     {state = CONNECTED}, [Actions.SUBSCRIPTION_REQUEST {id; ato}], []
   | PRESENCE_UPDATE available ->
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
-  | IQ_ERROR {error_type; error_tag; ato; id} ->
-    {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; ato; id}], []
+  | IQ_ERROR {error_type; error_tag; id} ->
+    {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
 ;;
 
 let handle_connected _t = function
@@ -133,8 +133,8 @@ let handle_connected _t = function
     {state = CONNECTED}, [Actions.SUBSCRIPTION_REQUEST {id; ato}], []
   | PRESENCE_UPDATE available ->
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
-  | IQ_ERROR {error_type; error_tag; ato; id} ->
-    {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; ato; id}], []
+  | IQ_ERROR {error_type; error_tag; id} ->
+    {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
 ;;
 
 let handle_closed _t = function

@@ -17,11 +17,7 @@ type t =
       ; groups : string list }
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | PRESENCE_UPDATE of Rosters.availability
-  | IQ_ERROR of
-      { error_type : Actions.error_type
-      ; error_tag : string
-      ; ato : Jid.t
-      ; id : string }
+  | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
 
 let to_string = function
   | STREAM_HEADER {ato; version} ->
@@ -50,13 +46,11 @@ let to_string = function
     "SUBSCRIPTION_REQUEST: id=" ^ id ^ " to=" ^ Jid.to_string ato
   | PRESENCE_UPDATE availability ->
     "PRESENCE_UPDATE: availability=" ^ Rosters.availability_to_string availability
-  | IQ_ERROR {error_type; error_tag; ato; id} ->
+  | IQ_ERROR {error_type; error_tag; id} ->
     "IQ_ERROR: error_type="
     ^ Actions.error_type_to_string error_type
     ^ " error_tag="
     ^ error_tag
-    ^ " to="
-    ^ Jid.to_string ato
     ^ " id="
     ^ id
 ;;
@@ -112,10 +106,8 @@ let lift_iq = function
         (* roster get query *)
         ROSTER_GET (Stanza.get_id attributes)
       | _ ->
-        let ato = Stanza.get_to attributes in
         let id = Stanza.get_id attributes in
-        IQ_ERROR
-          {error_type = Actions.Cancel; error_tag = "feature-not-implemented"; ato; id})
+        IQ_ERROR {error_type = Actions.Cancel; error_tag = "feature-not-implemented"; id})
     | _ -> ERROR "Type of iq expected to be 'set' or 'get'")
   | Xml.Text _t -> ERROR "Expected an iq stanza, not text"
 ;;

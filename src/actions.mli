@@ -42,7 +42,7 @@ type t =
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
-  | IQ_ERROR of {error_type: error_type ; error_tag : string;  ato: Jid.t; id:string}
+  | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

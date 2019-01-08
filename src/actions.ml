@@ -46,7 +46,7 @@ type t =
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
-  | IQ_ERROR of {error_type : error_type; error_tag : string; ato : Jid.t; id : string}
+  | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -92,13 +92,11 @@ let to_string = function
   | UPDATE_PRESENCE availability ->
     "UPDATE_PRESENCE: availability=" ^ Rosters.availability_to_string availability
   | SEND_PRESENCE_UPDATE from -> "SEND_PRESENCE_UPDATE: from=" ^ Jid.to_string from
-  | IQ_ERROR {error_type; error_tag; ato; id} ->
+  | IQ_ERROR {error_type; error_tag; id} ->
     "IQ_ERROR: error_type="
     ^ error_type_to_string error_type
     ^ " error_tag="
     ^ error_tag
-    ^ " to="
-    ^ Jid.to_string ato
     ^ " id="
     ^ id
 ;;

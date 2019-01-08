@@ -91,11 +91,16 @@ let handle_action t stream =
                | None -> () )
       | SEND_PRESENCE_UPDATE from ->
         t.callback (Some (Stanza.to_string (Stanza.create_presence ~from ~ato:t.jid [])))
-      | IQ_ERROR {error_type; error_tag; ato; id} ->
+      | IQ_ERROR {error_type; error_tag; id} ->
         t.callback
           (Some
              ( Stanza.to_string
-             @@ Stanza.create_iq_error ~from:t.jid ~ato ~id ~error_type ~error_tag )));
+             @@ Stanza.create_iq_error
+                  ~from:(Jid.of_string t.hostname)
+                  ~ato:t.jid
+                  ~id
+                  ~error_type
+                  ~error_tag ))
       if t.closed
       then (
         t.callback None;
