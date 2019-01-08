@@ -23,6 +23,14 @@ val create_iq :
   -> Xml.t list
   -> t
 
+val create_iq_error :
+     from:Jid.t
+  -> ato:Jid.t
+  -> id:string
+  -> error_type:Actions.error_type
+  -> error_tag:string
+  -> t
+
 val create_bind : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 val create_resource : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 val create_bind_result : id:string -> jid:Jid.t -> unit -> t

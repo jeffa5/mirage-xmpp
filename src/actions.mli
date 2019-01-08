@@ -4,13 +4,20 @@ type handler_actions = RESET_PARSER
 
 val handler_actions_to_string : handler_actions -> string
 
+type error_type =
+    | Auth
+    | Cancel
+    | Continue
+    | Modify
+    | Wait
+
+val error_type_to_string : error_type -> string
 (** The type of actions, examples for now *)
 type t =
   | SEND_STREAM_HEADER
   | SEND_STREAM_FEATURES_SASL
   | SEND_SASL_SUCCESS
   | SEND_STREAM_FEATURES
-  | REPLY_STANZA of Stanza.t
   | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | SESSION_START_SUCCESS of string
   | CLOSE
@@ -35,6 +42,7 @@ type t =
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
+  | IQ_ERROR of {error_type: error_type ; error_tag : string;  ato: Jid.t; id:string}
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

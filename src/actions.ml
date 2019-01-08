@@ -2,12 +2,26 @@ type handler_actions = RESET_PARSER
 
 let handler_actions_to_string = function RESET_PARSER -> "RESET_PARSER"
 
+type error_type =
+  | Auth
+  | Cancel
+  | Continue
+  | Modify
+  | Wait
+
+let error_type_to_string = function
+  | Auth -> "auth"
+  | Cancel -> "cancel"
+  | Continue -> "continue"
+  | Modify -> "modify"
+  | Wait -> "wait"
+;;
+
 type t =
   | SEND_STREAM_HEADER
   | SEND_STREAM_FEATURES_SASL
   | SEND_SASL_SUCCESS
   | SEND_STREAM_FEATURES
-  | REPLY_STANZA of Stanza.t
   | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | SESSION_START_SUCCESS of string
   | CLOSE
@@ -32,13 +46,13 @@ type t =
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
+  | IQ_ERROR of {error_type : error_type; error_tag : string; ato : Jid.t; id : string}
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
   | SEND_STREAM_FEATURES_SASL -> "SEND_STREAM_FEATURES_SASL"
   | SEND_SASL_SUCCESS -> "SEND_SASL_SUCCESS"
   | SEND_STREAM_FEATURES -> "SEND_STREAM_FEATURES"
-  | REPLY_STANZA s -> "REPLY_STANZA: " ^ Utils.mask_id (Stanza.to_string s)
   | SERVER_GEN_RESOURCE_IDENTIFIER s -> "SERVER_GEN_RESOURCE_IDENTIFIER: " ^ s
   | SESSION_START_SUCCESS id -> "SESSION_START_SUCCESS: id=" ^ id
   | CLOSE -> "CLOSE"
@@ -78,4 +92,13 @@ let to_string = function
   | UPDATE_PRESENCE availability ->
     "UPDATE_PRESENCE: availability=" ^ Rosters.availability_to_string availability
   | SEND_PRESENCE_UPDATE from -> "SEND_PRESENCE_UPDATE: from=" ^ Jid.to_string from
+  | IQ_ERROR {error_type; error_tag; ato; id} ->
+    "IQ_ERROR: error_type="
+    ^ error_type_to_string error_type
+    ^ " error_tag="
+    ^ error_tag
+    ^ " to="
+    ^ Jid.to_string ato
+    ^ " id="
+    ^ id
 ;;

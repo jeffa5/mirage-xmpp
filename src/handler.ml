@@ -27,7 +27,6 @@ let handle_action t stream =
                 (Xml.create
                    (("", "success"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]))))
       | SEND_STREAM_FEATURES -> t.callback (Some (Xml.to_string Stream.features))
-      | REPLY_STANZA s -> t.callback (Some (Stanza.to_string s))
       | SERVER_GEN_RESOURCE_IDENTIFIER id ->
         let resource = Jid.create_resource () in
         let jid_with_resource = Jid.set_resource resource t.jid in
@@ -91,7 +90,12 @@ let handle_action t stream =
                | Some f -> f (Some (SEND_PRESENCE_UPDATE t.jid))
                | None -> () )
       | SEND_PRESENCE_UPDATE from ->
-        t.callback (Some (Stanza.to_string (Stanza.create_presence ~from ~ato:t.jid []))));
+        t.callback (Some (Stanza.to_string (Stanza.create_presence ~from ~ato:t.jid [])))
+      | IQ_ERROR {error_type; error_tag; ato; id} ->
+        t.callback
+          (Some
+             ( Stanza.to_string
+             @@ Stanza.create_iq_error ~from:t.jid ~ato ~id ~error_type ~error_tag )));
       if t.closed
       then (
         t.callback None;
@@ -270,7 +274,7 @@ let%expect_test "bind resource" =
            )
            ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
     ^ Stream.to_string
-      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+        (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Stanza.to_string
         (Stanza.create_iq
            ~id:(Stanza.gen_id ())
@@ -321,7 +325,7 @@ let%expect_test "roster get" =
            )
            ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
     ^ Stream.to_string
-      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+        (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Xml.to_string
         (Xml.create
            (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])
@@ -386,7 +390,7 @@ let%expect_test "roster set" =
            )
            ~children:[Xml.Text "AGp1bGlldABwYXNzd29yZA=="])
     ^ Stream.to_string
-      (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
+        (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
     ^ Xml.to_string
         (Xml.create
            (("", "iq"), ["", Xml.Id "some_id"; "", Xml.Type "set"])

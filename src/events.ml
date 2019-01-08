@@ -17,6 +17,11 @@ type t =
       ; groups : string list }
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | PRESENCE_UPDATE of Rosters.availability
+  | IQ_ERROR of
+      { error_type : Actions.error_type
+      ; error_tag : string
+      ; ato : Jid.t
+      ; id : string }
 
 let to_string = function
   | STREAM_HEADER {ato; version} ->
@@ -45,6 +50,15 @@ let to_string = function
     "SUBSCRIPTION_REQUEST: id=" ^ id ^ " to=" ^ Jid.to_string ato
   | PRESENCE_UPDATE availability ->
     "PRESENCE_UPDATE: availability=" ^ Rosters.availability_to_string availability
+  | IQ_ERROR {error_type; error_tag; ato; id} ->
+    "IQ_ERROR: error_type="
+    ^ Actions.error_type_to_string error_type
+    ^ " error_tag="
+    ^ error_tag
+    ^ " to="
+    ^ Jid.to_string ato
+    ^ " id="
+    ^ id
 ;;
 
 let not_implemented = ERROR "not implemented"
@@ -63,8 +77,8 @@ let lift_iq = function
           RESOURCE_BIND_CLIENT_GEN {id = Stanza.get_id attributes; resource}
         | _ -> ERROR "Unexpected child of resource bind")
       | [ Xml.Element
-            (((_, "query"), _), [Xml.Element (((_, "item"), attrs), group_elements)]) ]
-      ->
+            ( ((_, "query"), [(_, Xml.Xmlns "jabber:iq:roster")])
+            , [Xml.Element (((_, "item"), attrs), group_elements)] ) ] ->
         let groups =
           List.map
             (fun element ->
@@ -94,10 +108,14 @@ let lift_iq = function
                children ))
     | Some "get" ->
       (match children with
-      | [Xml.Element (((_, "query"), _), _)] ->
+      | [Xml.Element (((_, "query"), [(_, Xml.Xmlns "jabber:iq:roster")]), _)] ->
         (* roster get query *)
         ROSTER_GET (Stanza.get_id attributes)
-      | _ -> ERROR "Child not implemented for get iq request")
+      | _ ->
+        let ato = Stanza.get_to attributes in
+        let id = Stanza.get_id attributes in
+        IQ_ERROR
+          {error_type = Actions.Cancel; error_tag = "feature-not-implemented"; ato; id})
     | _ -> ERROR "Type of iq expected to be 'set' or 'get'")
   | Xml.Text _t -> ERROR "Expected an iq stanza, not text"
 ;;
@@ -169,7 +187,8 @@ let%expect_test "iq get" =
                  , [ "", Xml.From (Jid.of_string "juliet@capulet.com/balcony")
                    ; "", Xml.Id "h83vxa4c"
                    ; "", Xml.Type "get" ] )
-               , [Xml.Element ((("", "query"), []), [])] ))))
+               , [Xml.Element ((("", "query"), ["", Xml.Xmlns "jabber:iq:roster"]), [])]
+               ))))
   in
   print_endline (to_string event);
   [%expect {| ROSTER_GET: id=h83vxa4c |}]

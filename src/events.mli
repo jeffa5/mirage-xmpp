@@ -18,6 +18,11 @@ type t =
       ; groups : string list }
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | PRESENCE_UPDATE of Rosters.availability
+  | IQ_ERROR of
+      { error_type : Actions.error_type
+      ; error_tag : string
+      ; ato : Jid.t
+      ; id : string }
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string

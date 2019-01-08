@@ -26,6 +26,19 @@ let create_iq ?(attributes = []) ?ato ~atype ~id children =
   Iq (Element ((("", "iq"), ["", Xml.Id id; "", Xml.Type atype] @ attributes), children))
 ;;
 
+let create_iq_error ~from ~ato ~id ~error_type ~error_tag =
+  Iq
+    (Element
+       ( ( ("", "iq")
+         , ["", Xml.From from; "", Xml.Id id; "", Xml.To ato; "", Xml.Type "error"] )
+       , [ Element
+             ( (("", "error"), ["", Xml.Type (Actions.error_type_to_string error_type)])
+             , [ Element
+                   ( ( ("", error_tag)
+                     , ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-stanzas"] )
+                   , [] ) ] ) ] ))
+;;
+
 let create_bind ?(attributes = []) children =
   Xml.create
     (("", "bind"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-bind"] @ attributes)
