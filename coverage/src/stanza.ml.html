@@ -566,8 +566,8 @@ let rec get_jid = <span data-count="2">f</span>unction
 ;;
 
 let rec get_name = <span data-count="2">f</span>unction
-  | <span data-count="0">[</span>] -&gt; raise Not_found
-  | <span data-count="2">(</span>_, Xml.Name name) :: _ -&gt; name
+  | <span data-count="0">[</span>] -&gt; None
+  | <span data-count="2">(</span>_, Xml.Name name) :: _ -&gt; Some name
   | <span data-count="2">_</span> :: attrs -&gt; get_name attrs
 ;;
 
@@ -625,7 +625,7 @@ let%expect_test "create tag with attrs" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-08 14:57:01 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-08 22:56:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
