@@ -49,6 +49,8 @@ let handle_idle _t = function
   | SUBSCRIPTION_REQUEST _ -> closed_with_error "No stream"
   | PRESENCE_UPDATE _ -> closed_with_error "No stream"
   | IQ_ERROR _ -> closed_with_error "No stream"
+  | MESSAGE _ -> closed_with_error "No stream"
+  | LOG_OUT -> closed_with_error "No stream"
 ;;
 
 let handle_sasl_negotiation _t = function
@@ -72,6 +74,8 @@ let handle_sasl_negotiation _t = function
     closed_with_error "Unexpected presence update during sasl negotiation"
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = SASL_NEGOTIATION}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
+  | MESSAGE _ -> closed_with_error "Unexpected message during sasl negotiation"
+  | LOG_OUT -> closed_with_error "Unexpected presence for log out during sasl negotiation"
 ;;
 
 let handle_negotiating _t = function
@@ -109,6 +113,8 @@ let handle_negotiating _t = function
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
+  | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
+  | LOG_OUT -> {state=CLOSED}, [], []
 ;;
 
 let handle_connected _t = function
@@ -135,6 +141,8 @@ let handle_connected _t = function
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
+  | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
+  | LOG_OUT -> {state=CLOSED}, [], []
 ;;
 
 let handle_closed _t = function
@@ -152,6 +160,8 @@ let handle_closed _t = function
   | SUBSCRIPTION_REQUEST _ -> closed_with_error "already closed"
   | PRESENCE_UPDATE _ -> closed_with_error "already closed"
   | IQ_ERROR _ -> closed_with_error "already closed"
+  | MESSAGE _ -> closed_with_error "already closed"
+  | LOG_OUT -> {state=CLOSED}, [], []
 ;;
 
 let handle t event =

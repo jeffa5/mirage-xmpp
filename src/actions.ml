@@ -47,6 +47,7 @@ type t =
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
+  | MESSAGE of {ato : Jid.t; message : Xml.t}
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -99,4 +100,6 @@ let to_string = function
     ^ error_tag
     ^ " id="
     ^ id
+  | MESSAGE {ato; message} ->
+    "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
 ;;

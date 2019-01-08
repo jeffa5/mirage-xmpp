@@ -23,6 +23,16 @@ type t =
   | Text of string
   | Element of tag * t list
 
+let remove_prefixes_attribute (_prefix, value) = "", value
+
+let rec remove_prefixes = function
+  | Element (((_prefix, name), attributes), children) ->
+    Element
+      ( (("", name), List.map remove_prefixes_attribute attributes)
+      , List.map remove_prefixes children )
+  | Text _t as text -> text
+;;
+
 let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
 
 let attribute_to_string (namespace, nameval) =

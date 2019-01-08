@@ -18,6 +18,8 @@ type t =
   | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
   | PRESENCE_UPDATE of Rosters.availability
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
+  | MESSAGE of {ato : Jid.t; message : Xml.t}
+  | LOG_OUT
 
 let to_string = function
   | STREAM_HEADER {ato; version} ->
@@ -53,6 +55,9 @@ let to_string = function
     ^ error_tag
     ^ " id="
     ^ id
+  | MESSAGE {ato; message} ->
+    "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
+  | LOG_OUT -> "LOG_OUT"
 ;;
 
 let not_implemented = ERROR "not implemented"
@@ -119,9 +124,18 @@ let lift_presence = function
     (match Stanza.get_type attributes with
     | Some "subscribe" ->
       SUBSCRIPTION_REQUEST {id = Stanza.get_id attributes; ato = Stanza.get_to attributes}
+    | Some "unavailable" -> LOG_OUT
     | None -> PRESENCE_UPDATE Rosters.Online
     | _ -> not_implemented)
-  | Xml.Text _t -> not_implemented
+  | Xml.Text _t -> ERROR "Expected a presence stanza, not text"
+;;
+
+let lift_message = function
+  | Xml.Element (((_prefix, _name), attributes), _children) as message ->
+    let ato = Stanza.get_to attributes in
+    let message = Xml.remove_prefixes message in
+    MESSAGE {ato; message}
+  | Xml.Text _t -> ERROR "Expected a message stanza, not text"
 ;;
 
 let lift parse_result =
@@ -131,17 +145,15 @@ let lift parse_result =
     (match stanza with
     | Stanza.Iq element -> lift_iq element
     | Stanza.Presence element -> lift_presence element
-    | Stanza.Message (Element (((_prefix, _name), _attributes), _children) as _xml) ->
-      not_implemented
-    | _ -> ERROR "Not expecing text elements")
+    | Stanza.Message element -> lift_message element)
   | Sasl_auth xml ->
+    let rec get_mechanism = function
+      | [] -> raise Not_found
+      | (_, Xml.Mechanism mechanism) :: _ -> mechanism
+      | _ :: attrs -> get_mechanism attrs
+    in
     (match xml with
     | Element ((_name, attributes), [Text b64_string]) ->
-      let rec get_mechanism = function
-        | [] -> raise Not_found
-        | (_, Xml.Mechanism mechanism) :: _ -> mechanism
-        | _ :: attrs -> get_mechanism attrs
-      in
       if get_mechanism attributes = "PLAIN"
       then
         let decoded_string = B64.decode b64_string in
@@ -151,8 +163,18 @@ let lift parse_result =
           | Some (user, pass) -> SASL_AUTH {user; password = pass}
           | None -> ERROR "SASL: couldn't find second 0 byte")
         | _ -> ERROR "SASL: couldn't find first 0 byte"
-      else assert false
-    | _ -> ERROR "Unsuccessful SASL negotiation")
+      else
+        ERROR
+          ( Xml.to_string
+          @@ Xml.create
+               ~children:[Xml.create (("", "invalid-mechanism"), [])]
+               (("", "failure"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]) )
+    | _ ->
+      ERROR
+        ( Xml.to_string
+        @@ Xml.create
+             ~children:[Xml.create (("", "invalid-mechanism"), [])]
+             (("", "failure"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]) ))
   | Stream_Element stream_element ->
     (match stream_element with
     | Header (_name, attributes) ->
@@ -160,7 +182,7 @@ let lift parse_result =
       let version = Stanza.get_version attributes in
       STREAM_HEADER {ato; version}
     | Features -> not_implemented
-    | Error -> not_implemented
+    | Error -> ERROR "Stream level error"
     | Close -> STREAM_CLOSE)
   | Error e -> ERROR e
 ;;

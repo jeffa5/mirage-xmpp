@@ -124,6 +124,7 @@ let rec parse parser =
         | "stream" ->
           parser.depth <- 1;
           Lwt.return (Stream_Element (Stream.Header tag))
+        | "error" -> Lwt.return (Stream_Element Stream.Error)
         | s -> Lwt.return (Error ("Unexpected tag with name: " ^ s)))
       | _ -> assert false)
     | `End_element ->

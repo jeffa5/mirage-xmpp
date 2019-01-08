@@ -101,6 +101,13 @@ let handle_action t stream =
                   ~id
                   ~error_type
                   ~error_tag ))
+      | MESSAGE {ato; message} ->
+        if ato = t.jid
+        then t.callback (Some (Xml.to_string message))
+        else (
+          match Connections.find ato with
+          | Some fn -> fn @@ Some (MESSAGE {ato; message})
+          | None -> () ));
       if t.closed
       then (
         t.callback None;
