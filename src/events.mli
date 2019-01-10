@@ -10,17 +10,15 @@ type t =
   | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of string
-  | ROSTER_SET of
-      { id : string
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
-  | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
+  | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
   | PRESENCE_UPDATE of Rosters.availability
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
+  | NOOP
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string

@@ -45,7 +45,7 @@ let convert_attribute ((namespace, name), value) =
     | "lang" -> Lang value
     | "stream" -> Stream value
     | "name" -> Name value
-    | "subscription" -> Subscription (Rosters.subscription_of_string value)
+    | "subscription" -> Subscription value
     | "mechanism" -> Mechanism value
     | _ -> Other (name, value) )
 ;;

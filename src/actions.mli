@@ -26,25 +26,19 @@ type t =
   | SET_JID of string
   | SET_JID_RESOURCE of {id : string; resource : string}
   | GET_ROSTER of string
-  | SET_ROSTER of
-      { id : string
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
-  | PUSH_ROSTER of
-      { jid : Jid.t option
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
+  | SET_ROSTER of {id : string; target : Jid.t; handle : string; groups : string list}
+  | PUSH_ROSTER of {ato : Jid.t option; contact : Jid.t}
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
-  | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
+  | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
+  | ROSTER_SET_FROM of Jid.t
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

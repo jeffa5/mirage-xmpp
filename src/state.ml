@@ -23,7 +23,7 @@ let to_string t = "{state: " ^ state_to_string t.state ^ "}"
 let closed t = t.state = CLOSED
 let closed_with_error e = {state = CLOSED}, [Actions.ERROR e], []
 
-let handle_idle _t = function
+let handle_idle t = function
   | STREAM_HEADER {ato; version} ->
     (* new incoming connection *)
     (* check it was for us *)
@@ -46,14 +46,17 @@ let handle_idle _t = function
   | ERROR e -> closed_with_error e
   | ROSTER_GET _ -> closed_with_error "No stream"
   | ROSTER_SET _ -> closed_with_error "No stream"
+  | ROSTER_REMOVE _ -> closed_with_error "No stream"
   | SUBSCRIPTION_REQUEST _ -> closed_with_error "No stream"
   | PRESENCE_UPDATE _ -> closed_with_error "No stream"
   | IQ_ERROR _ -> closed_with_error "No stream"
   | MESSAGE _ -> closed_with_error "No stream"
   | LOG_OUT -> closed_with_error "No stream"
+  | NOOP -> t, [], []
+  | SUBSCRIPTION_APPROVAL _ -> closed_with_error "No stream"
 ;;
 
-let handle_sasl_negotiation _t = function
+let handle_sasl_negotiation t = function
   | STREAM_HEADER _ ->
     closed_with_error "Unexpected stream header during sasl negotiation"
   | SASL_AUTH {user; _} ->
@@ -68,6 +71,8 @@ let handle_sasl_negotiation _t = function
   | ERROR e -> closed_with_error e
   | ROSTER_GET _ -> closed_with_error "Unexpected roster get during sasl negotiation"
   | ROSTER_SET _ -> closed_with_error "Unexpected roster set during sasl negotiation"
+  | ROSTER_REMOVE _ ->
+    closed_with_error "Unexpected roster remove during sasl negotiation"
   | SUBSCRIPTION_REQUEST _ ->
     closed_with_error "Unexpected subscription request during sasl negotiation"
   | PRESENCE_UPDATE _ ->
@@ -75,10 +80,14 @@ let handle_sasl_negotiation _t = function
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = SASL_NEGOTIATION}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE _ -> closed_with_error "Unexpected message during sasl negotiation"
-  | LOG_OUT -> closed_with_error "Unexpected presence for log out during sasl negotiation"
+  | LOG_OUT ->
+    closed_with_error "Unexpected presence for log out during sasl negotiation"
+  | NOOP -> t, [], []
+  | SUBSCRIPTION_APPROVAL _ ->
+    closed_with_error "Unexpected subscription approval during sasl negotiation"
 ;;
 
-let handle_negotiating _t = function
+let handle_negotiating t = function
   | STREAM_HEADER {ato; version} ->
     if ato <> Jid.Empty
     then
@@ -101,23 +110,39 @@ let handle_negotiating _t = function
   | ERROR e -> closed_with_error e
   | ROSTER_GET id ->
     {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER id], []
-  | ROSTER_SET {id; target; handle; subscription; groups} ->
+  | ROSTER_SET {id; target; handle; groups} ->
     ( {state = CONNECTED}
     , [ Actions.ADD_TO_CONNECTIONS
-      ; Actions.SET_ROSTER {id; target; handle; subscription; groups}
-      ; Actions.PUSH_ROSTER {jid = None; target; handle; subscription; groups} ]
+      ; Actions.SET_ROSTER {id; target; handle; groups}
+      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
     , [] )
-  | SUBSCRIPTION_REQUEST {id; ato} ->
-    {state = CONNECTED}, [Actions.SUBSCRIPTION_REQUEST {id; ato}], []
+  | ROSTER_REMOVE {id; target} ->
+    ( {state = CONNECTED}
+    , [ Actions.ROSTER_REMOVE {id; target}
+      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
+    , [] )
+  | SUBSCRIPTION_REQUEST {ato; xml} ->
+    ( {state = CONNECTED}
+    , [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
+      ; Actions.PUSH_ROSTER {ato = None; contact = ato} ]
+    , [] )
   | PRESENCE_UPDATE available ->
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
-  | LOG_OUT -> {state=CLOSED}, [], []
+  | LOG_OUT -> {state = CLOSED}, [], []
+  | NOOP -> t, [], []
+  | SUBSCRIPTION_APPROVAL {ato; xml} ->
+    ( {state = CONNECTED}
+    , [ Actions.SUBSCRIPTION_APPROVAL {ato; xml; from = None}
+      ; Actions.ROSTER_SET_FROM ato
+      ; Actions.PUSH_ROSTER {ato = None; contact = ato}
+      ; Actions.SEND_CURRENT_PRESENCE ato ]
+    , [] )
 ;;
 
-let handle_connected _t = function
+let handle_connected t = function
   | STREAM_HEADER _ ->
     ( {state = CLOSED}
     , [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR "Not expecting stream header"]
@@ -130,22 +155,38 @@ let handle_connected _t = function
     {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE], []
   | ERROR e -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR e], []
   | ROSTER_GET id -> {state = CONNECTED}, [Actions.GET_ROSTER id], []
-  | ROSTER_SET {id; target; handle; subscription; groups} ->
+  | ROSTER_SET {id; target; handle; groups} ->
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER {id; target; handle; subscription; groups}
-      ; Actions.PUSH_ROSTER {jid = None; target; handle; subscription; groups} ]
+    , [ Actions.SET_ROSTER {id; target; handle; groups}
+      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
     , [] )
-  | SUBSCRIPTION_REQUEST {id; ato} ->
-    {state = CONNECTED}, [Actions.SUBSCRIPTION_REQUEST {id; ato}], []
+  | ROSTER_REMOVE {id; target} ->
+    ( {state = CONNECTED}
+    , [ Actions.ROSTER_REMOVE {id; target}
+      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
+    , [] )
+  | SUBSCRIPTION_REQUEST {ato; xml} ->
+    ( {state = CONNECTED}
+    , [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
+      ; Actions.PUSH_ROSTER {ato = None; contact = ato} ]
+    , [] )
   | PRESENCE_UPDATE available ->
     {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
-  | LOG_OUT -> {state=CLOSED}, [], []
+  | LOG_OUT -> {state = CLOSED}, [], []
+  | NOOP -> t, [], []
+  | SUBSCRIPTION_APPROVAL {ato; xml} ->
+    ( {state = CONNECTED}
+    , [ Actions.SUBSCRIPTION_APPROVAL {ato; xml; from = None}
+      ; Actions.ROSTER_SET_FROM ato
+      ; Actions.PUSH_ROSTER {ato = None; contact = ato}
+      ; Actions.SEND_CURRENT_PRESENCE ato ]
+    , [] )
 ;;
 
-let handle_closed _t = function
+let handle_closed t = function
   | STREAM_HEADER _s -> closed_with_error "Not expecting stream header"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Connection closed"
@@ -157,11 +198,14 @@ let handle_closed _t = function
   | ERROR e -> closed_with_error e
   | ROSTER_GET _ -> closed_with_error "already closed"
   | ROSTER_SET _ -> closed_with_error "already closed"
+  | ROSTER_REMOVE _ -> closed_with_error "already closed"
   | SUBSCRIPTION_REQUEST _ -> closed_with_error "already closed"
   | PRESENCE_UPDATE _ -> closed_with_error "already closed"
   | IQ_ERROR _ -> closed_with_error "already closed"
   | MESSAGE _ -> closed_with_error "already closed"
-  | LOG_OUT -> {state=CLOSED}, [], []
+  | LOG_OUT -> {state = CLOSED}, [], []
+  | NOOP -> t, [], []
+  | SUBSCRIPTION_APPROVAL _ -> closed_with_error "already closed"
 ;;
 
 let handle t event =
@@ -446,7 +490,6 @@ let%expect_test "roster set" =
          { id = "some_id"
          ; target = Jid.of_string "nurse@example.com"
          ; handle = "Nurse"
-         ; subscription = Rosters.None
          ; groups = ["Servants"] })
   in
   print_endline (to_string fsm);
@@ -454,8 +497,8 @@ let%expect_test "roster set" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect
     {|
-    SET_ROSTER: id=some_id target=nurse@example.com handle=Nurse subscribed=none groups=[Servants]
-    PUSH_ROSTER: jid=None target=nurse@example.com handle=Nurse subscription=none groups=[Servants] |}];
+    SET_ROSTER: id=some_id target=nurse@example.com handle=Nurse groups=[Servants]
+    PUSH_ROSTER: to=None contact=nurse@example.com] |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| {state: CLOSED} |}];

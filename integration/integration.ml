@@ -261,7 +261,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Receive:
     <iq id='redacted_for_testing' type='result' to='juliet@im.example.com/balcony'/>
     Receive:
-    <iq id='redacted_for_testing' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
+    <iq id='redacted_for_testing' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' subscription='none' name='Nurse'><group>Servants</group></item></query></iq>
     Send:
     <iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'><query xmlns='jabber:iq:roster'/></iq>
     Receive:

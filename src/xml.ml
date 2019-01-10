@@ -12,7 +12,7 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
-  | Subscription of Rosters.subscription
+  | Subscription of string
   | Mechanism of string
   | Other of string * string
 
@@ -50,7 +50,7 @@ let attribute_to_string (namespace, nameval) =
   | Lang s -> "lang='" ^ s ^ "'"
   | Stream s -> "stream='" ^ s ^ "'"
   | Name s -> "name='" ^ s ^ "'"
-  | Subscription s -> "subscription='" ^ Rosters.subscription_to_string s ^ "'"
+  | Subscription s -> "subscription='" ^ s ^ "'"
   | Mechanism s -> "mechanism='" ^ s ^ "'"
   | Other (name, value) -> name ^ "='" ^ value ^ "'"
 ;;

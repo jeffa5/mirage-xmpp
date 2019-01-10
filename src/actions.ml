@@ -29,25 +29,19 @@ type t =
   | SET_JID of string
   | SET_JID_RESOURCE of {id : string; resource : string}
   | GET_ROSTER of string
-  | SET_ROSTER of
-      { id : string
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
-  | PUSH_ROSTER of
-      { jid : Jid.t option
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
+  | SET_ROSTER of {id : string; target : Jid.t; handle : string; groups : string list}
+  | PUSH_ROSTER of {ato : Jid.t option; contact : Jid.t}
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
-  | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | UPDATE_PRESENCE of Rosters.availability
   | SEND_PRESENCE_UPDATE of Jid.t
+  | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
+  | ROSTER_SET_FROM of Jid.t
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -62,37 +56,35 @@ let to_string = function
   | SET_JID_RESOURCE {id; resource} ->
     "SET_JID_RESOURCE: id=" ^ id ^ " resource=" ^ resource
   | GET_ROSTER id -> "GET_ROSTER: id=" ^ id
-  | SET_ROSTER {id; target; handle; subscription; groups} ->
+  | SET_ROSTER {id; target; handle; groups} ->
     "SET_ROSTER: id="
     ^ id
     ^ " target="
     ^ Jid.to_string target
     ^ " handle="
     ^ handle
-    ^ " subscribed="
-    ^ Rosters.subscription_to_string subscription
     ^ " groups=["
     ^ String.concat " " groups
     ^ "]"
-  | PUSH_ROSTER {jid; target; handle; subscription; groups} ->
-    "PUSH_ROSTER: jid="
-    ^ (match jid with Some j -> "Some " ^ Jid.to_string j | None -> "None")
-    ^ " target="
-    ^ Jid.to_string target
-    ^ " handle="
-    ^ handle
-    ^ " subscription="
-    ^ Rosters.subscription_to_string subscription
-    ^ " groups=["
-    ^ String.concat " " groups
+  | PUSH_ROSTER {ato; contact} ->
+    "PUSH_ROSTER: to="
+    ^ (match ato with Some j -> "Some " ^ Jid.to_string j | None -> "None")
+    ^ " contact="
+    ^ Jid.to_string contact
     ^ "]"
   | ADD_TO_CONNECTIONS -> "ADD_TO_CONNECTIONS"
   | REMOVE_FROM_CONNECTIONS -> "REMOVE_FROM_CONNECTIONS"
-  | SUBSCRIPTION_REQUEST {id; ato} ->
-    "SUBSCRIPTION_REQUEST: id=" ^ id ^ " to=" ^ Jid.to_string ato
+  | SUBSCRIPTION_REQUEST {ato; xml; from} ->
+    "SUBSCRIPTION_REQUEST: to="
+    ^ Jid.to_string ato
+    ^ " xml="
+    ^ Xml.to_string xml
+    ^ " from="
+    ^ (match from with Some f -> Jid.to_string f | None -> "")
   | UPDATE_PRESENCE availability ->
     "UPDATE_PRESENCE: availability=" ^ Rosters.availability_to_string availability
   | SEND_PRESENCE_UPDATE from -> "SEND_PRESENCE_UPDATE: from=" ^ Jid.to_string from
+  | SEND_CURRENT_PRESENCE ato -> "SEND_CURRENT_PRESENCE: to=" ^ Jid.to_string ato
   | IQ_ERROR {error_type; error_tag; id} ->
     "IQ_ERROR: error_type="
     ^ error_type_to_string error_type
@@ -102,4 +94,14 @@ let to_string = function
     ^ id
   | MESSAGE {ato; message} ->
     "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
+  | ROSTER_REMOVE {id; target} ->
+    "ROSTER_REMOVE id=" ^ id ^ " target=" ^ Jid.to_string target
+  | SUBSCRIPTION_APPROVAL {ato; xml; from} ->
+    "SUBSCRIPTION_APPROVAL: to="
+    ^ Jid.to_string ato
+    ^ " xml="
+    ^ Xml.to_string xml
+    ^ " from="
+    ^ (match from with Some f -> Jid.to_string f | None -> "")
+  | ROSTER_SET_FROM from -> "ROSTER_SET_FROM from=" ^ Jid.to_string from
 ;;

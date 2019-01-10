@@ -12,7 +12,7 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
-  | Subscription of Rosters.subscription
+  | Subscription of string
   | Mechanism of string
   | Other of string * string
 

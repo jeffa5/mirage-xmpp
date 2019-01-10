@@ -7,7 +7,7 @@ type t =
 
 let gen_id () = Uuidm.(to_string (create `V4))
 
-let create_presence ?(attributes = []) ?atype ?id ~ato ~from children =
+let create_presence ?(attributes = []) ?atype ~id ~ato ~from children =
   let attributes =
     match atype with Some t -> ("", Xml.Type t) :: attributes | None -> attributes
   in
@@ -67,10 +67,14 @@ let create_roster_get_result ~id ~ato items =
     ~ato
     [ create_query
         (List.map
-           (fun (jid, handle, subscription, groups) ->
+           (* (fun (jid, {handle; subscription; ask; groups}) -> *)
+             (fun (jid, item) ->
+             let handle, subscription, _ask, groups = Rosters.item_to_tuple item in
              Xml.create
                ( ("", "item")
-               , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscription]
+               , [ "", Xml.Jid jid
+                 ; "", Xml.Name handle
+                 ; "", Xml.Subscription (Rosters.subscription_to_string subscription) ]
                )
                ~children:
                  (List.map
@@ -82,25 +86,43 @@ let create_roster_get_result ~id ~ato items =
 
 let create_roster_set_result ~id ~ato = create_iq ~id ~atype:"result" ~ato []
 
-let create_roster_push ~id ~ato (jid, handle, subscription, groups) =
+let create_roster_push ~id ~ato (jid, item) =
+  let handle, subscription, _ask, groups = Rosters.item_to_tuple item in
+  let attributes = [] in
+  let attributes =
+    match handle with "" -> attributes | h -> ("", Xml.Name h) :: attributes
+  in
+  let attributes =
+    ("", Xml.Subscription (Rosters.subscription_to_string subscription)) :: attributes
+  in
   create_iq
     ~id
     ~ato
     ~atype:"set"
     [ create_query
         [ Xml.create
-            ( ("", "item")
-            , ["", Xml.Jid jid; "", Xml.Name handle; "", Xml.Subscription subscription]
-            )
+            (("", "item"), ["", Xml.Jid jid] @ attributes)
             ~children:
               (List.map
                  (fun group -> Xml.create (("", "group"), []) ~children:[Xml.Text group])
                  groups) ] ]
 ;;
 
-let rec get_id = function
+let rec get_subscription = function
+  | [] -> None
+  | (_, Xml.Subscription sub) :: _ -> Some sub
+  | _ :: attrs -> get_subscription attrs
+;;
+
+let rec get_id_exn = function
   | [] -> raise Not_found
   | (_, Xml.Id id) :: _ -> id
+  | _ :: attrs -> get_id_exn attrs
+;;
+
+let rec get_id = function
+  | [] -> None
+  | (_, Xml.Id id) :: _ -> Some id
   | _ :: attrs -> get_id attrs
 ;;
 

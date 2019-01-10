@@ -9,17 +9,15 @@ type t =
   | STREAM_CLOSE
   | ERROR of string
   | ROSTER_GET of string
-  | ROSTER_SET of
-      { id : string
-      ; target : Jid.t
-      ; handle : string
-      ; subscription : Rosters.subscription
-      ; groups : string list }
-  | SUBSCRIPTION_REQUEST of {id : string; ato : Jid.t}
+  | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
   | PRESENCE_UPDATE of Rosters.availability
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
+  | NOOP
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
 
 let to_string = function
   | STREAM_HEADER {ato; version} ->
@@ -32,20 +30,18 @@ let to_string = function
   | STREAM_CLOSE -> "STREAM_CLOSE"
   | ERROR s -> "ERROR: " ^ s
   | ROSTER_GET id -> "ROSTER_GET: id=" ^ id
-  | ROSTER_SET {id; target; handle; subscription; groups} ->
+  | ROSTER_SET {id; target; handle; groups} ->
     "ROSTER_SET: id="
     ^ id
     ^ " target="
     ^ Jid.to_string target
     ^ " handle="
     ^ handle
-    ^ " subscribed="
-    ^ Rosters.subscription_to_string subscription
     ^ " groups=["
     ^ String.concat ~sep:" " groups
     ^ "]"
-  | SUBSCRIPTION_REQUEST {id; ato} ->
-    "SUBSCRIPTION_REQUEST: id=" ^ id ^ " to=" ^ Jid.to_string ato
+  | SUBSCRIPTION_REQUEST {ato; xml} ->
+    "SUBSCRIPTION_REQUEST: to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
   | PRESENCE_UPDATE availability ->
     "PRESENCE_UPDATE: availability=" ^ Rosters.availability_to_string availability
   | IQ_ERROR {error_type; error_tag; id} ->
@@ -58,6 +54,11 @@ let to_string = function
   | MESSAGE {ato; message} ->
     "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
   | LOG_OUT -> "LOG_OUT"
+  | NOOP -> "NOOP"
+  | ROSTER_REMOVE {id; target} ->
+    "ROSTER_REMOVE id=" ^ id ^ " target=" ^ Jid.to_string target
+  | SUBSCRIPTION_APPROVAL {ato; xml} ->
+    "SUBSCRIPTION_APPROVAL to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
 ;;
 
 let not_implemented = ERROR "not implemented"
@@ -69,35 +70,34 @@ let lift_iq = function
       (match children with
       | [Xml.Element (((_p, "bind"), _attrs), [])] ->
         (* resource bind with server-generated resource identifier (7.6) *)
-        RESOURCE_BIND_SERVER_GEN (Stanza.get_id attributes)
+        RESOURCE_BIND_SERVER_GEN (Stanza.get_id_exn attributes)
       | [Xml.Element (((_p, "bind"), _attrs), [child])] ->
         (match child with
         | Xml.Element (((_, "resource"), []), [Xml.Text resource]) ->
-          RESOURCE_BIND_CLIENT_GEN {id = Stanza.get_id attributes; resource}
+          RESOURCE_BIND_CLIENT_GEN {id = Stanza.get_id_exn attributes; resource}
         | _ -> ERROR "Unexpected child of resource bind")
       | [ Xml.Element
             ( ((_, "query"), [(_, Xml.Xmlns "jabber:iq:roster")])
             , [Xml.Element (((_, "item"), attrs), group_elements)] ) ] ->
-        let groups =
-          List.map
-            (fun element ->
-              match element with
-              | Xml.Element (((_, "group"), _), [Xml.Text group]) -> group
-              | _ -> assert false )
-            group_elements
-        in
-        let jid = Stanza.get_jid attrs in
-        let handle = (match Stanza.get_name attrs with
-            | Some name -> name
-            | None -> "") in
-        ROSTER_SET
-          { id = Stanza.get_id attributes
-          ; target = jid
-          ; handle
-          ; subscription = Rosters.None
-          ; groups }
+        (match Stanza.get_subscription attrs with
+        | Some "remove" ->
+          ROSTER_REMOVE {id = Stanza.get_id_exn attributes; target = Stanza.get_jid attrs}
+        | _ ->
+          let groups =
+            List.map
+              (fun element ->
+                match element with
+                | Xml.Element (((_, "group"), _), [Xml.Text group]) -> group
+                | _ -> assert false )
+              group_elements
+          in
+          let jid = Stanza.get_jid attrs in
+          let handle =
+            match Stanza.get_name attrs with Some name -> name | None -> ""
+          in
+          ROSTER_SET {id = Stanza.get_id_exn attributes; target = jid; handle; groups})
       | [Xml.Element (((_, "session"), _), [])] ->
-        SESSION_START (Stanza.get_id attributes)
+        SESSION_START (Stanza.get_id_exn attributes)
       | _ ->
         ERROR
           ( "No children matched for iq of type set\n"
@@ -111,19 +111,36 @@ let lift_iq = function
       (match children with
       | [Xml.Element (((_, "query"), [(_, Xml.Xmlns "jabber:iq:roster")]), _)] ->
         (* roster get query *)
-        ROSTER_GET (Stanza.get_id attributes)
+        ROSTER_GET (Stanza.get_id_exn attributes)
       | _ ->
-        let id = Stanza.get_id attributes in
+        let id = Stanza.get_id_exn attributes in
         IQ_ERROR {error_type = Actions.Cancel; error_tag = "feature-not-implemented"; id})
+    | Some "result" -> NOOP
     | _ -> ERROR "Type of iq expected to be 'set' or 'get'")
   | Xml.Text _t -> ERROR "Expected an iq stanza, not text"
 ;;
 
 let lift_presence = function
-  | Xml.Element (((_prefix, _name), attributes), _children) ->
+  | Xml.Element (((namespace, name), attributes), children) ->
     (match Stanza.get_type attributes with
     | Some "subscribe" ->
-      SUBSCRIPTION_REQUEST {id = Stanza.get_id attributes; ato = Stanza.get_to attributes}
+      let rec modify_to = function
+        | [] -> []
+        | (ns, Xml.To jid) :: attrs -> (ns, Xml.To (Jid.to_bare jid)) :: attrs
+        | a :: attrs -> a :: modify_to attrs
+      in
+      let ato = Stanza.get_to attributes |> Jid.to_bare in
+      SUBSCRIPTION_REQUEST
+        {ato; xml = Xml.Element (((namespace, name), modify_to attributes), children)}
+    | Some "subscribed" ->
+      let rec modify_to = function
+        | [] -> []
+        | (ns, Xml.To jid) :: attrs -> (ns, Xml.To (Jid.to_bare jid)) :: attrs
+        | a :: attrs -> a :: modify_to attrs
+      in
+      let ato = Stanza.get_to attributes |> Jid.to_bare in
+      SUBSCRIPTION_APPROVAL
+        {ato; xml = Xml.Element (((namespace, name), modify_to attributes), children)}
     | Some "unavailable" -> LOG_OUT
     | None -> PRESENCE_UPDATE Rosters.Online
     | _ -> not_implemented)
@@ -259,6 +276,5 @@ let%expect_test "roster set" =
                            , [] ) ] ) ] ))))
   in
   print_endline (to_string event);
-  [%expect
-    {| ROSTER_SET: id=rs1 target=nurse@example.com handle=Nurse subscribed=none groups=[] |}]
+  [%expect {| ROSTER_SET: id=rs1 target=nurse@example.com handle=Nurse groups=[] |}]
 ;;
