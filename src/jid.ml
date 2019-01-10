@@ -11,6 +11,7 @@ type t =
   | Empty
 
 let empty = Empty
+let at_least_bare = function Full_JID _ | Bare_JID _ -> true | _ -> false
 
 let to_bare = function
   | Full_JID (bare_jid, _) -> Bare_JID bare_jid

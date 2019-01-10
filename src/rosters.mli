@@ -27,6 +27,7 @@ val upgrade_subscription_from : Jid.t -> Jid.t -> unit
 val unset_ask : Jid.t -> Jid.t -> unit
 val set_ask : Jid.t -> Jid.t -> unit
 val set_item : user:Jid.t -> contact:Jid.t -> handle:string -> groups:string list -> unit
+val get_presence : Jid.t -> availability
 val get_ask : Jid.t -> Jid.t -> bool
 val get_subscription : Jid.t -> Jid.t -> subscription option
 val get_roster_item : Jid.t -> Jid.t -> item option

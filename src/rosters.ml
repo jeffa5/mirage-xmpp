@@ -130,6 +130,13 @@ let set_item ~user ~contact ~handle ~groups =
     t := Jid_map.add user {presence_status = Offline; roster = new_roster} !t
 ;;
 
+let get_presence user =
+  let user = Jid.to_bare user in
+  match Jid_map.find user !t with
+  | Some {presence_status; _} -> presence_status
+  | None -> Offline
+;;
+
 let get_roster_item user contact =
   let user = Jid.to_bare user in
   let contact = Jid.to_bare contact in

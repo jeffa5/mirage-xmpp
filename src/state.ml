@@ -18,10 +18,24 @@ let state_to_string = function
   | CLOSED -> "CLOSED"
 ;;
 
-let create () = {state = IDLE}
+let initial = {state = IDLE}
 let to_string t = "{state: " ^ state_to_string t.state ^ "}"
-let closed t = t.state = CLOSED
-let closed_with_error e = {state = CLOSED}, [Actions.ERROR e], []
+
+let closed =
+  ( {state = CLOSED}
+  , [ Actions.UPDATE_PRESENCE Rosters.Offline
+    ; Actions.REMOVE_FROM_CONNECTIONS
+    ; Actions.CLOSE ]
+  , [] )
+;;
+
+let closed_with_error e =
+  ( {state = CLOSED}
+  , [ Actions.UPDATE_PRESENCE Rosters.Offline
+    ; Actions.REMOVE_FROM_CONNECTIONS
+    ; Actions.ERROR e ]
+  , [] )
+;;
 
 let handle_idle t = function
   | STREAM_HEADER {ato; version} ->
@@ -106,7 +120,7 @@ let handle_negotiating t = function
   | SESSION_START id -> {state = CONNECTED}, [Actions.SESSION_START_SUCCESS id], []
   | STREAM_CLOSE ->
     (* the stream can close during negotiation so close our direction too *)
-    {state = CLOSED}, [Actions.CLOSE], []
+    closed
   | ERROR e -> closed_with_error e
   | ROSTER_GET id ->
     {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER id], []
@@ -131,7 +145,7 @@ let handle_negotiating t = function
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
-  | LOG_OUT -> {state = CLOSED}, [], []
+  | LOG_OUT -> closed
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL {ato; xml} ->
     ( {state = CONNECTED}
@@ -143,17 +157,13 @@ let handle_negotiating t = function
 ;;
 
 let handle_connected t = function
-  | STREAM_HEADER _ ->
-    ( {state = CLOSED}
-    , [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR "Not expecting stream header"]
-    , [] )
+  | STREAM_HEADER _ -> closed_with_error "Not expecting stream header"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Already connected"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Already connected"
   | SESSION_START id -> {state = CONNECTED}, [Actions.SESSION_START_SUCCESS id], []
-  | STREAM_CLOSE ->
-    {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.CLOSE], []
-  | ERROR e -> {state = CLOSED}, [Actions.REMOVE_FROM_CONNECTIONS; Actions.ERROR e], []
+  | STREAM_CLOSE -> closed
+  | ERROR e -> closed_with_error e
   | ROSTER_GET id -> {state = CONNECTED}, [Actions.GET_ROSTER id], []
   | ROSTER_SET {id; target; handle; groups} ->
     ( {state = CONNECTED}
@@ -175,7 +185,7 @@ let handle_connected t = function
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
-  | LOG_OUT -> {state = CLOSED}, [], []
+  | LOG_OUT -> closed
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL {ato; xml} ->
     ( {state = CONNECTED}
@@ -203,7 +213,7 @@ let handle_closed t = function
   | PRESENCE_UPDATE _ -> closed_with_error "already closed"
   | IQ_ERROR _ -> closed_with_error "already closed"
   | MESSAGE _ -> closed_with_error "already closed"
-  | LOG_OUT -> {state = CLOSED}, [], []
+  | LOG_OUT -> closed
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL _ -> closed_with_error "already closed"
 ;;
@@ -218,13 +228,13 @@ let handle t event =
 ;;
 
 let%expect_test "create" =
-  let fsm = create () in
+  let fsm = initial in
   print_endline (to_string fsm);
   [%expect {| {state: IDLE} |}]
 ;;
 
 let%expect_test "idle to negotiating" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -240,7 +250,7 @@ let%expect_test "idle to negotiating" =
 ;;
 
 let%expect_test "idle to negotiating with > 1.0" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -256,7 +266,7 @@ let%expect_test "idle to negotiating with > 1.0" =
 ;;
 
 let%expect_test "negotiating to closing" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -274,11 +284,15 @@ let%expect_test "negotiating to closing" =
   [%expect {| {state: CLOSED} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
-  [%expect {| ERROR: Unexpected stream close during sasl negotiation |}]
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
+    REMOVE_FROM_CONNECTIONS
+    ERROR: Unexpected stream close during sasl negotiation |}]
 ;;
 
 let%expect_test "sasl negotiation" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -315,11 +329,15 @@ let%expect_test "sasl negotiation" =
   [%expect {| {state: CLOSED} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
-  [%expect {| CLOSE |}]
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
+    REMOVE_FROM_CONNECTIONS
+    CLOSE |}]
 ;;
 
 let%expect_test "bind resource" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -356,11 +374,15 @@ let%expect_test "bind resource" =
   [%expect {| {state: CLOSED} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
-  [%expect {| CLOSE |}]
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
+    REMOVE_FROM_CONNECTIONS
+    CLOSE |}]
 ;;
 
 let%expect_test "bind resource client" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -397,11 +419,15 @@ let%expect_test "bind resource client" =
   [%expect {| {state: CLOSED} |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
-  [%expect {| CLOSE |}]
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
+    REMOVE_FROM_CONNECTIONS
+    CLOSE |}]
 ;;
 
 let%expect_test "roster get" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -441,13 +467,15 @@ let%expect_test "roster get" =
   print_endline (to_string fsm);
   [%expect {| {state: CLOSED} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
-  [%expect {|
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
 
 let%expect_test "roster set" =
-  let fsm = create () in
+  let fsm = initial in
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -503,7 +531,9 @@ let%expect_test "roster set" =
   print_endline (to_string fsm);
   [%expect {| {state: CLOSED} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
-  [%expect {|
+  [%expect
+    {|
+    UPDATE_PRESENCE: availability=Offline
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;

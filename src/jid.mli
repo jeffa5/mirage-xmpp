@@ -10,6 +10,7 @@ type t =
   | Empty
 
 val empty : t
+val at_least_bare : t -> bool
 val to_bare : t -> t
 
 (** [of_string s] creates a new jid from the string, splitting it appropriately *)

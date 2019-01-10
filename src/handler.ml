@@ -113,17 +113,28 @@ let handle_action t stream =
                            {ato; xml; from = Some (t.jid |> Jid.to_bare)})) ))
       | SUBSCRIPTION_REQUEST {xml = Xml.Text _; _} -> assert false
       | UPDATE_PRESENCE availability ->
-        Rosters.set_presence ~jid:t.jid availability;
-        Rosters.get_subscribers t.jid
-        |> List.iter (fun jid ->
-               match Connections.find jid with
-               | Some f -> f (Some (SEND_PRESENCE_UPDATE t.jid))
-               | None -> () )
+        if Jid.at_least_bare t.jid
+        then (
+          Rosters.set_presence ~jid:t.jid availability;
+          Rosters.get_subscribers t.jid
+          |> List.iter (fun jid ->
+                 Connections.find_all jid
+                 |> List.iter (fun (_, handler) ->
+                        handler (Some (SEND_PRESENCE_UPDATE t.jid)) ) ) )
       | SEND_PRESENCE_UPDATE from ->
-        t.callback
-          (Some
-             (Stanza.to_string
-                (Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:t.jid [])))
+        let stanza =
+          match Rosters.get_presence from with
+          | Rosters.Online ->
+            Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:t.jid []
+          | Rosters.Offline ->
+            Stanza.create_presence
+              ~id:(Some (Stanza.gen_id ()))
+              ~from
+              ~ato:t.jid
+              ~atype:"unavailable"
+              []
+        in
+        t.callback (Some (Stanza.to_string stanza))
       | SEND_CURRENT_PRESENCE ato ->
         List.iter (fun (_, handler) ->
             List.iter (fun (jid, _) -> handler (Some (SEND_PRESENCE_UPDATE jid)))
@@ -201,7 +212,7 @@ let handle_action t stream =
 let create ~stream ~callback ~hostname =
   let parser = Parser.create stream in
   let jid = Jid.empty in
-  let fsm = State.create () in
+  let fsm = State.initial in
   let actions_stream, actions_push = Lwt_stream.create () in
   let t = {parser; callback; jid; fsm; actions_push; hostname; closed = false} in
   Lwt.async (fun () -> handle_action t actions_stream);
@@ -218,7 +229,7 @@ let handle t =
       (function Actions.RESET_PARSER -> t.parser <- Parser.reset t.parser)
       handler_actions;
     List.iter (fun action -> t.actions_push (Some action)) actions;
-    if State.closed t.fsm then Lwt.return_unit else aux ()
+    if t.closed then Lwt.return_unit else aux ()
   in
   aux ()
 ;;
@@ -388,7 +399,7 @@ let%expect_test "bind resource" =
     {|
     {
     rosters:
-    []
+    [juliet@im.example.com: Offline; ]
     connections:
     []
     parser:
@@ -452,7 +463,7 @@ let%expect_test "roster get" =
     {|
       {
       rosters:
-      []
+      [juliet@im.example.com: Offline; ]
       connections:
       []
       parser:
