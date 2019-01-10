@@ -842,7 +842,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Receive:
     &lt;iq id='redacted_for_testing' type='result' to='juliet@im.example.com/balcony'/&gt;
     Receive:
-    &lt;iq id='redacted_for_testing' type='set' to='juliet@im.example.com/balcony'&gt;&lt;query xmlns='jabber:iq:roster'&gt;&lt;item jid='nurse@example.com' name='Nurse' subscription='none'&gt;&lt;group&gt;Servants&lt;/group&gt;&lt;/item&gt;&lt;/query&gt;&lt;/iq&gt;
+    &lt;iq id='redacted_for_testing' type='set' to='juliet@im.example.com/balcony'&gt;&lt;query xmlns='jabber:iq:roster'&gt;&lt;item jid='nurse@example.com' subscription='none' name='Nurse'&gt;&lt;group&gt;Servants&lt;/group&gt;&lt;/item&gt;&lt;/query&gt;&lt;/iq&gt;
     Send:
     &lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;
     Receive:
@@ -858,7 +858,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-08 22:56:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-10 19:30:59 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

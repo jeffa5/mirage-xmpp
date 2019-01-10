@@ -647,7 +647,7 @@ let convert_attribute ((namespace, name), value) =
     | <span data-count="10">"</span>lang" -&gt; Lang value
     | <span data-count="10">"</span>stream" -&gt; Stream value
     | <span data-count="1">"</span>name" -&gt; Name value
-    | <span data-count="0">"</span>subscription" -&gt; Subscription (Rosters.subscription_of_string value)
+    | <span data-count="0">"</span>subscription" -&gt; Subscription value
     | <span data-count="3">"</span>mechanism" -&gt; Mechanism value
     | <span data-count="0">_</span> -&gt; Other (name, value) )
 ;;
@@ -878,7 +878,7 @@ let%expect_test "non-whitespace between elements" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-08 22:56:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-10 19:30:59 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

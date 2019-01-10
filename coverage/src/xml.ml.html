@@ -209,7 +209,7 @@ type attribute_value =
   | Lang of string
   | Stream of string
   | Name of string
-  | Subscription of Rosters.subscription
+  | Subscription of string
   | Mechanism of string
   | Other of string * string
 
@@ -247,7 +247,7 @@ let attribute_to_string (namespace, nameval) =
   | <span data-count="18">L</span>ang s -&gt; "lang='" ^ s ^ "'"
   | <span data-count="18">S</span>tream s -&gt; "stream='" ^ s ^ "'"
   | <span data-count="3">N</span>ame s -&gt; "name='" ^ s ^ "'"
-  | <span data-count="2">S</span>ubscription s -&gt; "subscription='" ^ Rosters.subscription_to_string s ^ "'"
+  | <span data-count="2">S</span>ubscription s -&gt; "subscription='" ^ s ^ "'"
   | <span data-count="3">M</span>echanism s -&gt; "mechanism='" ^ s ^ "'"
   | <span data-count="0">O</span>ther (name, value) -&gt; name ^ "='" ^ value ^ "'"
 ;;
@@ -281,7 +281,7 @@ let create ?(children = <span data-count="5">[</span>]) tag = <span data-count="
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-08 22:56:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-10 19:30:59 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
