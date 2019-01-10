@@ -150,13 +150,20 @@ let handle_action t stream =
                   ~id
                   ~error_type
                   ~error_tag ))
-      | MESSAGE {ato; message} ->
+      | MESSAGE
+          { ato
+          ; message = Xml.Element (((namespace, name), attributes), children) as message
+          } ->
         if ato = t.jid
         then t.callback (Some (Xml.to_string message))
-        else (
-          match Connections.find ato with
-          | Some fn -> fn @@ Some (MESSAGE {ato; message})
-          | None -> () )
+        else
+          let message =
+            Xml.Element
+              (((namespace, name), ("", Xml.From t.jid) :: attributes), children)
+          in
+          Connections.find_all ato
+          |> List.iter (fun (_, handler) -> handler (Some (MESSAGE {ato; message})))
+      | MESSAGE {message = Xml.Text _; _} -> assert false
       | ROSTER_REMOVE {id; target} ->
         Rosters.remove_item t.jid target;
         t.callback
