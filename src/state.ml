@@ -26,7 +26,7 @@ let closed =
   , [ Actions.UPDATE_PRESENCE Rosters.Offline
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.CLOSE ]
-  , [] )
+  , [Actions.EXIT] )
 ;;
 
 let closed_with_error e =
@@ -34,7 +34,7 @@ let closed_with_error e =
   , [ Actions.UPDATE_PRESENCE Rosters.Offline
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.ERROR e ]
-  , [] )
+  , [Actions.EXIT] )
 ;;
 
 let handle_idle t = function

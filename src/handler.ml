@@ -220,16 +220,19 @@ let create ~stream ~callback ~hostname =
 ;;
 
 let handle t =
+  let closed = ref false in
   let rec aux () =
     let%lwt parse_result = Parser.parse t.parser in
     let event = Events.lift parse_result in
     let new_fsm, actions, handler_actions = State.handle t.fsm event in
     t.fsm <- new_fsm;
     List.iter
-      (function Actions.RESET_PARSER -> t.parser <- Parser.reset t.parser)
+      (function
+        | Actions.RESET_PARSER -> t.parser <- Parser.reset t.parser
+        | Actions.EXIT -> closed := true)
       handler_actions;
     List.iter (fun action -> t.actions_push (Some action)) actions;
-    if t.closed then Lwt.return_unit else aux ()
+    if !closed then Lwt.return_unit else aux ()
   in
   aux ()
 ;;

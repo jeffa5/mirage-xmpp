@@ -1,6 +1,11 @@
-type handler_actions = RESET_PARSER
+type handler_actions =
+  | RESET_PARSER
+  | EXIT
 
-let handler_actions_to_string = function RESET_PARSER -> "RESET_PARSER"
+let handler_actions_to_string = function
+  | RESET_PARSER -> "RESET_PARSER"
+  | EXIT -> "EXIT"
+;;
 
 type error_type =
   | Auth
