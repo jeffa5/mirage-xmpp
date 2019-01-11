@@ -175,6 +175,17 @@ let get_subscription user contact =
   | None -> None
 ;;
 
+let get_subscriptions user =
+  let user = Jid.to_bare user in
+  match Jid_map.find user !t with
+  | Some {roster; _} ->
+    Jid_map.to_list roster
+    |> List.filter (fun (_jid, {subscription; _}) ->
+           match subscription with To | Both -> true | _ -> false )
+    |> List.map (fun (jid, _) -> jid)
+  | None -> []
+;;
+
 let get_subscribers user =
   let user = Jid.to_bare user in
   match Jid_map.find user !t with

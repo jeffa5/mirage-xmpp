@@ -41,6 +41,7 @@ type t =
   | ROSTER_REMOVE of {id : string; target : Jid.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | ROSTER_SET_FROM of Jid.t
+  | PROBE_PRESENCE
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

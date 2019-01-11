@@ -116,7 +116,8 @@ let handle_action t stream =
         if Jid.at_least_bare t.jid
         then (
           Rosters.set_presence ~jid:t.jid availability;
-          Rosters.get_subscribers t.jid
+          (Connections.find_all (Jid.to_bare t.jid) |> List.map (fun (jid, _) -> jid))
+          @ Rosters.get_subscribers t.jid
           |> List.iter (fun jid ->
                  Connections.find_all jid
                  |> List.iter (fun (_, handler) ->
@@ -203,7 +204,14 @@ let handle_action t stream =
                  ) )
           | _ -> () )
       | SUBSCRIPTION_APPROVAL {xml = Xml.Text _; _} -> assert false
-      | ROSTER_SET_FROM from -> Rosters.upgrade_subscription_from t.jid from);
+      | ROSTER_SET_FROM from -> Rosters.upgrade_subscription_from t.jid from
+      | PROBE_PRESENCE ->
+        (Connections.find_all (Jid.to_bare t.jid) |> List.map (fun (jid, _) -> jid))
+        @ List.fold_left
+            (fun l jid -> l @ List.map (fun (jid, _) -> jid) @@ Connections.find_all jid)
+            []
+            (Rosters.get_subscriptions t.jid)
+        |> List.iter (fun jid -> t.actions_push (Some (SEND_PRESENCE_UPDATE jid))));
       if t.closed
       then (
         t.callback None;
@@ -465,6 +473,7 @@ let%expect_test "roster get" =
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
+      <presence to='juliet@im.example.com/balcony' from='juliet@im.example.com/balcony' id='<redacted_for_testing>' type='unavailable'/>
       </stream:stream>
       Out stream closed
     |}];
@@ -549,6 +558,7 @@ let%expect_test "roster set" =
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'/>
       <iq id='<redacted_for_testing>' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' subscription='none' name='Nurse'><group>Servants</group></item></query></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
+      <presence to='juliet@im.example.com/balcony' from='juliet@im.example.com/balcony' id='<redacted_for_testing>' type='unavailable'/>
       </stream:stream>
       Out stream closed
     |}];

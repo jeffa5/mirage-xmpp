@@ -32,6 +32,7 @@ val get_ask : Jid.t -> Jid.t -> bool
 val get_subscription : Jid.t -> Jid.t -> subscription option
 val get_roster_item : Jid.t -> Jid.t -> item option
 val get_roster_items : Jid.t -> (Jid.t * item) list
+val get_subscriptions : Jid.t -> Jid.t list
 val get_subscribers : Jid.t -> Jid.t list
 val to_string : unit -> string
 val clear : unit -> unit

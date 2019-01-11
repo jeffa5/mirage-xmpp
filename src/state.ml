@@ -101,6 +101,10 @@ let handle_sasl_negotiation t = function
     closed_with_error "Unexpected subscription approval during sasl negotiation"
 ;;
 
+let just_connected actions =
+  {state = CONNECTED}, [Actions.PROBE_PRESENCE; Actions.ADD_TO_CONNECTIONS] @ actions, []
+;;
+
 let handle_negotiating t = function
   | STREAM_HEADER {ato; version} ->
     if ato <> Jid.Empty
@@ -117,43 +121,36 @@ let handle_negotiating t = function
     {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id], []
   | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
     {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource}], []
-  | SESSION_START id -> {state = CONNECTED}, [Actions.SESSION_START_SUCCESS id], []
+  | SESSION_START id -> just_connected [Actions.SESSION_START_SUCCESS id]
   | STREAM_CLOSE ->
     (* the stream can close during negotiation so close our direction too *)
     closed
   | ERROR e -> closed_with_error e
-  | ROSTER_GET id ->
-    {state = CONNECTED}, [Actions.ADD_TO_CONNECTIONS; Actions.GET_ROSTER id], []
+  | ROSTER_GET id -> just_connected [Actions.GET_ROSTER id]
   | ROSTER_SET {id; target; handle; groups} ->
-    ( {state = CONNECTED}
-    , [ Actions.ADD_TO_CONNECTIONS
-      ; Actions.SET_ROSTER {id; target; handle; groups}
+    just_connected
+      [ Actions.SET_ROSTER {id; target; handle; groups}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
-    , [] )
   | ROSTER_REMOVE {id; target} ->
-    ( {state = CONNECTED}
-    , [ Actions.ROSTER_REMOVE {id; target}
+    just_connected
+      [ Actions.ROSTER_REMOVE {id; target}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
-    , [] )
   | SUBSCRIPTION_REQUEST {ato; xml} ->
-    ( {state = CONNECTED}
-    , [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
+    just_connected
+      [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
       ; Actions.PUSH_ROSTER {ato = None; contact = ato} ]
-    , [] )
-  | PRESENCE_UPDATE available ->
-    {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
+  | PRESENCE_UPDATE availability -> just_connected [Actions.UPDATE_PRESENCE availability]
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
-  | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
+  | MESSAGE {ato; message} -> just_connected [Actions.MESSAGE {ato; message}]
   | LOG_OUT -> closed
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL {ato; xml} ->
-    ( {state = CONNECTED}
-    , [ Actions.SUBSCRIPTION_APPROVAL {ato; xml; from = None}
+    just_connected
+      [ Actions.SUBSCRIPTION_APPROVAL {ato; xml; from = None}
       ; Actions.ROSTER_SET_FROM ato
       ; Actions.PUSH_ROSTER {ato = None; contact = ato}
       ; Actions.SEND_CURRENT_PRESENCE ato ]
-    , [] )
 ;;
 
 let handle_connected t = function
@@ -461,6 +458,7 @@ let%expect_test "roster get" =
   [%expect {| {state: CONNECTED} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {|
+    PROBE_PRESENCE
     ADD_TO_CONNECTIONS
     GET_ROSTER: id=some_id |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
@@ -509,6 +507,7 @@ let%expect_test "roster set" =
   [%expect {| {state: CONNECTED} |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {|
+    PROBE_PRESENCE
     ADD_TO_CONNECTIONS
     GET_ROSTER: id=some_id |}];
   let fsm, actions, _handler_actions =

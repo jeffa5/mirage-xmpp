@@ -47,6 +47,7 @@ type t =
   | ROSTER_REMOVE of {id : string; target : Jid.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | ROSTER_SET_FROM of Jid.t
+  | PROBE_PRESENCE
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -109,4 +110,5 @@ let to_string = function
     ^ " from="
     ^ (match from with Some f -> Jid.to_string f | None -> "")
   | ROSTER_SET_FROM from -> "ROSTER_SET_FROM from=" ^ Jid.to_string from
+  | PROBE_PRESENCE -> "PROBE_PRESENCE"
 ;;
