@@ -23,7 +23,7 @@ let to_string t = "{state: " ^ state_to_string t.state ^ "}"
 
 let closed =
   ( {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE Rosters.Offline
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.CLOSE ]
   , [Actions.EXIT] )
@@ -31,7 +31,7 @@ let closed =
 
 let closed_with_error e =
   ( {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE Rosters.Offline
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.ERROR e ]
   , [Actions.EXIT] )
@@ -139,7 +139,8 @@ let handle_negotiating t = function
     just_connected
       [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
       ; Actions.PUSH_ROSTER {ato = None; contact = ato} ]
-  | PRESENCE_UPDATE availability -> just_connected [Actions.UPDATE_PRESENCE availability]
+  | PRESENCE_UPDATE {status; xml} ->
+    just_connected [Actions.UPDATE_PRESENCE {status; xml}]
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = NEGOTIATING}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> just_connected [Actions.MESSAGE {ato; message}]
@@ -177,8 +178,8 @@ let handle_connected t = function
     , [ Actions.SUBSCRIPTION_REQUEST {ato; xml; from = None}
       ; Actions.PUSH_ROSTER {ato = None; contact = ato} ]
     , [] )
-  | PRESENCE_UPDATE available ->
-    {state = CONNECTED}, [Actions.UPDATE_PRESENCE available], []
+  | PRESENCE_UPDATE {status; xml} ->
+    {state = CONNECTED}, [Actions.UPDATE_PRESENCE {status; xml}], []
   | IQ_ERROR {error_type; error_tag; id} ->
     {state = CONNECTED}, [Actions.IQ_ERROR {error_type; error_tag; id}], []
   | MESSAGE {ato; message} -> {state = CONNECTED}, [Actions.MESSAGE {ato; message}], []
@@ -283,7 +284,7 @@ let%expect_test "negotiating to closing" =
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     ERROR: Unexpected stream close during sasl negotiation |}]
 ;;
@@ -328,7 +329,7 @@ let%expect_test "sasl negotiation" =
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -373,7 +374,7 @@ let%expect_test "bind resource" =
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -418,7 +419,7 @@ let%expect_test "bind resource client" =
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -467,7 +468,7 @@ let%expect_test "roster get" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -532,7 +533,7 @@ let%expect_test "roster set" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline
+    UPDATE_PRESENCE: availability=Offline xml=
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;

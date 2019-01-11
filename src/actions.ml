@@ -39,8 +39,8 @@ type t =
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
-  | UPDATE_PRESENCE of Rosters.availability
-  | SEND_PRESENCE_UPDATE of Jid.t
+  | UPDATE_PRESENCE of {status : Rosters.availability; xml : Xml.t option}
+  | SEND_PRESENCE_UPDATE of {from : Jid.t; xml : Xml.t option}
   | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
@@ -87,9 +87,16 @@ let to_string = function
     ^ Xml.to_string xml
     ^ " from="
     ^ (match from with Some f -> Jid.to_string f | None -> "")
-  | UPDATE_PRESENCE availability ->
-    "UPDATE_PRESENCE: availability=" ^ Rosters.availability_to_string availability
-  | SEND_PRESENCE_UPDATE from -> "SEND_PRESENCE_UPDATE: from=" ^ Jid.to_string from
+  | UPDATE_PRESENCE {status; xml} ->
+    "UPDATE_PRESENCE: availability="
+    ^ Rosters.availability_to_string status
+    ^ " xml="
+    ^ (match xml with Some x -> Xml.to_string x | None -> "")
+  | SEND_PRESENCE_UPDATE {from; xml} ->
+    "SEND_PRESENCE_UPDATE: from="
+    ^ Jid.to_string from
+    ^ " xml="
+    ^ (match xml with Some x -> Xml.to_string x | None -> "")
   | SEND_CURRENT_PRESENCE ato -> "SEND_CURRENT_PRESENCE: to=" ^ Jid.to_string ato
   | IQ_ERROR {error_type; error_tag; id} ->
     "IQ_ERROR: error_type="

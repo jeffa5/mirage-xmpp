@@ -11,7 +11,7 @@ type t =
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
-  | PRESENCE_UPDATE of Rosters.availability
+  | PRESENCE_UPDATE of {status : Rosters.availability; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
@@ -42,8 +42,11 @@ let to_string = function
     ^ "]"
   | SUBSCRIPTION_REQUEST {ato; xml} ->
     "SUBSCRIPTION_REQUEST: to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
-  | PRESENCE_UPDATE availability ->
-    "PRESENCE_UPDATE: availability=" ^ Rosters.availability_to_string availability
+  | PRESENCE_UPDATE {status; xml} ->
+    "PRESENCE_UPDATE: status="
+    ^ Rosters.availability_to_string status
+    ^ " xml="
+    ^ (match xml with Some x -> Xml.to_string x | None -> "")
   | IQ_ERROR {error_type; error_tag; id} ->
     "IQ_ERROR: error_type="
     ^ Actions.error_type_to_string error_type
@@ -141,8 +144,14 @@ let lift_presence = function
       let ato = Stanza.get_to attributes |> Jid.to_bare in
       SUBSCRIPTION_APPROVAL
         {ato; xml = Xml.Element (((namespace, name), modify_to attributes), children)}
-    | Some "unavailable" -> LOG_OUT
-    | None -> PRESENCE_UPDATE Rosters.Online
+    | Some "unavailable" ->
+      PRESENCE_UPDATE
+        { status = Rosters.Offline
+        ; xml = Some (Xml.Element (((namespace, name), attributes), children)) }
+    | None ->
+      PRESENCE_UPDATE
+        { status = Rosters.Online
+        ; xml = Some (Xml.Element (((namespace, name), attributes), children)) }
     | _ -> not_implemented)
   | Xml.Text _t -> ERROR "Expected a presence stanza, not text"
 ;;

@@ -112,33 +112,51 @@ let handle_action t stream =
                         (SUBSCRIPTION_REQUEST
                            {ato; xml; from = Some (t.jid |> Jid.to_bare)})) ))
       | SUBSCRIPTION_REQUEST {xml = Xml.Text _; _} -> assert false
-      | UPDATE_PRESENCE availability ->
+      | UPDATE_PRESENCE {status; xml} ->
         if Jid.at_least_bare t.jid
         then (
-          Rosters.set_presence ~jid:t.jid availability;
+          Rosters.set_presence ~jid:t.jid status;
           (Connections.find_all (Jid.to_bare t.jid) |> List.map (fun (jid, _) -> jid))
           @ Rosters.get_subscribers t.jid
           |> List.iter (fun jid ->
                  Connections.find_all jid
                  |> List.iter (fun (_, handler) ->
-                        handler (Some (SEND_PRESENCE_UPDATE t.jid)) ) ) )
-      | SEND_PRESENCE_UPDATE from ->
+                        handler (Some (SEND_PRESENCE_UPDATE {from = t.jid; xml})) ) ) )
+      | SEND_PRESENCE_UPDATE {from; xml} ->
+        let rec modify_from = function
+          | [] -> ["", Xml.From from]
+          | (ns, Xml.From _) :: attrs -> (ns, Xml.From from) :: attrs
+          | a :: attrs -> a :: modify_from attrs
+        in
+        let rec modify_to = function
+          | [] -> ["", Xml.To (t.jid |> Jid.to_bare)]
+          | (ns, Xml.To _) :: attrs -> (ns, Xml.To (t.jid |> Jid.to_bare)) :: attrs
+          | a :: attrs -> a :: modify_to attrs
+        in
         let stanza =
-          match Rosters.get_presence from with
-          | Rosters.Online ->
-            Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:t.jid []
-          | Rosters.Offline ->
-            Stanza.create_presence
-              ~id:(Some (Stanza.gen_id ()))
-              ~from
-              ~ato:t.jid
-              ~atype:"unavailable"
-              []
+          match xml with
+          | Some (Xml.Element (((ns, n), attributes), c)) ->
+            Stanza.Presence
+              ( Xml.remove_prefixes
+              @@ Xml.Element (((ns, n), modify_to @@ modify_from attributes), c) )
+          | Some (Xml.Text _) -> assert false
+          | None ->
+            (match Rosters.get_presence from with
+            | Rosters.Online ->
+              Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:t.jid []
+            | Rosters.Offline ->
+              Stanza.create_presence
+                ~id:(Some (Stanza.gen_id ()))
+                ~from
+                ~ato:t.jid
+                ~atype:"unavailable"
+                [])
         in
         t.callback (Some (Stanza.to_string stanza))
       | SEND_CURRENT_PRESENCE ato ->
         List.iter (fun (_, handler) ->
-            List.iter (fun (jid, _) -> handler (Some (SEND_PRESENCE_UPDATE jid)))
+            List.iter (fun (jid, _) ->
+                handler (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) )
             @@ Connections.find_all (Jid.to_bare t.jid) )
         @@ Connections.find_all ato
       | IQ_ERROR {error_type; error_tag; id} ->
@@ -211,7 +229,8 @@ let handle_action t stream =
             (fun l jid -> l @ List.map (fun (jid, _) -> jid) @@ Connections.find_all jid)
             []
             (Rosters.get_subscriptions t.jid)
-        |> List.iter (fun jid -> t.actions_push (Some (SEND_PRESENCE_UPDATE jid))));
+        |> List.iter (fun jid ->
+               t.actions_push (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) ));
       if t.closed
       then (
         t.callback None;

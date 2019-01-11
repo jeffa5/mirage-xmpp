@@ -33,8 +33,8 @@ type t =
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
-  | UPDATE_PRESENCE of Rosters.availability
-  | SEND_PRESENCE_UPDATE of Jid.t
+  | UPDATE_PRESENCE of {status : Rosters.availability; xml : Xml.t option}
+  | SEND_PRESENCE_UPDATE of {from : Jid.t; xml : Xml.t option}
   | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
