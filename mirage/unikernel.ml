@@ -11,12 +11,14 @@ module Main (S : Mirage_stack_lwt.V4) = struct
   ;;
 
   let read flow pushf =
+    let dst, dst_port = S.TCPV4.dst flow in
+    let dst = Ipaddr.V4.to_string dst in
     let rec aux () =
       match%lwt S.TCPV4.read flow with
       | Ok `Eof | Error _ -> Lwt.return_unit
       | Ok (`Data b) ->
         let s = Cstruct.to_string b in
-        Logs.debug (fun f -> f "Data read from connection: %s" s);
+        Logs.debug (fun f -> f "Read <- %s:%d : %s" dst dst_port s);
         String.iter (fun c -> pushf (Some c)) s;
         aux ()
     in
@@ -26,10 +28,12 @@ module Main (S : Mirage_stack_lwt.V4) = struct
   let mvar = Lwt_mvar.create_empty ()
 
   let write flow out_stream =
+    let dst, dst_port = S.TCPV4.dst flow in
+    let dst = Ipaddr.V4.to_string dst in
     let rec aux () =
       match%lwt Lwt_stream.get out_stream with
       | Some s ->
-        Logs.debug (fun f -> f "Sending string: %s" s);
+        Logs.debug (fun f -> f "Send -> %s:%d : %s" dst dst_port s);
         let%lwt () = write_string flow s in
         aux ()
       | None ->
