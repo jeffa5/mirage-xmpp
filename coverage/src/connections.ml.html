@@ -11,10 +11,12 @@
           <span class="dirname">src/</span>connections.ml
         </a>
       </h1>
-      <h2>80.00%</h2>
+      <h2>65.00%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:14.93%"></span>
+      <span class="unvisited" style="top:8.96%"></span>
+      <span class="unvisited" style="top:13.43%"></span>
+      <span class="unvisited" style="top:14.93%"></span>
       <span class="unvisited" style="top:23.88%"></span>
       <span class="unvisited" style="top:25.37%"></span>
       <span class="unvisited" style="top:29.85%"></span>
@@ -27,11 +29,11 @@
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span class="visited"> </span>
 <a id="L5"></a><span class="visited"> </span>
-<a id="L6"></a><span class="visited"> </span>
+<a id="L6"></a><span class="unvisited"> </span>
 <a id="L7"></a><span > </span>
 <a id="L8"></a><span class="visited"> </span>
-<a id="L9"></a><span class="visited"> </span>
-<a id="L10"></a><span class="some-visited"> </span>
+<a id="L9"></a><span class="unvisited"> </span>
+<a id="L10"></a><span class="unvisited"> </span>
 <a id="L11"></a><span class="visited"> </span>
 <a id="L12"></a><span > </span>
 <a id="L13"></a><span > </span>
@@ -167,11 +169,11 @@ module Jid_map = Map.Make (Jid)
 
 let t = <span data-count="2">r</span>ef Jid_map.empty
 let add jid f = <span data-count="6">t</span> := Jid_map.add jid f !t
-let find jid = <span data-count="2">J</span>id_map.find jid !t
+let find jid = <span data-count="0">J</span>id_map.find jid !t
 
 let find_all = <span data-count="2">f</span>unction
-  | <span data-count="2">J</span>id.Full_JID (_bare_jid, _resource) as jid -&gt;
-    (match find jid with <span data-count="2">S</span>ome actions_push -&gt; [jid, actions_push] | <span data-count="0">N</span>one -&gt; [])
+  | <span data-count="0">J</span>id.Full_JID (_bare_jid, _resource) as jid -&gt;
+    (match find jid with <span data-count="0">S</span>ome actions_push -&gt; [jid, actions_push] | <span data-count="0">N</span>one -&gt; [])
   | <span data-count="7">J</span>id.Bare_JID bare_jid -&gt;
     Jid_map.filter
       (fun jid _actions_fun -&gt;
@@ -232,7 +234,7 @@ let%expect_test "find all matches bare jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-11 10:36:35 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-12 19:21:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
