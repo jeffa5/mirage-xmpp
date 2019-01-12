@@ -68,6 +68,8 @@ let handle_idle t = function
   | LOG_OUT -> closed_with_error "No stream"
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL _ -> closed_with_error "No stream"
+  | SUBSCRIPTION_CANCELLATION _ -> closed_with_error "No stream"
+  | SUBSCRIPTION_REMOVAL _ -> closed_with_error "No stream"
 ;;
 
 let handle_sasl_negotiation t = function
@@ -99,6 +101,10 @@ let handle_sasl_negotiation t = function
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL _ ->
     closed_with_error "Unexpected subscription approval during sasl negotiation"
+  | SUBSCRIPTION_CANCELLATION _ ->
+    closed_with_error "Unexpected subscription cancellation during sasl negotiation"
+  | SUBSCRIPTION_REMOVAL _ ->
+    closed_with_error "Unexpected subscription removal during sasl negotiation"
 ;;
 
 let just_connected actions =
@@ -152,6 +158,10 @@ let handle_negotiating t = function
       ; Actions.ROSTER_SET_FROM ato
       ; Actions.PUSH_ROSTER {ato = None; contact = ato}
       ; Actions.SEND_CURRENT_PRESENCE ato ]
+  | SUBSCRIPTION_CANCELLATION {user} ->
+    just_connected [Actions.SUBSCRIPTION_CANCELLATION {user; force = false}]
+  | SUBSCRIPTION_REMOVAL {contact} ->
+    just_connected [Actions.SUBSCRIPTION_REMOVAL {contact}]
 ;;
 
 let handle_connected t = function
@@ -192,6 +202,10 @@ let handle_connected t = function
       ; Actions.PUSH_ROSTER {ato = None; contact = ato}
       ; Actions.SEND_CURRENT_PRESENCE ato ]
     , [] )
+  | SUBSCRIPTION_CANCELLATION {user} ->
+    {state = CONNECTED}, [Actions.SUBSCRIPTION_CANCELLATION {user; force = false}], []
+  | SUBSCRIPTION_REMOVAL {contact} ->
+    {state = CONNECTED}, [Actions.SUBSCRIPTION_REMOVAL {contact}], []
 ;;
 
 let handle_closed t = function
@@ -214,6 +228,8 @@ let handle_closed t = function
   | LOG_OUT -> closed
   | NOOP -> t, [], []
   | SUBSCRIPTION_APPROVAL _ -> closed_with_error "already closed"
+  | SUBSCRIPTION_CANCELLATION _ -> closed_with_error "already closed"
+  | SUBSCRIPTION_REMOVAL _ -> closed_with_error "already closed"
 ;;
 
 let handle t event =

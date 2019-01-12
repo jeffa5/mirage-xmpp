@@ -5,18 +5,20 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
+let to_xml = function Message xml -> xml | Presence xml -> xml | Iq xml -> xml
 let gen_id () = Uuidm.(to_string (create `V4))
 
-let create_presence ?(attributes = []) ?atype ~id ~ato ~from children =
+let create_presence ?(attributes = []) ?atype ?ato ~id ~from children =
   let attributes =
     match atype with Some t -> ("", Xml.Type t) :: attributes | None -> attributes
   in
   let attributes =
     match id with Some i -> ("", Xml.Id i) :: attributes | None -> attributes
   in
-  Presence
-    (Element
-       ((("", "presence"), ["", Xml.To ato; "", Xml.From from] @ attributes), children))
+  let attributes =
+    match ato with Some ato -> ("", Xml.To ato) :: attributes | None -> attributes
+  in
+  Presence (Element ((("", "presence"), ["", Xml.From from] @ attributes), children))
 ;;
 
 let create_iq ?(attributes = []) ?ato ~atype ~id children =

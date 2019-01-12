@@ -42,6 +42,8 @@ type t =
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | ROSTER_SET_FROM of Jid.t
   | PROBE_PRESENCE
+  | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
+  | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

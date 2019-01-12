@@ -18,6 +18,8 @@ type t =
   | NOOP
   | ROSTER_REMOVE of {id : string; target : Jid.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
+  | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
+  | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
 
 let to_string = function
   | STREAM_HEADER {ato; version} ->
@@ -62,6 +64,10 @@ let to_string = function
     "ROSTER_REMOVE id=" ^ id ^ " target=" ^ Jid.to_string target
   | SUBSCRIPTION_APPROVAL {ato; xml} ->
     "SUBSCRIPTION_APPROVAL to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
+  | SUBSCRIPTION_CANCELLATION {user} ->
+    "SUBSCRIPTION_CANCELLATION user=" ^ Jid.to_string user
+  | SUBSCRIPTION_REMOVAL {contact} ->
+    "SUBSCRIPTION_REMOVAL contact=" ^ Jid.to_string contact
 ;;
 
 let not_implemented = ERROR "not implemented"
@@ -148,6 +154,10 @@ let lift_presence = function
       PRESENCE_UPDATE
         { status = Rosters.Offline
         ; xml = Some (Xml.Element (((namespace, name), attributes), children)) }
+    | Some "unsubscribed" ->
+      SUBSCRIPTION_CANCELLATION {user = Stanza.get_to attributes |> Jid.to_bare}
+    | Some "unsubscribe" ->
+      SUBSCRIPTION_REMOVAL {contact = Stanza.get_to attributes |> Jid.to_bare}
     | None ->
       PRESENCE_UPDATE
         { status = Rosters.Online

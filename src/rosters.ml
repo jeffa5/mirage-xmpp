@@ -12,12 +12,14 @@ type subscription =
   | To
   | From
   | Both
+  | Remove
 
 let subscription_to_string = function
   | None -> "none"
   | To -> "to"
   | From -> "from"
   | Both -> "both"
+  | Remove -> "remove"
 ;;
 
 exception ConversionError
@@ -68,6 +70,52 @@ let remove_item user contact =
   | None -> ()
 ;;
 
+let downgrade_subscription_from user contact =
+  let user = Jid.to_bare user in
+  let contact = Jid.to_bare contact in
+  match Jid_map.find user !t with
+  | Some ({roster; _} as r) ->
+    (match Jid_map.find contact roster with
+    | Some ({subscription; _} as item) ->
+      let new_subscription =
+        match subscription with
+        | None -> None
+        | To -> To
+        | From -> None
+        | Both -> To
+        | Remove -> Remove
+      in
+      let new_roster =
+        Jid_map.add contact {item with subscription = new_subscription} roster
+      in
+      t := Jid_map.add user {r with roster = new_roster} !t
+    | None -> ())
+  | None -> ()
+;;
+
+let downgrade_subscription_to user contact =
+  let user = Jid.to_bare user in
+  let contact = Jid.to_bare contact in
+  match Jid_map.find user !t with
+  | Some ({roster; _} as r) ->
+    (match Jid_map.find contact roster with
+    | Some ({subscription; _} as item) ->
+      let new_subscription =
+        match subscription with
+        | None -> None
+        | To -> None
+        | From -> From
+        | Both -> From
+        | Remove -> Remove
+      in
+      let new_roster =
+        Jid_map.add contact {item with subscription = new_subscription} roster
+      in
+      t := Jid_map.add user {r with roster = new_roster} !t
+    | None -> ())
+  | None -> ()
+;;
+
 let upgrade_subscription_to user contact =
   let user = Jid.to_bare user in
   let contact = Jid.to_bare contact in
@@ -76,14 +124,19 @@ let upgrade_subscription_to user contact =
     (match Jid_map.find contact roster with
     | Some ({subscription; _} as item) ->
       let new_subscription =
-        match subscription with None -> To | To -> To | From -> Both | Both -> Both
+        match subscription with
+        | None -> To
+        | To -> To
+        | From -> Both
+        | Both -> Both
+        | Remove -> Remove
       in
       let new_roster =
         Jid_map.add contact {item with subscription = new_subscription} roster
       in
       t := Jid_map.add user {r with roster = new_roster} !t
-    | None -> raise Not_found)
-  | None -> raise Not_found
+    | None -> ())
+  | None -> ()
 ;;
 
 let upgrade_subscription_from user contact =
@@ -94,14 +147,19 @@ let upgrade_subscription_from user contact =
     (match Jid_map.find contact roster with
     | Some ({subscription; _} as item) ->
       let new_subscription =
-        match subscription with None -> From | To -> Both | From -> From | Both -> Both
+        match subscription with
+        | None -> From
+        | To -> Both
+        | From -> From
+        | Both -> Both
+        | Remove -> Remove
       in
       let new_roster =
         Jid_map.add contact {item with subscription = new_subscription} roster
       in
       t := Jid_map.add user {r with roster = new_roster} !t
-    | None -> raise Not_found)
-  | None -> raise Not_found
+    | None -> ())
+  | None -> ()
 ;;
 
 let create_item ~handle ~subscription ?(ask = false) ~groups () =

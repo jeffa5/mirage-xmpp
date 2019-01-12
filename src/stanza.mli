@@ -4,13 +4,14 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
+val to_xml : t -> Xml.t
 val gen_id : unit -> string
 
 val create_presence :
      ?attributes:Xml.attribute list
   -> ?atype:string
+  -> ?ato:Jid.t
   -> id:string option
-  -> ato:Jid.t
   -> from:Jid.t
   -> Xml.t list
   -> t

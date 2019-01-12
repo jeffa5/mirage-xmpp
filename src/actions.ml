@@ -48,6 +48,8 @@ type t =
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
   | ROSTER_SET_FROM of Jid.t
   | PROBE_PRESENCE
+  | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
+  | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -118,4 +120,11 @@ let to_string = function
     ^ (match from with Some f -> Jid.to_string f | None -> "")
   | ROSTER_SET_FROM from -> "ROSTER_SET_FROM from=" ^ Jid.to_string from
   | PROBE_PRESENCE -> "PROBE_PRESENCE"
+  | SUBSCRIPTION_CANCELLATION {user; force} ->
+    "SUBSCRIPTION_CANCELLATION user="
+    ^ Jid.to_string user
+    ^ " force="
+    ^ string_of_bool force
+  | SUBSCRIPTION_REMOVAL {contact} ->
+    "SUBSCRIPTION_REMOVAL contact=" ^ Jid.to_string contact
 ;;

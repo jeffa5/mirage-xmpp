@@ -9,6 +9,7 @@ type subscription =
   | To
   | From
   | Both
+  | Remove
 
 type item =
   { handle : string
@@ -22,6 +23,8 @@ val subscription_to_string : subscription -> string
 val subscription_of_string : string -> subscription
 val set_presence : jid:Jid.t -> availability -> unit
 val remove_item : Jid.t -> Jid.t -> unit
+val downgrade_subscription_to : Jid.t -> Jid.t -> unit
+val downgrade_subscription_from : Jid.t -> Jid.t -> unit
 val upgrade_subscription_to : Jid.t -> Jid.t -> unit
 val upgrade_subscription_from : Jid.t -> Jid.t -> unit
 val unset_ask : Jid.t -> Jid.t -> unit

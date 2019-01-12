@@ -19,6 +19,8 @@ type t =
   | NOOP
   | ROSTER_REMOVE of {id : string; target : Jid.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
+  | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
+  | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string
