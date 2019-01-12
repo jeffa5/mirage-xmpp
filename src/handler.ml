@@ -698,7 +698,6 @@ let%expect_test "roster set" =
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'/>
-      [juliet@im.example.com: Offline; nurse@example.com: {Nurse; none; false; [Servants]}]
       <iq id='<redacted_for_testing>' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' subscription='none' name='Nurse'><group>Servants</group></item></query></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
       <presence from='juliet@im.example.com/balcony' to='juliet@im.example.com/balcony' id='<redacted_for_testing>' type='unavailable'/>
