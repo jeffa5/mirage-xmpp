@@ -34,7 +34,7 @@ mirage: install
 # run the integration tests
 .PHONY: integration
 integration: mirage
-	dune build @integration/runtest
+	dune build @test/integration/runtest
 
 # run the unikernel built by mirage
 .PHONY: run
@@ -104,3 +104,7 @@ docker-ci: docker-build
 .PHONY: docker-prune
 docker-prune:
 	docker system prune
+
+.PHONY: ejabberd
+ejabberd:
+	docker run --name ejabberd -d --rm -p 5222:5222 ejabberd/ecs
