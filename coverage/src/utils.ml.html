@@ -29,6 +29,11 @@
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span class="visited"> </span>
 <a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span class="visited"> </span>
+<a id="L14"></a><span class="visited"> </span>
+<a id="L15"></a><span class="visited"> </span>
+<a id="L16"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -44,6 +49,11 @@
 <a href="#L9"> 9</a>
 <a href="#L10">10</a>
 <a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
 </pre>
         <pre id="code">
 let mask_id s =
@@ -57,10 +67,15 @@ let mask_id s =
     | None -&gt; assert false)
   | <span data-count="22">N</span>one -&gt; s
 ;;
+
+let option_to_string string_func = <span data-count="6">f</span>unction
+  | <span data-count="2">S</span>ome thing -&gt; "Some: " ^ string_func thing
+  | <span data-count="4">N</span>one -&gt; "None"
+;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-12 19:21:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

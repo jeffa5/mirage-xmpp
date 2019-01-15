@@ -205,38 +205,38 @@ let at_least_bare = <span data-count="2">f</span>unction <span data-count="3">F<
 
 let to_bare = <span data-count="2">f</span>unction
   | <span data-count="20">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
-  | <span data-count="16">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
+  | <span data-count="134">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
   | <span data-count="0">_</span> -&gt; raise Not_found
 ;;
 
 let of_string str =
-  <span data-count="71">m</span>atch String.cut ~sep:"@" str with
-  | <span data-count="37">S</span>ome (user, domres) -&gt;
+  <span data-count="189">m</span>atch String.cut ~sep:"@" str with
+  | <span data-count="155">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
     | <span data-count="11">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
-    | <span data-count="26">N</span>one -&gt; Bare_JID (user, domres))
+    | <span data-count="144">N</span>one -&gt; Bare_JID (user, domres))
   | <span data-count="34">N</span>one -&gt; Domain str
 ;;
 
 let compare jid1 jid2 =
-  <span data-count="19">l</span>et user1, domain1, resource1 =
-    <span data-count="19">m</span>atch jid1 with
+  <span data-count="106">l</span>et user1, domain1, resource1 =
+    <span data-count="106">m</span>atch jid1 with
     | <span data-count="2">F</span>ull_JID ((u1, d1), r1) -&gt; u1, d1, r1
-    | <span data-count="17">B</span>are_JID (u1, d1) -&gt; u1, d1, ""
+    | <span data-count="104">B</span>are_JID (u1, d1) -&gt; u1, d1, ""
     | <span data-count="0">D</span>omain d1 -&gt; "", d1, ""
     | <span data-count="0">E</span>mpty -&gt; "", "", ""
   in
-  <span data-count="19">l</span>et user2, domain2, resource2 =
-    <span data-count="19">m</span>atch jid2 with
+  <span data-count="106">l</span>et user2, domain2, resource2 =
+    <span data-count="106">m</span>atch jid2 with
     | <span data-count="2">F</span>ull_JID ((u2, d2), r2) -&gt; u2, d2, r2
-    | <span data-count="17">B</span>are_JID (u2, d2) -&gt; u2, d2, ""
+    | <span data-count="104">B</span>are_JID (u2, d2) -&gt; u2, d2, ""
     | <span data-count="0">D</span>omain d2 -&gt; "", d2, ""
     | <span data-count="0">E</span>mpty -&gt; "", "", ""
   in
-  <span data-count="19">l</span>et d = <span data-count="19">S</span>tring.compare domain1 domain2 in
-  <span data-count="19">l</span>et u = <span data-count="19">S</span>tring.compare user1 user2 in
-  <span data-count="19">l</span>et r = <span data-count="19">S</span>tring.compare resource1 resource2 in
-  <span data-count="19">i</span>f d = 0 then <span data-count="18">i</span>f u = 0 then <span data-count="16">r</span> else <span data-count="2">u</span> else <span data-count="1">d</span>
+  <span data-count="106">l</span>et d = <span data-count="106">S</span>tring.compare domain1 domain2 in
+  <span data-count="106">l</span>et u = <span data-count="106">S</span>tring.compare user1 user2 in
+  <span data-count="106">l</span>et r = <span data-count="106">S</span>tring.compare resource1 resource2 in
+  <span data-count="106">i</span>f d = 0 then <span data-count="105">i</span>f u = 0 then <span data-count="95">r</span> else <span data-count="10">u</span> else <span data-count="1">d</span>
 ;;
 
 let create_resource () = <span data-count="0">U</span>uidm.(to_string (create `V4))
@@ -250,7 +250,7 @@ let set_resource new_resource = <span data-count="3">f</span>unction
 
 let to_string = <span data-count="2">f</span>unction
   | <span data-count="20">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
-  | <span data-count="26">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
+  | <span data-count="104">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
   | <span data-count="18">D</span>omain domain -&gt; domain
   | <span data-count="3">E</span>mpty -&gt; "empty"
 ;;
@@ -269,7 +269,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-12 19:21:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

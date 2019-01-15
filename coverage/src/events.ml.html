@@ -701,7 +701,7 @@ type t =
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
-  | PRESENCE_UPDATE of {status : Rosters.availability; xml : Xml.t option}
+  | PRESENCE_UPDATE of {status : Rosters.presence; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
@@ -736,7 +736,7 @@ let to_string = <span data-count="2">f</span>unction
     "SUBSCRIPTION_REQUEST: to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
   | <span data-count="0">P</span>RESENCE_UPDATE {status; xml} -&gt;
     "PRESENCE_UPDATE: status="
-    ^ Rosters.availability_to_string status
+    ^ Rosters.presence_to_string status
     ^ " xml="
     ^ (match xml with <span data-count="0">S</span>ome x -&gt; Xml.to_string x | <span data-count="0">N</span>one -&gt; "")
   | <span data-count="0">I</span>Q_ERROR {error_type; error_tag; id} -&gt;
@@ -990,7 +990,7 @@ let%expect_test "roster set" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-12 19:21:56 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
