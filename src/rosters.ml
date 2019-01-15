@@ -1,11 +1,9 @@
 open Asetmap
 module Jid_map = Map.Make (Jid)
 
-type availability =
+type presence =
   | Online
   | Offline
-
-let availability_to_string = function Online -> "Online" | Offline -> "Offline"
 
 type subscription =
   | None
@@ -13,6 +11,21 @@ type subscription =
   | From
   | Both
   | Remove
+
+type item =
+  { handle : string
+  ; subscription : subscription
+  ; ask : bool
+  ; groups : string list }
+
+type roster = item Jid_map.t
+
+type user =
+  { presence_status : presence
+  ; roster : roster }
+
+let t = ref Jid_map.empty
+let presence_to_string = function Online -> "Online" | Offline -> "Offline"
 
 let subscription_to_string = function
   | None -> "none"
@@ -22,33 +35,41 @@ let subscription_to_string = function
   | Remove -> "remove"
 ;;
 
-exception ConversionError
-
-let subscription_of_string = function
-  | "none" -> None
-  | "to" -> To
-  | "from" -> From
-  | "both" -> Both
-  | _ -> raise ConversionError
-;;
-
-type item =
-  { handle : string
-  ; subscription : subscription
-  ; ask : bool
-  ; groups : string list }
-
+let groups_to_string groups = "[" ^ String.concat ", " groups ^ "]"
 let item_to_tuple {handle; subscription; ask; groups} = handle, subscription, ask, groups
 
-type roster = item Jid_map.t
+let item_to_string {handle; subscription; ask; groups} =
+  "{"
+  ^ String.concat
+      "; "
+      [ "handle=" ^ handle
+      ; "subscription=" ^ subscription_to_string subscription
+      ; "ask=" ^ string_of_bool ask
+      ; "groups=" ^ groups_to_string groups ]
+  ^ "}"
+;;
 
-type user =
-  { presence_status : availability
-  ; roster : roster }
+let roster_to_string roster =
+  "["
+  ^ ( Jid_map.to_list roster
+    |> List.map (fun (jid, item) -> Jid.to_string jid ^ ": " ^ item_to_string item)
+    |> String.concat ";\n" )
+  ^ "]"
+;;
 
-let t = ref Jid_map.empty
+let user_to_string {presence_status; roster} =
+  presence_to_string presence_status ^ "; " ^ roster_to_string roster
+;;
 
-let set_presence ~jid updated_presence_status =
+let to_string () =
+  "["
+  ^ ( Jid_map.to_list !t
+    |> List.map (fun (jid, user) -> Jid.to_string jid ^ ": " ^ user_to_string user)
+    |> String.concat "\n" )
+  ^ "]"
+;;
+
+let set_presence jid updated_presence_status =
   let jid = Jid.to_bare jid in
   match Jid_map.find jid !t with
   | Some {roster; _} ->
@@ -166,7 +187,7 @@ let create_item ~handle ~subscription ?(ask = false) ~groups () =
   {handle; subscription; ask; groups}
 ;;
 
-let set_item ~user ~contact ~handle ~groups =
+let set_item ?(subscription = None) ?(handle = "") ?(groups = []) user contact =
   let user = Jid.to_bare user in
   let contact = Jid.to_bare contact in
   match Jid_map.find user !t with
@@ -174,16 +195,13 @@ let set_item ~user ~contact ~handle ~groups =
     let new_item =
       match Jid_map.find contact roster with
       | Some item -> {item with handle; groups}
-      | None -> create_item ~handle ~subscription:None ~groups ()
+      | None -> create_item ~handle ~subscription ~groups ()
     in
     let new_roster = Jid_map.add contact new_item roster in
     t := Jid_map.add user {r with roster = new_roster} !t
   | None ->
     let new_roster =
-      Jid_map.add
-        contact
-        (create_item ~handle ~subscription:None ~groups ())
-        Jid_map.empty
+      Jid_map.add contact (create_item ~handle ~subscription ~groups ()) Jid_map.empty
     in
     t := Jid_map.add user {presence_status = Offline; roster = new_roster} !t
 ;;
@@ -216,10 +234,8 @@ let get_ask user contact =
   let contact = Jid.to_bare contact in
   match Jid_map.find user !t with
   | Some {roster; _} ->
-    (match Jid_map.find contact roster with
-    | Some {ask; _} -> ask
-    | None -> raise Not_found)
-  | None -> raise Not_found
+    (match Jid_map.find contact roster with Some {ask; _} -> Some ask | None -> None)
+  | None -> None
 ;;
 
 let get_subscription user contact =
@@ -273,37 +289,6 @@ let update_ask user contact value =
 
 let unset_ask user contact = update_ask user contact false
 let set_ask user contact = update_ask user contact true
-let groups_to_string groups = "[" ^ String.concat "," groups ^ "]"
-
-let item_to_string {handle; subscription; ask; groups} =
-  "{"
-  ^ String.concat
-      "; "
-      [ handle
-      ; subscription_to_string subscription
-      ; string_of_bool ask
-      ; groups_to_string groups ]
-  ^ "}"
-;;
-
-let roster_to_string roster =
-  Jid_map.to_list roster
-  |> List.map (fun (jid, item) -> Jid.to_string jid ^ ": " ^ item_to_string item)
-  |> String.concat "\n"
-;;
-
-let user_to_string {presence_status; roster} =
-  availability_to_string presence_status ^ "; " ^ roster_to_string roster
-;;
-
-let to_string () =
-  "["
-  ^ ( Jid_map.to_list !t
-    |> List.map (fun (jid, user) -> Jid.to_string jid ^ ": " ^ user_to_string user)
-    |> String.concat "\n" )
-  ^ "]"
-;;
-
 let clear () = t := Jid_map.empty
 
 let%expect_test "empty initially" =
@@ -315,59 +300,550 @@ let%expect_test "empty initially" =
 let%expect_test "add one jid" =
   clear ();
   set_item
-    ~user:(Jid.of_string "juliet@im.example.com")
-    ~contact:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~groups:[];
+    ~groups:[]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
   print_endline (to_string ());
   [%expect
-    {| [juliet@im.example.com: Offline; romeo@im.example.com: {my romeo; none; false; []}] |}]
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[]}]] |}]
 ;;
 
 let%expect_test "add one jid with groups" =
   clear ();
   set_item
-    ~user:(Jid.of_string "juliet@im.example.com")
-    ~contact:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~groups:["Group1"; "Group2"];
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
   print_endline (to_string ());
   [%expect
-    {| [juliet@im.example.com: Offline; romeo@im.example.com: {my romeo; none; false; [Group1,Group2]}] |}]
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
 ;;
 
 let%expect_test "add same jid multiple times" =
   clear ();
   set_item
-    ~user:(Jid.of_string "juliet@im.example.com")
-    ~contact:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~groups:["Group1"; "Group2"];
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
   set_item
-    ~user:(Jid.of_string "juliet@im.example.com")
-    ~contact:(Jid.of_string "romeo@im.example.com")
     ~handle:"my romeo"
-    ~groups:["Group1"; "Group2"];
-  print_endline (to_string ());
-  [%expect
-    {| [juliet@im.example.com: Offline; romeo@im.example.com: {my romeo; none; false; [Group1,Group2]}] |}]
-;;
-
-let%expect_test "add same jid multiple times" =
-  clear ();
-  set_item
-    ~user:(Jid.of_string "juliet@im.example.com")
-    ~contact:(Jid.of_string "romeo@im.example.com")
-    ~handle:"my romeo"
-    ~groups:["Group1"; "Group2"];
-  set_item
-    ~user:(Jid.of_string "lord@im.example.com")
-    ~contact:(Jid.of_string "king@im.example.com")
-    ~handle:"king1"
-    ~groups:["Kings1"; "Rulers"; "Others"];
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
   print_endline (to_string ());
   [%expect
     {|
-      [juliet@im.example.com: Offline; romeo@im.example.com: {my romeo; none; false; [Group1,Group2]}
-      lord@im.example.com: Offline; king@im.example.com: {king1; none; false; [Kings1,Rulers,Others]}] |}]
+      [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "add same jid multiple times with different groups" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  set_item
+    ~handle:"king1"
+    ~groups:["Kings1"; "Rulers"; "Others"]
+    (Jid.of_string "lord@im.example.com")
+    (Jid.of_string "king@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {|
+      [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]
+      lord@im.example.com: Offline; [king@im.example.com: {handle=king1; subscription=none; ask=false; groups=[Kings1, Rulers, Others]}]] |}]
+;;
+
+let%expect_test "add two different jids to the roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "romeo@im.example.com");
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "other@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {|
+      [juliet@im.example.com: Offline; [other@im.example.com: {handle=; subscription=none; ask=false; groups=[]};
+      romeo@im.example.com: {handle=; subscription=none; ask=false; groups=[]}]] |}]
+;;
+
+let%expect_test "removing an item" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {|
+    [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}];
+  remove_item
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {|
+    [juliet@im.example.com: Offline; []] |}]
+;;
+
+let%expect_test "removing a non-existant item" =
+  clear ();
+  remove_item
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {|
+    [] |}]
+;;
+
+let%expect_test "downgrade subscription from when no items in roster" =
+  clear ();
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {| [] |}]
+;;
+
+let%expect_test "downgrade subscription from when no valid item in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "other@im.example.com");
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [other@im.example.com: {handle=; subscription=none; ask=false; groups=[]}]] |}]
+;;
+
+let%expect_test "downgrade subscription from with None item" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription from with To item" =
+  clear ();
+  set_item
+    ~subscription:To
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription from with From item" =
+  clear ();
+  set_item
+    ~subscription:From
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription from with Both item" =
+  clear ();
+  set_item
+    ~subscription:Both
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription to when no items in roster" =
+  clear ();
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {| [] |}]
+;;
+
+let%expect_test "downgrade subscription to when no valid item in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "other@im.example.com");
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [other@im.example.com: {handle=; subscription=none; ask=false; groups=[]}]] |}]
+;;
+
+let%expect_test "downgrade subscription to with None item" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription to with To item" =
+  clear ();
+  set_item
+    ~subscription:To
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription to with From item" =
+  clear ();
+  set_item
+    ~subscription:From
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "downgrade subscription to with Both item" =
+  clear ();
+  set_item
+    ~subscription:Both
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}];
+  downgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription to when no items in roster" =
+  clear ();
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {| [] |}]
+;;
+
+let%expect_test "upgrade subscription to when no valid item in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "other@im.example.com");
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [other@im.example.com: {handle=; subscription=none; ask=false; groups=[]}]] |}]
+;;
+
+let%expect_test "upgrade subscription to with None item" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription to with To item" =
+  clear ();
+  set_item
+    ~subscription:To
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription to with From item" =
+  clear ();
+  set_item
+    ~subscription:From
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription to with Both item" =
+  clear ();
+  set_item
+    ~subscription:Both
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_to
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription from when no items in roster" =
+  clear ();
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect {| [] |}]
+;;
+
+let%expect_test "upgrade subscription from when no valid item in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "other@im.example.com");
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [other@im.example.com: {handle=; subscription=none; ask=false; groups=[]}]] |}]
+;;
+
+let%expect_test "upgrade subscription from with None item" =
+  clear ();
+  set_item
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=none; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription from with To item" =
+  clear ();
+  set_item
+    ~subscription:To
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=to; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription from with From item" =
+  clear ();
+  set_item
+    ~subscription:From
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=from; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "upgrade subscription from with Both item" =
+  clear ();
+  set_item
+    ~subscription:Both
+    ~handle:"my romeo"
+    ~groups:["Group1"; "Group2"]
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}];
+  upgrade_subscription_from
+    (Jid.of_string "juliet@im.example.com")
+    (Jid.of_string "romeo@im.example.com");
+  print_endline (to_string ());
+  [%expect
+    {| [juliet@im.example.com: Offline; [romeo@im.example.com: {handle=my romeo; subscription=both; ask=false; groups=[Group1, Group2]}]] |}]
+;;
+
+let%expect_test "get ask on empty roster" =
+  clear ();
+  print_endline
+  @@ Utils.option_to_string
+       string_of_bool
+       (get_ask
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "romeo@im.example.com"));
+  [%expect {| None |}]
+;;
+
+let%expect_test "get ask with user in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "romeo@im.example.com");
+  print_endline
+  @@ Utils.option_to_string
+       string_of_bool
+       (get_ask
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "romeo@im.example.com"));
+  [%expect {| Some: false |}]
+;;
+
+let%expect_test "get ask with user not in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "romeo@im.example.com");
+  print_endline
+  @@ Utils.option_to_string
+       string_of_bool
+       (get_ask
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "other@im.example.com"));
+  [%expect {| None |}]
+;;
+
+let%expect_test "get subscription with empty roster" =
+  clear ();
+  print_endline
+  @@ Utils.option_to_string
+       subscription_to_string
+       (get_subscription
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "romeo@im.example.com"));
+  [%expect {| None |}]
+;;
+
+let%expect_test "get subscription with user in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "romeo@im.example.com");
+  print_endline
+  @@ Utils.option_to_string
+       subscription_to_string
+       (get_subscription
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "romeo@im.example.com"));
+  [%expect {| Some: none |}]
+;;
+
+let%expect_test "get subscription with user not in roster" =
+  clear ();
+  set_item (Jid.of_string "juliet@im.example.com") (Jid.of_string "romeo@im.example.com");
+  print_endline
+  @@ Utils.option_to_string
+       subscription_to_string
+       (get_subscription
+          (Jid.of_string "juliet@im.example.com")
+          (Jid.of_string "other@im.example.com"));
+  [%expect {| None |}]
 ;;

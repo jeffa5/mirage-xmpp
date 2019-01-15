@@ -2,25 +2,12 @@ type handler_actions =
   | RESET_PARSER
   | EXIT
 
-let handler_actions_to_string = function
-  | RESET_PARSER -> "RESET_PARSER"
-  | EXIT -> "EXIT"
-;;
-
 type error_type =
   | Auth
   | Cancel
   | Continue
   | Modify
   | Wait
-
-let error_type_to_string = function
-  | Auth -> "auth"
-  | Cancel -> "cancel"
-  | Continue -> "continue"
-  | Modify -> "modify"
-  | Wait -> "wait"
-;;
 
 type t =
   | SEND_STREAM_HEADER
@@ -39,7 +26,7 @@ type t =
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
-  | UPDATE_PRESENCE of {status : Rosters.availability; xml : Xml.t option}
+  | UPDATE_PRESENCE of {status : Rosters.presence; xml : Xml.t option}
   | SEND_PRESENCE_UPDATE of {from : Jid.t; xml : Xml.t option}
   | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}
@@ -50,6 +37,19 @@ type t =
   | PROBE_PRESENCE
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
+
+let handler_actions_to_string = function
+  | RESET_PARSER -> "RESET_PARSER"
+  | EXIT -> "EXIT"
+;;
+
+let error_type_to_string = function
+  | Auth -> "auth"
+  | Cancel -> "cancel"
+  | Continue -> "continue"
+  | Modify -> "modify"
+  | Wait -> "wait"
+;;
 
 let to_string = function
   | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
@@ -91,7 +91,7 @@ let to_string = function
     ^ (match from with Some f -> Jid.to_string f | None -> "")
   | UPDATE_PRESENCE {status; xml} ->
     "UPDATE_PRESENCE: availability="
-    ^ Rosters.availability_to_string status
+    ^ Rosters.presence_to_string status
     ^ " xml="
     ^ (match xml with Some x -> Xml.to_string x | None -> "")
   | SEND_PRESENCE_UPDATE {from; xml} ->

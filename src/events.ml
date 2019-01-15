@@ -11,7 +11,7 @@ type t =
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
-  | PRESENCE_UPDATE of {status : Rosters.availability; xml : Xml.t option}
+  | PRESENCE_UPDATE of {status : Rosters.presence; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
@@ -46,7 +46,7 @@ let to_string = function
     "SUBSCRIPTION_REQUEST: to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
   | PRESENCE_UPDATE {status; xml} ->
     "PRESENCE_UPDATE: status="
-    ^ Rosters.availability_to_string status
+    ^ Rosters.presence_to_string status
     ^ " xml="
     ^ (match xml with Some x -> Xml.to_string x | None -> "")
   | IQ_ERROR {error_type; error_tag; id} ->

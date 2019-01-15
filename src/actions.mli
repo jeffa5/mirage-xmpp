@@ -4,8 +4,6 @@ type handler_actions =
   | RESET_PARSER
   | EXIT
 
-val handler_actions_to_string : handler_actions -> string
-
 type error_type =
   | Auth
   | Cancel
@@ -13,6 +11,7 @@ type error_type =
   | Modify
   | Wait
 
+val handler_actions_to_string : handler_actions -> string
 val error_type_to_string : error_type -> string
 
 (** The type of actions, examples for now *)
@@ -33,7 +32,7 @@ type t =
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
-  | UPDATE_PRESENCE of {status : Rosters.availability; xml : Xml.t option}
+  | UPDATE_PRESENCE of {status : Rosters.presence; xml : Xml.t option}
   | SEND_PRESENCE_UPDATE of {from : Jid.t; xml : Xml.t option}
   | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}

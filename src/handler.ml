@@ -54,7 +54,7 @@ let handle_action t stream =
         t.callback
           (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:t.jid items)))
       | SET_ROSTER {id; target; handle; groups} ->
-        Rosters.set_item ~user:t.jid ~contact:target ~handle ~groups;
+        Rosters.set_item ~handle ~groups t.jid target;
         t.callback
           (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:t.jid)))
       | PUSH_ROSTER {ato; contact} ->
@@ -125,7 +125,7 @@ let handle_action t stream =
       | UPDATE_PRESENCE {status; xml} ->
         if Jid.at_least_bare t.jid
         then (
-          Rosters.set_presence ~jid:t.jid status;
+          Rosters.set_presence t.jid status;
           [Jid.to_bare t.jid] @ Rosters.get_subscribers t.jid
           |> List.iter (fun jid ->
                  Connections.find_all jid
@@ -231,8 +231,8 @@ let handle_action t stream =
         else (
           match Rosters.get_subscription ato t.jid with
           | Some Rosters.None | Some Rosters.From ->
-            if Rosters.get_ask ato t.jid
-            then (
+            (match Rosters.get_ask ato t.jid with
+            | Some _ ->
               Rosters.upgrade_subscription_to ato t.jid;
               Rosters.unset_ask ato t.jid;
               Connections.find_all ato
@@ -243,7 +243,8 @@ let handle_action t stream =
                              {ato; xml; from = Some (t.jid |> Jid.to_bare)}));
                      handler
                        (Some (PUSH_ROSTER {ato = Some jid; contact = Jid.to_bare t.jid}))
-                 ) )
+                 )
+            | None -> ())
           | _ -> () )
       | SUBSCRIPTION_APPROVAL {xml = Xml.Text _; _} -> assert false
       | ROSTER_SET_FROM from -> Rosters.upgrade_subscription_from t.jid from
@@ -559,7 +560,7 @@ let%expect_test "bind resource" =
     {|
     {
     rosters:
-    [juliet@im.example.com: Offline; ]
+    [juliet@im.example.com: Offline; []]
     connections:
     []
     parser:
@@ -624,7 +625,7 @@ let%expect_test "roster get" =
     {|
       {
       rosters:
-      [juliet@im.example.com: Offline; ]
+      [juliet@im.example.com: Offline; []]
       connections:
       []
       parser:
@@ -709,7 +710,7 @@ let%expect_test "roster set" =
     {|
       {
       rosters:
-      [juliet@im.example.com: Offline; nurse@example.com: {Nurse; none; false; [Servants]}]
+      [juliet@im.example.com: Offline; [nurse@example.com: {handle=Nurse; subscription=none; ask=false; groups=[Servants]}]]
       connections:
       []
       parser:

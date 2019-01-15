@@ -9,3 +9,8 @@ let mask_id s =
     | None -> assert false)
   | None -> s
 ;;
+
+let option_to_string string_func = function
+  | Some thing -> "Some: " ^ string_func thing
+  | None -> "None"
+;;
