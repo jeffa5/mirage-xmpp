@@ -1175,7 +1175,7 @@ let to_string t = <span data-count="28">S</span>explib.Sexp.to_string_hum @@ sex
 
 let closed =
   <span data-count="2">(</span> {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Presence.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.CLOSE ]
   , [Actions.EXIT] )
@@ -1183,7 +1183,7 @@ let closed =
 
 let closed_with_error e =
   <span data-count="3">(</span> {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Presence.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.ERROR e ]
   , [Actions.EXIT] )
@@ -1683,7 +1683,7 @@ let%expect_test "roster set" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-23 11:15:48 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-23 15:20:46 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
