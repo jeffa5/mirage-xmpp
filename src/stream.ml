@@ -3,6 +3,7 @@ type t =
   | Features
   | Error
   | Close
+[@@deriving sexp]
 
 let to_string = function
   | Header tag -> Xml.tag_to_string ~empty:false tag

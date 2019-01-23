@@ -7,19 +7,12 @@ type state =
   | NEGOTIATING
   | CONNECTED
   | CLOSED
+[@@deriving sexp]
 
-type t = {state : state}
-
-let state_to_string = function
-  | IDLE -> "IDLE"
-  | SASL_NEGOTIATION -> "SASL_NEGOTIATION"
-  | NEGOTIATING -> "NEGOTIATING"
-  | CONNECTED -> "CONNECTED"
-  | CLOSED -> "CLOSED"
-;;
+type t = {state : state} [@@deriving sexp]
 
 let initial = {state = IDLE}
-let to_string t = "{state: " ^ state_to_string t.state ^ "}"
+let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t
 
 let closed =
   ( {state = CLOSED}
@@ -38,20 +31,13 @@ let closed_with_error e =
 ;;
 
 let handle_idle t = function
-  | STREAM_HEADER {ato; version} ->
-    (* new incoming connection *)
-    (* check it was for us *)
-    if ato <> Jid.Empty
+  | STREAM_HEADER {version} ->
+    if float_of_string version >= 1.0
     then
-      if (* construct reply *)
-         (* check the version attribute *)
-         float_of_string version >= 1.0
-      then
-        ( {state = SASL_NEGOTIATION}
-        , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES_SASL]
-        , [] )
-      else closed_with_error "Must use version >= 1.0"
-    else closed_with_error "Received empty to attribute"
+      ( {state = SASL_NEGOTIATION}
+      , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES_SASL]
+      , [] )
+    else closed_with_error "Must use version >= 1.0"
   | SASL_AUTH _ -> closed_with_error "No stream"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "No stream"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "No stream"
@@ -112,16 +98,13 @@ let just_connected actions =
 ;;
 
 let handle_negotiating t = function
-  | STREAM_HEADER {ato; version} ->
-    if ato <> Jid.Empty
+  | STREAM_HEADER {version} ->
+    if float_of_string version >= 1.0
     then
-      if float_of_string version >= 1.0
-      then
-        ( {state = NEGOTIATING}
-        , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES]
-        , [] )
-      else closed_with_error "Must use version >= 1.0"
-    else closed_with_error "Received empty to attribute"
+      ( {state = NEGOTIATING}
+      , [Actions.SEND_STREAM_HEADER; Actions.SEND_STREAM_FEATURES]
+      , [] )
+    else closed_with_error "Must use version >= 1.0"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN id ->
     {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id], []
@@ -244,18 +227,16 @@ let handle t event =
 let%expect_test "create" =
   let fsm = initial in
   print_endline (to_string fsm);
-  [%expect {| {state: IDLE} |}]
+  [%expect {| ((state IDLE)) |}]
 ;;
 
 let%expect_test "idle to negotiating" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -266,12 +247,10 @@ let%expect_test "idle to negotiating" =
 let%expect_test "idle to negotiating with > 1.0" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "2.0"})
+    handle fsm (Events.STREAM_HEADER {version = "2.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -282,12 +261,10 @@ let%expect_test "idle to negotiating with > 1.0" =
 let%expect_test "negotiating to closing" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Utils.mask_id @@ Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -295,25 +272,23 @@ let%expect_test "negotiating to closing" =
     SEND_STREAM_FEATURES_SASL |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
-    ERROR: Unexpected stream close during sasl negotiation |}]
+    (ERROR "Unexpected stream close during sasl negotiation") |}]
 ;;
 
 let%expect_test "sasl negotiation" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -323,29 +298,29 @@ let%expect_test "sasl negotiation" =
     handle fsm (Events.SASL_AUTH {user = "juliet"; password = ""})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    SET_JID: juliet
+    (SET_JID juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    SERVER_GEN_RESOURCE_IDENTIFIER: id |}];
+    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -353,12 +328,10 @@ let%expect_test "sasl negotiation" =
 let%expect_test "bind resource" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -368,29 +341,29 @@ let%expect_test "bind resource" =
     handle fsm (Events.SASL_AUTH {user = "juliet"; password = ""})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    SET_JID: juliet
+    (SET_JID juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    SERVER_GEN_RESOURCE_IDENTIFIER: id |}];
+    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -398,12 +371,10 @@ let%expect_test "bind resource" =
 let%expect_test "bind resource client" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
@@ -413,29 +384,29 @@ let%expect_test "bind resource client" =
     handle fsm (Events.SASL_AUTH {user = "juliet"; password = ""})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    SET_JID: juliet
+    (SET_JID juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    SET_JID_RESOURCE: id=id resource=client-res |}];
+    (SET_JID_RESOURCE (id id) (resource client-res)) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -443,12 +414,10 @@ let%expect_test "bind resource client" =
 let%expect_test "roster get" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect {|
     SEND_STREAM_HEADER
@@ -457,34 +426,34 @@ let%expect_test "roster get" =
     handle fsm (Events.SASL_AUTH {user = "juliet"; password = ""})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    SET_JID: juliet
+    (SET_JID juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| SET_JID_RESOURCE: id=id resource=client-res |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
-  [%expect {| {state: CONNECTED} |}];
+  [%expect {| ((state CONNECTED)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {|
     PROBE_PRESENCE
     ADD_TO_CONNECTIONS
-    GET_ROSTER: id=some_id |}];
+    (GET_ROSTER some_id) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;
@@ -492,12 +461,10 @@ let%expect_test "roster get" =
 let%expect_test "roster set" =
   let fsm = initial in
   let fsm, actions, _handler_actions =
-    handle
-      fsm
-      (Events.STREAM_HEADER {ato = Jid.of_string "im.example.com"; version = "1.0"})
+    handle fsm (Events.STREAM_HEADER {version = "1.0"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: SASL_NEGOTIATION} |}];
+  [%expect {| ((state SASL_NEGOTIATION)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect {|
     SEND_STREAM_HEADER
@@ -506,27 +473,27 @@ let%expect_test "roster set" =
     handle fsm (Events.SASL_AUTH {user = "juliet"; password = ""})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    SET_JID: juliet
+    (SET_JID juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
   in
   print_endline (to_string fsm);
-  [%expect {| {state: NEGOTIATING} |}];
+  [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| SET_JID_RESOURCE: id=id resource=client-res |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
-  [%expect {| {state: CONNECTED} |}];
+  [%expect {| ((state CONNECTED)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect {|
     PROBE_PRESENCE
     ADD_TO_CONNECTIONS
-    GET_ROSTER: id=some_id |}];
+    (GET_ROSTER some_id) |}];
   let fsm, actions, _handler_actions =
     handle
       fsm
@@ -537,19 +504,20 @@ let%expect_test "roster set" =
          ; groups = ["Servants"] })
   in
   print_endline (to_string fsm);
-  [%expect {| {state: CONNECTED} |}];
+  [%expect {| ((state CONNECTED)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect
     {|
-    SET_ROSTER: id=some_id target=nurse@example.com handle=Nurse groups=[Servants]
-    PUSH_ROSTER: to=None contact=nurse@example.com] |}];
+    (SET_ROSTER (id some_id) (target (Bare_JID (nurse example.com)))
+     (handle Nurse) (groups (Servants)))
+    (PUSH_ROSTER (ato ()) (contact (Bare_JID (nurse example.com)))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
-  [%expect {| {state: CLOSED} |}];
+  [%expect {| ((state CLOSED)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (Printf.printf "%s\n");
   [%expect
     {|
-    UPDATE_PRESENCE: availability=Offline xml=
+    (UPDATE_PRESENCE (status Offline) (xml ()))
     REMOVE_FROM_CONNECTIONS
     CLOSE |}]
 ;;

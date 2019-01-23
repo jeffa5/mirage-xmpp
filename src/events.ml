@@ -1,7 +1,8 @@
 open Astring
+open Sexplib.Std
 
 type t =
-  | STREAM_HEADER of {ato : Jid.t; version : string}
+  | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
@@ -20,56 +21,9 @@ type t =
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
+[@@deriving sexp]
 
-let to_string = function
-  | STREAM_HEADER {ato; version} ->
-    "STREAM_HEADER: to=" ^ Jid.to_string ato ^ " version=" ^ version
-  | SASL_AUTH {user; password} -> "SASL_AUTH: user=" ^ user ^ " password=" ^ password
-  | RESOURCE_BIND_SERVER_GEN _id -> "RESOURCE_BIND_SERVER_GEN: id"
-  | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
-    "RESOURCE_BIND_CLIENT_GEN: id=" ^ id ^ " resource=" ^ resource
-  | SESSION_START id -> "SESSION_START: id=" ^ id
-  | STREAM_CLOSE -> "STREAM_CLOSE"
-  | ERROR s -> "ERROR: " ^ s
-  | ROSTER_GET id -> "ROSTER_GET: id=" ^ id
-  | ROSTER_SET {id; target; handle; groups} ->
-    "ROSTER_SET: id="
-    ^ id
-    ^ " target="
-    ^ Jid.to_string target
-    ^ " handle="
-    ^ handle
-    ^ " groups=["
-    ^ String.concat ~sep:" " groups
-    ^ "]"
-  | SUBSCRIPTION_REQUEST {ato; xml} ->
-    "SUBSCRIPTION_REQUEST: to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
-  | PRESENCE_UPDATE {status; xml} ->
-    "PRESENCE_UPDATE: status="
-    ^ Rosters.presence_to_string status
-    ^ " xml="
-    ^ (match xml with Some x -> Xml.to_string x | None -> "")
-  | IQ_ERROR {error_type; error_tag; id} ->
-    "IQ_ERROR: error_type="
-    ^ Actions.error_type_to_string error_type
-    ^ " error_tag="
-    ^ error_tag
-    ^ " id="
-    ^ id
-  | MESSAGE {ato; message} ->
-    "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
-  | LOG_OUT -> "LOG_OUT"
-  | NOOP -> "NOOP"
-  | ROSTER_REMOVE {id; target} ->
-    "ROSTER_REMOVE id=" ^ id ^ " target=" ^ Jid.to_string target
-  | SUBSCRIPTION_APPROVAL {ato; xml} ->
-    "SUBSCRIPTION_APPROVAL to=" ^ Jid.to_string ato ^ " xml=" ^ Xml.to_string xml
-  | SUBSCRIPTION_CANCELLATION {user} ->
-    "SUBSCRIPTION_CANCELLATION user=" ^ Jid.to_string user
-  | SUBSCRIPTION_REMOVAL {contact} ->
-    "SUBSCRIPTION_REMOVAL contact=" ^ Jid.to_string contact
-;;
-
+let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t
 let not_implemented = ERROR "not implemented"
 
 let lift_iq = function
@@ -214,9 +168,8 @@ let lift parse_result =
   | Stream_Element stream_element ->
     (match stream_element with
     | Header (_name, attributes) ->
-      let ato = Stanza.get_to attributes in
       let version = Stanza.get_version attributes in
-      STREAM_HEADER {ato; version}
+      STREAM_HEADER {version}
     | Features -> not_implemented
     | Error -> ERROR "Stream level error"
     | Close -> STREAM_CLOSE)
@@ -226,7 +179,7 @@ let lift parse_result =
 let%expect_test "lift error gives error" =
   let event = lift (Error "some error") in
   print_endline (to_string event);
-  [%expect {| ERROR: some error |}]
+  [%expect {| (ERROR "some error") |}]
 ;;
 
 let%expect_test "iq get" =
@@ -243,7 +196,7 @@ let%expect_test "iq get" =
                ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_GET: id=h83vxa4c |}]
+  [%expect {| (ROSTER_GET h83vxa4c) |}]
 ;;
 
 let%expect_test "iq set" =
@@ -256,7 +209,7 @@ let%expect_test "iq set" =
                , [Xml.Element ((("", "bind"), []), [])] ))))
   in
   print_endline (to_string event);
-  [%expect {| RESOURCE_BIND_SERVER_GEN: id |}]
+  [%expect {| (RESOURCE_BIND_SERVER_GEN l3b1vs75) |}]
 ;;
 
 let%expect_test "roster get" =
@@ -273,7 +226,7 @@ let%expect_test "roster get" =
                ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_GET: id=bv1bs71f |}]
+  [%expect {| (ROSTER_GET bv1bs71f) |}]
 ;;
 
 let%expect_test "roster set" =
@@ -295,5 +248,8 @@ let%expect_test "roster set" =
                            , [] ) ] ) ] ))))
   in
   print_endline (to_string event);
-  [%expect {| ROSTER_SET: id=rs1 target=nurse@example.com handle=Nurse groups=[] |}]
+  [%expect
+    {|
+    (ROSTER_SET (id rs1) (target (Bare_JID (nurse example.com))) (handle Nurse)
+     (groups ())) |}]
 ;;

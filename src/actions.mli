@@ -3,6 +3,7 @@
 type handler_actions =
   | RESET_PARSER
   | EXIT
+[@@deriving sexp]
 
 type error_type =
   | Auth
@@ -10,8 +11,8 @@ type error_type =
   | Continue
   | Modify
   | Wait
+[@@deriving sexp]
 
-val handler_actions_to_string : handler_actions -> string
 val error_type_to_string : error_type -> string
 
 (** The type of actions, examples for now *)
@@ -43,6 +44,7 @@ type t =
   | PROBE_PRESENCE
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
+[@@deriving sexp]
 
 (** [to_string t] takes an action and returns its string representation *)
 val to_string : t -> string

@@ -1,11 +1,14 @@
+open Sexplib.Std
+
 type t =
   { mutable parser : Parser.t
   ; callback : string option -> unit
-  ; mutable jid : Jid.t
+  ; mutable jid : Jid.t option
   ; mutable fsm : State.t
   ; actions_push : Actions.t option -> unit
   ; hostname : string
   ; mutable closed : bool }
+[@@deriving sexp]
 
 let handle_action t stream =
   let rec aux () =
@@ -29,11 +32,15 @@ let handle_action t stream =
       | SEND_STREAM_FEATURES -> t.callback (Some (Xml.to_string Stream.features))
       | SERVER_GEN_RESOURCE_IDENTIFIER id ->
         let resource = Jid.create_resource () in
-        let jid_with_resource = Jid.set_resource resource t.jid in
-        t.jid <- jid_with_resource;
-        t.callback
-          (Some
-             (Stanza.to_string (Stanza.create_bind_result ~id ~jid:jid_with_resource ())))
+        (match t.jid with
+        | Some jid ->
+          let jid_with_resource = Jid.set_resource resource jid in
+          t.jid <- Some jid_with_resource;
+          t.callback
+            (Some
+               (Stanza.to_string
+                  (Stanza.create_bind_result ~id ~jid:jid_with_resource ())))
+        | None -> ())
       | SESSION_START_SUCCESS id ->
         t.callback (Some (Stanza.to_string (Stanza.create_iq ~atype:"result" ~id [])))
       | CLOSE ->
@@ -43,20 +50,32 @@ let handle_action t stream =
       | ERROR e ->
         t.callback (Some e);
         t.closed <- true
-      | SET_JID j -> t.jid <- Jid.of_string (j ^ "@" ^ t.hostname)
+      | SET_JID j -> t.jid <- Some (Jid.of_string (j ^ "@" ^ t.hostname))
       | SET_JID_RESOURCE {id; resource} ->
-        t.jid <- Jid.set_resource resource t.jid;
-        (* send the packet *)
-        t.callback
-          (Some (Stanza.to_string (Stanza.create_bind_result ~id ~jid:t.jid ())))
+        (match t.jid with
+        | Some jid ->
+          let jid_with_resource = Jid.set_resource resource jid in
+          t.jid <- Some jid_with_resource;
+          (* send the packet *)
+          t.callback
+            (Some
+               (Stanza.to_string
+                  (Stanza.create_bind_result ~id ~jid:jid_with_resource ())))
+        | None -> ())
       | GET_ROSTER id ->
-        let items = Rosters.get_roster_items t.jid in
-        t.callback
-          (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:t.jid items)))
+        (match t.jid with
+        | Some jid ->
+          let items = Rosters.get_roster_items jid in
+          t.callback
+            (Some (Stanza.to_string (Stanza.create_roster_get_result ~id ~ato:jid items)))
+        | None -> ())
       | SET_ROSTER {id; target; handle; groups} ->
-        Rosters.set_item ~handle ~groups t.jid target;
-        t.callback
-          (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:t.jid)))
+        (match t.jid with
+        | Some jid ->
+          Rosters.set_item ~handle ~groups jid target;
+          t.callback
+            (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:jid)))
+        | None -> ())
       | PUSH_ROSTER {ato; contact} ->
         let contact = Jid.to_bare contact in
         (match ato with
@@ -81,280 +100,323 @@ let handle_action t stream =
                        , {handle = ""; subscription = Remove; ask = false; groups = []}
                        )))))
         | None ->
-          Connections.find_all (Jid.to_bare t.jid)
-          |> List.iter (fun (full_jid, actions_push) ->
-                 actions_push (Some (PUSH_ROSTER {ato = Some full_jid; contact})) )
+          (match t.jid with
+          | Some jid ->
+            Connections.find_all (Jid.to_bare jid)
+            |> List.iter (fun (full_jid, actions_push) ->
+                   actions_push (Some (PUSH_ROSTER {ato = Some full_jid; contact})) )
+          | None -> ())
         | _ -> assert false)
-      | ADD_TO_CONNECTIONS -> Connections.add t.jid t.actions_push
-      | REMOVE_FROM_CONNECTIONS -> Connections.remove t.jid
+      | ADD_TO_CONNECTIONS ->
+        (match t.jid with Some jid -> Connections.add jid t.actions_push | None -> ())
+      | REMOVE_FROM_CONNECTIONS ->
+        (match t.jid with Some jid -> Connections.remove jid | None -> ())
       | SUBSCRIPTION_REQUEST
           {ato; xml = Xml.Element (((namespace, name), attributes), children); from} ->
-        (match Rosters.get_subscription t.jid ato with
-        | Some Rosters.To | Some Rosters.Both ->
-          let xml =
-            Xml.create
-              ( ("", "presence")
-              , ["", Xml.From ato; "", Xml.To t.jid; "", Xml.Type "subscribed"] )
+        (match t.jid with
+        | Some jid ->
+          (match Rosters.get_subscription jid ato with
+          | Some Rosters.To | Some Rosters.Both ->
+            let xml =
+              Xml.create
+                ( ("", "presence")
+                , ["", Xml.From ato; "", Xml.To jid; "", Xml.Type "subscribed"] )
+            in
+            t.callback (Some (Xml.to_string xml))
+          | _ ->
+            Rosters.set_ask jid ato;
+            let xml =
+              Xml.remove_prefixes
+                (match from with
+                | None ->
+                  let rec modify_from = function
+                    | [] -> ["", Xml.From (jid |> Jid.to_bare)]
+                    | (ns, Xml.From _) :: attrs ->
+                      (ns, Xml.From (jid |> Jid.to_bare)) :: attrs
+                    | a :: attrs -> a :: modify_from attrs
+                  in
+                  Xml.Element (((namespace, name), modify_from attributes), children)
+                | Some _ -> Xml.Element (((namespace, name), attributes), children))
+            in
+            if ato = Jid.to_bare jid
+            then t.callback (Some (Xml.to_string xml))
+            else
+              Connections.find_all ato
+              |> List.iter (fun (_jid, handler) ->
+                     handler
+                       (Some
+                          (SUBSCRIPTION_REQUEST
+                             {ato; xml; from = Some (jid |> Jid.to_bare)})) ))
+        | None -> ())
+      | SUBSCRIPTION_REQUEST {xml = Xml.Text _; _} -> assert false
+      | UPDATE_PRESENCE {status; xml} ->
+        (match t.jid with
+        | Some jid ->
+          if Jid.at_least_bare jid
+          then (
+            Rosters.set_presence jid status;
+            [Jid.to_bare jid] @ Rosters.get_subscribers jid
+            |> List.iter (fun user ->
+                   Connections.find_all user
+                   |> List.iter (fun (_, handler) ->
+                          handler (Some (SEND_PRESENCE_UPDATE {from = jid; xml})) ) ) )
+        | None -> ())
+      | SEND_PRESENCE_UPDATE {from; xml} ->
+        (match t.jid with
+        | Some jid ->
+          let rec modify_from = function
+            | [] -> ["", Xml.From from]
+            | (ns, Xml.From _) :: attrs -> (ns, Xml.From from) :: attrs
+            | a :: attrs -> a :: modify_from attrs
           in
-          t.callback (Some (Xml.to_string xml))
-        | _ ->
-          Rosters.set_ask t.jid ato;
+          let rec modify_to = function
+            | [] -> ["", Xml.To (jid |> Jid.to_bare)]
+            | (ns, Xml.To _) :: attrs -> (ns, Xml.To (jid |> Jid.to_bare)) :: attrs
+            | a :: attrs -> a :: modify_to attrs
+          in
+          let stanza =
+            match xml with
+            | Some (Xml.Element (((ns, n), attributes), c)) ->
+              Stanza.Presence
+                ( Xml.remove_prefixes
+                @@ Xml.Element (((ns, n), modify_to @@ modify_from attributes), c) )
+            | Some (Xml.Text _) -> assert false
+            | None ->
+              (match Rosters.get_presence from with
+              | Rosters.Online ->
+                Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:jid []
+              | Rosters.Offline ->
+                Stanza.create_presence
+                  ~id:(Some (Stanza.gen_id ()))
+                  ~from
+                  ~ato:jid
+                  ~atype:"unavailable"
+                  [])
+          in
+          t.callback (Some (Stanza.to_string stanza))
+        | None -> ())
+      | SEND_CURRENT_PRESENCE ato ->
+        (match t.jid with
+        | Some jid ->
+          Connections.find_all ato
+          |> List.iter (fun (_, handler) ->
+                 Connections.find_all (Jid.to_bare jid)
+                 |> List.iter (fun (jid, _) ->
+                        handler (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) )
+             )
+        | None -> ())
+      | IQ_ERROR {error_type; error_tag; id} ->
+        (match t.jid with
+        | Some jid ->
+          t.callback
+            (Some
+               ( Stanza.to_string
+               @@ Stanza.create_iq_error
+                    ~from:(Jid.of_string t.hostname)
+                    ~ato:jid
+                    ~id
+                    ~error_type
+                    ~error_tag ))
+        | None -> ())
+      | MESSAGE
+          { ato
+          ; message = Xml.Element (((namespace, name), attributes), children) as message
+          } ->
+        (match t.jid with
+        | Some jid ->
+          if Jid.to_bare ato = Jid.to_bare jid
+          then t.callback (Some (Xml.to_string message))
+          else
+            let message =
+              Xml.Element
+                (((namespace, name), ("", Xml.From jid) :: attributes), children)
+            in
+            Connections.find_all ato
+            |> List.iter (fun (_, handler) -> handler (Some (MESSAGE {ato; message})))
+        | None -> ())
+      | MESSAGE {message = Xml.Text _; _} -> assert false
+      | ROSTER_REMOVE {id; target} ->
+        (match t.jid with
+        | Some jid ->
+          let unsubscribe () =
+            t.actions_push (Some (SUBSCRIPTION_REMOVAL {contact = Jid.to_bare target}))
+          in
+          let unsubscribed () =
+            t.actions_push
+              (Some (SUBSCRIPTION_CANCELLATION {user = Jid.to_bare target; force = true}))
+          in
+          (match Rosters.get_subscription jid target with
+          | Some Rosters.Both ->
+            unsubscribe ();
+            unsubscribed ()
+          | Some Rosters.To -> unsubscribe ()
+          | Some Rosters.From -> unsubscribed ()
+          | Some Rosters.None | Some Rosters.Remove -> ()
+          | None -> ());
+          Rosters.remove_item jid target;
+          t.callback
+            (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:jid)))
+        | None -> ())
+      | SUBSCRIPTION_APPROVAL
+          {ato; xml = Xml.Element (((namespace, name), attributes), children); from} ->
+        (match t.jid with
+        | Some jid ->
           let xml =
             Xml.remove_prefixes
               (match from with
               | None ->
                 let rec modify_from = function
-                  | [] -> ["", Xml.From (t.jid |> Jid.to_bare)]
+                  | [] -> ["", Xml.From (jid |> Jid.to_bare)]
                   | (ns, Xml.From _) :: attrs ->
-                    (ns, Xml.From (t.jid |> Jid.to_bare)) :: attrs
+                    (ns, Xml.From (jid |> Jid.to_bare)) :: attrs
                   | a :: attrs -> a :: modify_from attrs
                 in
                 Xml.Element (((namespace, name), modify_from attributes), children)
               | Some _ -> Xml.Element (((namespace, name), attributes), children))
           in
-          if ato = Jid.to_bare t.jid
+          if ato = Jid.to_bare jid
           then t.callback (Some (Xml.to_string xml))
-          else
-            Connections.find_all ato
-            |> List.iter (fun (_jid, handler) ->
-                   handler
-                     (Some
-                        (SUBSCRIPTION_REQUEST
-                           {ato; xml; from = Some (t.jid |> Jid.to_bare)})) ))
-      | SUBSCRIPTION_REQUEST {xml = Xml.Text _; _} -> assert false
-      | UPDATE_PRESENCE {status; xml} ->
-        if Jid.at_least_bare t.jid
-        then (
-          Rosters.set_presence t.jid status;
-          [Jid.to_bare t.jid] @ Rosters.get_subscribers t.jid
+          else (
+            match Rosters.get_subscription ato jid with
+            | Some Rosters.None | Some Rosters.From ->
+              (match Rosters.get_ask ato jid with
+              | Some _ ->
+                Rosters.upgrade_subscription_to ato jid;
+                Rosters.unset_ask ato jid;
+                Connections.find_all ato
+                |> List.iter (fun (jid, handler) ->
+                       handler
+                         (Some
+                            (SUBSCRIPTION_APPROVAL
+                               {ato; xml; from = Some (jid |> Jid.to_bare)}));
+                       handler
+                         (Some (PUSH_ROSTER {ato = Some jid; contact = Jid.to_bare jid}))
+                   )
+              | None -> ())
+            | _ -> () )
+        | None -> ())
+      | SUBSCRIPTION_APPROVAL {xml = Xml.Text _; _} -> assert false
+      | ROSTER_SET_FROM from ->
+        (match t.jid with
+        | Some jid -> Rosters.upgrade_subscription_from jid from
+        | None -> ())
+      | PROBE_PRESENCE ->
+        (match t.jid with
+        | Some jid ->
+          (Connections.find_all (Jid.to_bare jid) |> List.map (fun (jid, _) -> jid))
+          @ List.fold_left
+              (fun l jid ->
+                l @ List.map (fun (jid, _) -> jid) @@ Connections.find_all jid )
+              []
+              (Rosters.get_subscriptions jid)
           |> List.iter (fun jid ->
-                 Connections.find_all jid
-                 |> List.iter (fun (_, handler) ->
-                        handler (Some (SEND_PRESENCE_UPDATE {from = t.jid; xml})) ) ) )
-      | SEND_PRESENCE_UPDATE {from; xml} ->
-        let rec modify_from = function
-          | [] -> ["", Xml.From from]
-          | (ns, Xml.From _) :: attrs -> (ns, Xml.From from) :: attrs
-          | a :: attrs -> a :: modify_from attrs
-        in
-        let rec modify_to = function
-          | [] -> ["", Xml.To (t.jid |> Jid.to_bare)]
-          | (ns, Xml.To _) :: attrs -> (ns, Xml.To (t.jid |> Jid.to_bare)) :: attrs
-          | a :: attrs -> a :: modify_to attrs
-        in
-        let stanza =
-          match xml with
-          | Some (Xml.Element (((ns, n), attributes), c)) ->
-            Stanza.Presence
-              ( Xml.remove_prefixes
-              @@ Xml.Element (((ns, n), modify_to @@ modify_from attributes), c) )
-          | Some (Xml.Text _) -> assert false
-          | None ->
-            (match Rosters.get_presence from with
-            | Rosters.Online ->
-              Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:t.jid []
-            | Rosters.Offline ->
-              Stanza.create_presence
-                ~id:(Some (Stanza.gen_id ()))
-                ~from
-                ~ato:t.jid
-                ~atype:"unavailable"
-                [])
-        in
-        t.callback (Some (Stanza.to_string stanza))
-      | SEND_CURRENT_PRESENCE ato ->
-        Connections.find_all ato
-        |> List.iter (fun (_, handler) ->
-               Connections.find_all (Jid.to_bare t.jid)
-               |> List.iter (fun (jid, _) ->
-                      handler (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) ) )
-      | IQ_ERROR {error_type; error_tag; id} ->
-        t.callback
-          (Some
-             ( Stanza.to_string
-             @@ Stanza.create_iq_error
-                  ~from:(Jid.of_string t.hostname)
-                  ~ato:t.jid
-                  ~id
-                  ~error_type
-                  ~error_tag ))
-      | MESSAGE
-          { ato
-          ; message = Xml.Element (((namespace, name), attributes), children) as message
-          } ->
-        if Jid.to_bare ato = Jid.to_bare t.jid
-        then t.callback (Some (Xml.to_string message))
-        else
-          let message =
-            Xml.Element
-              (((namespace, name), ("", Xml.From t.jid) :: attributes), children)
-          in
-          Connections.find_all ato
-          |> List.iter (fun (_, handler) -> handler (Some (MESSAGE {ato; message})))
-      | MESSAGE {message = Xml.Text _; _} -> assert false
-      | ROSTER_REMOVE {id; target} ->
-        let unsubscribe () =
-          t.actions_push (Some (SUBSCRIPTION_REMOVAL {contact = Jid.to_bare target}))
-        in
-        let unsubscribed () =
-          t.actions_push
-            (Some (SUBSCRIPTION_CANCELLATION {user = Jid.to_bare target; force = true}))
-        in
-        (match Rosters.get_subscription t.jid target with
-        | Some Rosters.Both ->
-          unsubscribe ();
-          unsubscribed ()
-        | Some Rosters.To -> unsubscribe ()
-        | Some Rosters.From -> unsubscribed ()
-        | Some Rosters.None | Some Rosters.Remove -> ()
-        | None -> ());
-        Rosters.remove_item t.jid target;
-        t.callback
-          (Some (Stanza.to_string (Stanza.create_roster_set_result ~id ~ato:t.jid)))
-      | SUBSCRIPTION_APPROVAL
-          {ato; xml = Xml.Element (((namespace, name), attributes), children); from} ->
-        let xml =
-          Xml.remove_prefixes
-            (match from with
-            | None ->
-              let rec modify_from = function
-                | [] -> ["", Xml.From (t.jid |> Jid.to_bare)]
-                | (ns, Xml.From _) :: attrs ->
-                  (ns, Xml.From (t.jid |> Jid.to_bare)) :: attrs
-                | a :: attrs -> a :: modify_from attrs
-              in
-              Xml.Element (((namespace, name), modify_from attributes), children)
-            | Some _ -> Xml.Element (((namespace, name), attributes), children))
-        in
-        if ato = Jid.to_bare t.jid
-        then t.callback (Some (Xml.to_string xml))
-        else (
-          match Rosters.get_subscription ato t.jid with
-          | Some Rosters.None | Some Rosters.From ->
-            (match Rosters.get_ask ato t.jid with
+                 t.actions_push (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) )
+        | None -> ())
+      | SUBSCRIPTION_CANCELLATION {user; force} ->
+        (match t.jid with
+        | Some jid ->
+          let contact = jid in
+          let aux () =
+            (match Rosters.get_roster_item user contact with
             | Some _ ->
-              Rosters.upgrade_subscription_to ato t.jid;
-              Rosters.unset_ask ato t.jid;
-              Connections.find_all ato
+              Connections.find_all contact
+              |> List.iter (fun (from, _) ->
+                     Connections.find_all user
+                     |> List.iter (fun (_, handler) ->
+                            handler
+                              (Some
+                                 (SEND_PRESENCE_UPDATE
+                                    { from
+                                    ; xml =
+                                        Some
+                                          ( Stanza.to_xml
+                                          @@ Stanza.create_presence
+                                               ~id:(Some (Stanza.gen_id ()))
+                                               ~from
+                                               ~atype:"unavailable"
+                                               [] ) })) ) );
+              Connections.find_all user
               |> List.iter (fun (jid, handler) ->
                      handler
                        (Some
-                          (SUBSCRIPTION_APPROVAL
-                             {ato; xml; from = Some (t.jid |> Jid.to_bare)}));
-                     handler
-                       (Some (PUSH_ROSTER {ato = Some jid; contact = Jid.to_bare t.jid}))
-                 )
-            | None -> ())
-          | _ -> () )
-      | SUBSCRIPTION_APPROVAL {xml = Xml.Text _; _} -> assert false
-      | ROSTER_SET_FROM from -> Rosters.upgrade_subscription_from t.jid from
-      | PROBE_PRESENCE ->
-        (Connections.find_all (Jid.to_bare t.jid) |> List.map (fun (jid, _) -> jid))
-        @ List.fold_left
-            (fun l jid -> l @ List.map (fun (jid, _) -> jid) @@ Connections.find_all jid)
-            []
-            (Rosters.get_subscriptions t.jid)
-        |> List.iter (fun jid ->
-               t.actions_push (Some (SEND_PRESENCE_UPDATE {from = jid; xml = None})) )
-      | SUBSCRIPTION_CANCELLATION {user; force} ->
-        let contact = t.jid in
-        let aux () =
-          (match Rosters.get_roster_item user contact with
-          | Some _ ->
+                          (SEND_PRESENCE_UPDATE
+                             { from = Jid.to_bare jid
+                             ; xml =
+                                 Some
+                                   ( Stanza.to_xml
+                                   @@ Stanza.create_presence
+                                        ~id:(Some (Stanza.gen_id ()))
+                                        ~from:(Jid.to_bare jid)
+                                        ~ato:(Jid.to_bare jid)
+                                        ~atype:"unsubscribed"
+                                        [] ) })) );
+              Rosters.downgrade_subscription_to user contact;
+              Connections.find_all user
+              |> List.iter (fun (jid, handler) ->
+                     handler (Some (PUSH_ROSTER {ato = Some jid; contact})) )
+            | None -> ());
+            Rosters.downgrade_subscription_from contact user;
+            t.actions_push (Some (PUSH_ROSTER {ato = None; contact = user}))
+          in
+          if force
+          then aux ()
+          else (
+            match Rosters.get_subscription contact user with
+            | Some From | Some Both -> aux ()
+            | _ -> () )
+        | None -> ())
+      | SUBSCRIPTION_REMOVAL {contact} ->
+        (match t.jid with
+        | Some jid ->
+          let user = Jid.to_bare jid in
+          (match Rosters.get_subscription contact user with
+          | Some Rosters.From | Some Rosters.Both ->
+            (* deliver unsubscribe stanza to all contacts resources *)
             Connections.find_all contact
-            |> List.iter (fun (from, _) ->
-                   Connections.find_all user
-                   |> List.iter (fun (_, handler) ->
-                          handler
-                            (Some
-                               (SEND_PRESENCE_UPDATE
-                                  { from
-                                  ; xml =
-                                      Some
-                                        ( Stanza.to_xml
-                                        @@ Stanza.create_presence
-                                             ~id:(Some (Stanza.gen_id ()))
-                                             ~from
-                                             ~atype:"unavailable"
-                                             [] ) })) ) );
-            Connections.find_all user
             |> List.iter (fun (jid, handler) ->
                    handler
                      (Some
                         (SEND_PRESENCE_UPDATE
-                           { from = Jid.to_bare t.jid
+                           { from = user
                            ; xml =
                                Some
                                  ( Stanza.to_xml
                                  @@ Stanza.create_presence
                                       ~id:(Some (Stanza.gen_id ()))
-                                      ~from:(Jid.to_bare t.jid)
-                                      ~ato:(Jid.to_bare jid)
-                                      ~atype:"unsubscribed"
+                                      ~from:user
+                                      ~ato:jid
+                                      ~atype:"unsubscribe"
                                       [] ) })) );
-            Rosters.downgrade_subscription_to user contact;
-            Connections.find_all user
+            (* roster push to contacts resources with sub=none / to *)
+            Rosters.downgrade_subscription_from contact user;
+            Connections.find_all contact
             |> List.iter (fun (jid, handler) ->
-                   handler (Some (PUSH_ROSTER {ato = Some jid; contact})) )
-          | None -> ());
-          Rosters.downgrade_subscription_from contact user;
-          t.actions_push (Some (PUSH_ROSTER {ato = None; contact = user}))
-        in
-        if force
-        then aux ()
-        else (
-          match Rosters.get_subscription contact user with
-          | Some From | Some Both -> aux ()
-          | _ -> () )
-      | SUBSCRIPTION_REMOVAL {contact} ->
-        let user = Jid.to_bare t.jid in
-        (match Rosters.get_subscription contact user with
-        | Some Rosters.From | Some Rosters.Both ->
-          (* deliver unsubscribe stanza to all contacts resources *)
-          Connections.find_all contact
+                   handler (Some (PUSH_ROSTER {ato = Some jid; contact = user})) );
+            (* unavailable from contacts resources to bare user *)
+            Connections.find_all contact
+            |> List.iter (fun (jid, _) ->
+                   Connections.find_all user
+                   |> List.iter (fun (_, handler) ->
+                          handler
+                            (Some
+                               (SEND_PRESENCE_UPDATE
+                                  { from = jid
+                                  ; xml =
+                                      Some
+                                        ( Stanza.to_xml
+                                        @@ Stanza.create_presence
+                                             ~id:(Some (Stanza.gen_id ()))
+                                             ~from:jid
+                                             ~ato:user
+                                             ~atype:"unavailable"
+                                             [] ) })) ) )
+          | _ -> ());
+          (* Roster push to users resources with none/from *)
+          Rosters.downgrade_subscription_to user contact;
+          Connections.find_all user
           |> List.iter (fun (jid, handler) ->
-                 handler
-                   (Some
-                      (SEND_PRESENCE_UPDATE
-                         { from = user
-                         ; xml =
-                             Some
-                               ( Stanza.to_xml
-                               @@ Stanza.create_presence
-                                    ~id:(Some (Stanza.gen_id ()))
-                                    ~from:user
-                                    ~ato:jid
-                                    ~atype:"unsubscribe"
-                                    [] ) })) );
-          (* roster push to contacts resources with sub=none / to *)
-          Rosters.downgrade_subscription_from contact user;
-          Connections.find_all contact
-          |> List.iter (fun (jid, handler) ->
-                 handler (Some (PUSH_ROSTER {ato = Some jid; contact = user})) );
-          (* unavailable from contacts resources to bare user *)
-          Connections.find_all contact
-          |> List.iter (fun (jid, _) ->
-                 Connections.find_all user
-                 |> List.iter (fun (_, handler) ->
-                        handler
-                          (Some
-                             (SEND_PRESENCE_UPDATE
-                                { from = jid
-                                ; xml =
-                                    Some
-                                      ( Stanza.to_xml
-                                      @@ Stanza.create_presence
-                                           ~id:(Some (Stanza.gen_id ()))
-                                           ~from:jid
-                                           ~ato:user
-                                           ~atype:"unavailable"
-                                           [] ) })) ) )
-        | _ -> ());
-        (* Roster push to users resources with none/from *)
-        Rosters.downgrade_subscription_to user contact;
-        Connections.find_all user
-        |> List.iter (fun (jid, handler) ->
-               handler (Some (PUSH_ROSTER {ato = Some jid; contact})) ));
+                 handler (Some (PUSH_ROSTER {ato = Some jid; contact})) )
+        | None -> ()));
       if t.closed
       then (
         t.callback None;
@@ -369,7 +431,7 @@ let handle_action t stream =
 
 let create ~stream ~callback ~hostname =
   let parser = Parser.create stream in
-  let jid = Jid.empty in
+  let jid = None in
   let fsm = State.initial in
   let actions_stream, actions_push = Lwt_stream.create () in
   let t = {parser; callback; jid; fsm; actions_push; hostname; closed = false} in
@@ -395,24 +457,7 @@ let handle t =
   aux ()
 ;;
 
-let to_string t =
-  String.concat
-    "\n"
-    [ "{"
-    ; "rosters: "
-    ; Rosters.to_string ()
-    ; "connections: "
-    ; Connections.to_string ()
-    ; "parser: "
-    ; "callback"
-    ; "jid: "
-    ; Jid.to_string t.jid
-    ; "fsm: "
-    ; State.to_string t.fsm
-    ; "closed: "
-    ; string_of_bool t.closed
-    ; "}" ]
-;;
+let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t
 
 let make_test_handler s =
   let stream = Lwt_stream.of_string s in
@@ -438,20 +483,9 @@ let%expect_test "creation of handler" =
   print_endline (to_string handler);
   [%expect
     {|
-    {
-    rosters:
-    []
-    connections:
-    []
-    parser:
-    callback
-    jid:
-    empty
-    fsm:
-    {state: IDLE}
-    closed:
-    false
-    } |}]
+    ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 0)))
+     (callback <fun>) (jid ()) (fsm ((state IDLE))) (actions_push <fun>)
+     (hostname im.example.com) (closed false)) |}]
 ;;
 
 let%expect_test "initial stanza with version" =
@@ -473,20 +507,9 @@ let%expect_test "initial stanza with version" =
   print_endline (to_string handler);
   [%expect
     {|
-    {
-    rosters:
-    []
-    connections:
-    []
-    parser:
-    callback
-    jid:
-    empty
-    fsm:
-    {state: CLOSED}
-    closed:
-    true
-    } |}]
+    ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 1)))
+     (callback <fun>) (jid ()) (fsm ((state CLOSED))) (actions_push <fun>)
+     (hostname im.example.com) (closed true)) |}]
 ;;
 
 let%expect_test "error in initial stanza" =
@@ -507,20 +530,9 @@ let%expect_test "error in initial stanza" =
   print_endline (to_string handler);
   [%expect
     {|
-    {
-    rosters:
-    []
-    connections:
-    []
-    parser:
-    callback
-    jid:
-    empty
-    fsm:
-    {state: CLOSED}
-    closed:
-    true
-    } |}]
+    ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 1)))
+     (callback <fun>) (jid ()) (fsm ((state CLOSED))) (actions_push <fun>)
+     (hostname im.example.com) (closed true)) |}]
 ;;
 
 let%expect_test "bind resource" =
@@ -558,20 +570,10 @@ let%expect_test "bind resource" =
   print_endline (to_string handler);
   [%expect
     {|
-    {
-    rosters:
-    [juliet@im.example.com: Offline; []]
-    connections:
-    []
-    parser:
-    callback
-    jid:
-    juliet@im.example.com/balcony
-    fsm:
-    {state: CLOSED}
-    closed:
-    true
-    } |}]
+    ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 1)))
+     (callback <fun>) (jid ((Full_JID ((juliet im.example.com) balcony))))
+     (fsm ((state CLOSED))) (actions_push <fun>) (hostname im.example.com)
+     (closed true)) |}]
 ;;
 
 let%expect_test "roster get" =
@@ -623,20 +625,10 @@ let%expect_test "roster get" =
   print_endline (to_string handler);
   [%expect
     {|
-      {
-      rosters:
-      [juliet@im.example.com: Offline; []]
-      connections:
-      []
-      parser:
-      callback
-      jid:
-      juliet@im.example.com/balcony
-      fsm:
-      {state: CLOSED}
-      closed:
-      true
-      }
+      ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 1)))
+       (callback <fun>) (jid ((Full_JID ((juliet im.example.com) balcony))))
+       (fsm ((state CLOSED))) (actions_push <fun>) (hostname im.example.com)
+       (closed true))
      |}]
 ;;
 
@@ -708,19 +700,9 @@ let%expect_test "roster set" =
   print_endline (to_string handler);
   [%expect
     {|
-      {
-      rosters:
-      [juliet@im.example.com: Offline; [nurse@example.com: {handle=Nurse; subscription=none; ask=false; groups=[Servants]}]]
-      connections:
-      []
-      parser:
-      callback
-      jid:
-      juliet@im.example.com/balcony
-      fsm:
-      {state: CLOSED}
-      closed:
-      true
-      }
+      ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 1)))
+       (callback <fun>) (jid ((Full_JID ((juliet im.example.com) balcony))))
+       (fsm ((state CLOSED))) (actions_push <fun>) (hostname im.example.com)
+       (closed true))
      |}]
 ;;

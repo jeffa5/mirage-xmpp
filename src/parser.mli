@@ -1,5 +1,5 @@
 (** The type of a parser *)
-type t
+type t [@@deriving sexp]
 
 type parse_result =
   | Stanza of Stanza.t

@@ -4,7 +4,7 @@ type t =
   | Presence of Xml.t
   | Iq of Xml.t
 
-  (** [to_xml t] returns the xml element contained within the stanza type [t]. *)
+(** [to_xml t] returns the xml element contained within the stanza type [t]. *)
 val to_xml : t -> Xml.t
 
 (** [gen_id ()] generates a new string to use as an id. *)
@@ -20,7 +20,7 @@ val create_presence :
   -> Xml.t list
   -> t
 
-  (** [create_iq ~attributes ~ato ~atype ~id children] creates an iq stanza with the given attributes and children. *)
+(** [create_iq ~attributes ~ato ~atype ~id children] creates an iq stanza with the given attributes and children. *)
 val create_iq :
      ?attributes:Xml.attribute list
   -> ?ato:Jid.t
@@ -29,7 +29,7 @@ val create_iq :
   -> Xml.t list
   -> t
 
-  (** [create_iq_error ~from ~ato ~id ~error_type ~error_tag] creates an iq error stanza with the given attributes. *)
+(** [create_iq_error ~from ~ato ~id ~error_type ~error_tag] creates an iq error stanza with the given attributes. *)
 val create_iq_error :
      from:Jid.t
   -> ato:Jid.t
@@ -38,41 +38,26 @@ val create_iq_error :
   -> error_tag:string
   -> t
 
-  (** [create_bind ~attributes children] creates an iq bind stanza with the given attributes and children. *)
+(** [create_bind ~attributes children] creates an iq bind stanza with the given attributes and children. *)
 val create_bind : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 
 (** [create_resource ~attributes children] creates a resource bind xml element with the given attributes and children. *)
 val create_resource : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 
-
 val create_bind_result : id:string -> jid:Jid.t -> unit -> t
-
-
 val create_roster_get_result : id:string -> ato:Jid.t -> (Jid.t * Rosters.item) list -> t
-
-
 val create_roster_set_result : id:string -> ato:Jid.t -> t
-
-
 val create_roster_push : id:string -> ato:Jid.t -> Jid.t * Rosters.item -> t
 
 (** [to_string t] takes a stanza [t] and returns the string representation of it *)
 val to_string : t -> string
 
 val get_subscription : Xml.attribute list -> string option
-
 val get_id_exn : Xml.attribute list -> string
-
 val get_id : Xml.attribute list -> string option
-
 val get_from : Xml.attribute list -> Jid.t
-
 val get_to : Xml.attribute list -> Jid.t
-
 val get_type : Xml.attribute list -> string option
-
 val get_version : Xml.attribute list -> string
-
 val get_jid : Xml.attribute list -> Jid.t
-
 val get_name : Xml.attribute list -> string option

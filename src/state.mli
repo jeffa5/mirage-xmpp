@@ -1,7 +1,7 @@
 (** State machine representing the transitions for the XMPP input events. The events drive the new states of the state machine and it returns actions to be taken, typically of the form of writing data back to the user. *)
 
 (** The type of a state machine *)
-type t
+type t [@@deriving sexp]
 
 (** Create a state machine in the initial state *)
 val initial : t

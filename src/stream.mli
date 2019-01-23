@@ -3,6 +3,7 @@ type t =
   | Features
   | Error
   | Close
+[@@deriving sexp]
 
 val to_string : t -> string
 val features_sasl_mechanisms : Xml.t

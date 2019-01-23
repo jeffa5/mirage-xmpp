@@ -1,7 +1,11 @@
+open Ppx_sexp_conv_lib
+open Conv
+
 type t =
-  { raw_stream : char Lwt_stream.t
-  ; stream : (Markup.signal, Markup.async) Markup.stream
+  { raw_stream : char Lwt_stream.t sexp_opaque
+  ; stream : (Markup.signal, Markup.async) Markup.stream sexp_opaque
   ; mutable depth : int }
+[@@deriving sexp]
 
 type parse_result =
   | Stanza of Stanza.t

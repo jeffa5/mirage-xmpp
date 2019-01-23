@@ -4,6 +4,7 @@
 type presence =
   | Online
   | Offline
+[@@deriving sexp]
 
 (** Type of a [user]'s subscription to the [contact]. *)
 type subscription =
@@ -12,10 +13,11 @@ type subscription =
   | From  (** A subscription to the [user] from the [contact] *)
   | Both  (** A mutual subscription between the [user] and the [contact] *)
   | Remove  (** An attribute value in presence stanzas, not for use in the roster *)
+[@@deriving sexp]
 
-  (** Type of an item in the [user]'s roster. *)
+(** Type of an item in the [user]'s roster. *)
 type item =
-    { handle : string  (** The nickname given to the [contact] *)
+  { handle : string  (** The nickname given to the [contact] *)
   ; subscription : subscription
         (** The subscription status of the [user] to the [contact] *)
   ; ask : bool  (** Whether a subscription is currently being asked for *)
@@ -63,7 +65,7 @@ val set_item :
   -> Jid.t
   -> unit
 
-  (** [get_presence user] gets the current presence status for the [user]. *)
+(** [get_presence user] gets the current presence status for the [user]. *)
 val get_presence : Jid.t -> presence
 
 (** [get_ask user contact] gets the current status of a presence subscription ask from [user] to [contact]. *)

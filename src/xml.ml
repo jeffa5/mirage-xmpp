@@ -1,4 +1,6 @@
-type name = string * string
+open Sexplib.Std
+
+type name = string * string [@@deriving sexp]
 
 type attribute_value =
   | From of Jid.t
@@ -15,13 +17,15 @@ type attribute_value =
   | Subscription of string
   | Mechanism of string
   | Other of string * string
+[@@deriving sexp]
 
-type attribute = string * attribute_value
-type tag = name * attribute list
+type attribute = string * attribute_value [@@deriving sexp]
+type tag = name * attribute list [@@deriving sexp]
 
 type t =
   | Text of string
   | Element of tag * t list
+[@@deriving sexp]
 
 let remove_prefixes_attribute (_prefix, value) = "", value
 

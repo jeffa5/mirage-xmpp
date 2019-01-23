@@ -2,7 +2,7 @@
 
 (** The type of events, examples for now *)
 type t =
-  | STREAM_HEADER of {ato : Jid.t; version : string}
+  | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
   | RESOURCE_BIND_SERVER_GEN of string
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
@@ -21,6 +21,7 @@ type t =
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
+[@@deriving sexp]
 
 (** [to_string t] takes an event and returns it's string representation *)
 val to_string : t -> string

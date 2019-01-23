@@ -7,9 +7,8 @@ type t =
   | Full_JID of full_jid
   | Bare_JID of bare_jid
   | Domain of string
-  | Empty
+[@@deriving sexp]
 
-val empty : t
 val at_least_bare : t -> bool
 val to_bare : t -> t
 

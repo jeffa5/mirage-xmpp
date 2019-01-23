@@ -1,6 +1,9 @@
+open Sexplib.Std
+
 type handler_actions =
   | RESET_PARSER
   | EXIT
+[@@deriving sexp]
 
 type error_type =
   | Auth
@@ -8,6 +11,7 @@ type error_type =
   | Continue
   | Modify
   | Wait
+[@@deriving sexp]
 
 type t =
   | SEND_STREAM_HEADER
@@ -37,11 +41,7 @@ type t =
   | PROBE_PRESENCE
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
-
-let handler_actions_to_string = function
-  | RESET_PARSER -> "RESET_PARSER"
-  | EXIT -> "EXIT"
-;;
+[@@deriving sexp]
 
 let error_type_to_string = function
   | Auth -> "auth"
@@ -51,80 +51,4 @@ let error_type_to_string = function
   | Wait -> "wait"
 ;;
 
-let to_string = function
-  | SEND_STREAM_HEADER -> "SEND_STREAM_HEADER"
-  | SEND_STREAM_FEATURES_SASL -> "SEND_STREAM_FEATURES_SASL"
-  | SEND_SASL_SUCCESS -> "SEND_SASL_SUCCESS"
-  | SEND_STREAM_FEATURES -> "SEND_STREAM_FEATURES"
-  | SERVER_GEN_RESOURCE_IDENTIFIER s -> "SERVER_GEN_RESOURCE_IDENTIFIER: " ^ s
-  | SESSION_START_SUCCESS id -> "SESSION_START_SUCCESS: id=" ^ id
-  | CLOSE -> "CLOSE"
-  | ERROR s -> "ERROR: " ^ s
-  | SET_JID j -> "SET_JID: " ^ j
-  | SET_JID_RESOURCE {id; resource} ->
-    "SET_JID_RESOURCE: id=" ^ id ^ " resource=" ^ resource
-  | GET_ROSTER id -> "GET_ROSTER: id=" ^ id
-  | SET_ROSTER {id; target; handle; groups} ->
-    "SET_ROSTER: id="
-    ^ id
-    ^ " target="
-    ^ Jid.to_string target
-    ^ " handle="
-    ^ handle
-    ^ " groups=["
-    ^ String.concat " " groups
-    ^ "]"
-  | PUSH_ROSTER {ato; contact} ->
-    "PUSH_ROSTER: to="
-    ^ (match ato with Some j -> "Some " ^ Jid.to_string j | None -> "None")
-    ^ " contact="
-    ^ Jid.to_string contact
-    ^ "]"
-  | ADD_TO_CONNECTIONS -> "ADD_TO_CONNECTIONS"
-  | REMOVE_FROM_CONNECTIONS -> "REMOVE_FROM_CONNECTIONS"
-  | SUBSCRIPTION_REQUEST {ato; xml; from} ->
-    "SUBSCRIPTION_REQUEST: to="
-    ^ Jid.to_string ato
-    ^ " xml="
-    ^ Xml.to_string xml
-    ^ " from="
-    ^ (match from with Some f -> Jid.to_string f | None -> "")
-  | UPDATE_PRESENCE {status; xml} ->
-    "UPDATE_PRESENCE: availability="
-    ^ Rosters.presence_to_string status
-    ^ " xml="
-    ^ (match xml with Some x -> Xml.to_string x | None -> "")
-  | SEND_PRESENCE_UPDATE {from; xml} ->
-    "SEND_PRESENCE_UPDATE: from="
-    ^ Jid.to_string from
-    ^ " xml="
-    ^ (match xml with Some x -> Xml.to_string x | None -> "")
-  | SEND_CURRENT_PRESENCE ato -> "SEND_CURRENT_PRESENCE: to=" ^ Jid.to_string ato
-  | IQ_ERROR {error_type; error_tag; id} ->
-    "IQ_ERROR: error_type="
-    ^ error_type_to_string error_type
-    ^ " error_tag="
-    ^ error_tag
-    ^ " id="
-    ^ id
-  | MESSAGE {ato; message} ->
-    "MESSAGE: to=" ^ Jid.to_string ato ^ " message=" ^ Xml.to_string message
-  | ROSTER_REMOVE {id; target} ->
-    "ROSTER_REMOVE id=" ^ id ^ " target=" ^ Jid.to_string target
-  | SUBSCRIPTION_APPROVAL {ato; xml; from} ->
-    "SUBSCRIPTION_APPROVAL: to="
-    ^ Jid.to_string ato
-    ^ " xml="
-    ^ Xml.to_string xml
-    ^ " from="
-    ^ (match from with Some f -> Jid.to_string f | None -> "")
-  | ROSTER_SET_FROM from -> "ROSTER_SET_FROM from=" ^ Jid.to_string from
-  | PROBE_PRESENCE -> "PROBE_PRESENCE"
-  | SUBSCRIPTION_CANCELLATION {user; force} ->
-    "SUBSCRIPTION_CANCELLATION user="
-    ^ Jid.to_string user
-    ^ " force="
-    ^ string_of_bool force
-  | SUBSCRIPTION_REMOVAL {contact} ->
-    "SUBSCRIPTION_REMOVAL contact=" ^ Jid.to_string contact
-;;
+let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t

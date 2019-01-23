@@ -1,9 +1,8 @@
-open Astring
-
 type t =
   | Message of Xml.t
   | Presence of Xml.t
   | Iq of Xml.t
+[@@deriving sexp]
 
 let to_xml = function Message xml -> xml | Presence xml -> xml | Iq xml -> xml
 let gen_id () = Uuidm.(to_string (create `V4))
@@ -164,54 +163,8 @@ let rec get_name = function
   | _ :: attrs -> get_name attrs
 ;;
 
-let name_to_string (prefix, name) = if prefix <> "" then prefix ^ ":" ^ name else name
-
-let pp_attribute_to_string (name, attribute) =
-  let name_string = name_to_string name in
-  if name_string = "id"
-  then name_string ^ "='redacted_for_testing'"
-  else name_string ^ "='" ^ attribute ^ "'"
-;;
-
-let pp_tag_to_string (name, attributes) =
-  let sep = "\n  " in
-  let attr_string =
-    String.concat ~sep (List.map (fun a -> pp_attribute_to_string a) attributes)
-  in
-  let name_string = name_to_string name in
-  name_string ^ if attr_string <> "" then sep ^ attr_string else ""
-;;
-
 let to_string = function
   | Message xml -> Xml.to_string xml
   | Presence xml -> Xml.to_string xml
   | Iq xml -> Xml.to_string xml
-;;
-
-let%expect_test "empty tag prefix" =
-  let tag = ("", "name"), [] in
-  print_endline (pp_tag_to_string tag);
-  [%expect {| name |}]
-;;
-
-let%expect_test "create tag" =
-  let tag = ("prefix", "name"), [] in
-  print_endline (pp_tag_to_string tag);
-  [%expect {| prefix:name |}]
-;;
-
-let%expect_test "empty tag prefix with attrs" =
-  let tag = ("", "name"), [("", "attr1"), "val1"] in
-  print_endline (pp_tag_to_string tag);
-  [%expect {|
-    name
-      attr1='val1' |}]
-;;
-
-let%expect_test "create tag with attrs" =
-  let tag = ("prefix", "name"), [("prefix", "attr1"), "val1"] in
-  print_endline (pp_tag_to_string tag);
-  [%expect {|
-    prefix:name
-      prefix:attr1='val1' |}]
 ;;

@@ -1,16 +1,18 @@
 open Asetmap
 module Jid_map = Map.Make (Jid)
 
-type presence =
-  | Online
-  | Offline
-
 type subscription =
   | None
   | To
   | From
   | Both
   | Remove
+[@@deriving sexp]
+
+type presence =
+  | Online
+  | Offline
+[@@deriving sexp]
 
 type item =
   { handle : string
