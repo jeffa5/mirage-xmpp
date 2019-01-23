@@ -11,15 +11,15 @@
           <span class="dirname">src/</span>connections.ml
         </a>
       </h1>
-      <h2>65.00%</h2>
+      <h2>61.11%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:8.96%"></span>
-      <span class="unvisited" style="top:13.43%"></span>
-      <span class="unvisited" style="top:14.93%"></span>
-      <span class="unvisited" style="top:23.88%"></span>
-      <span class="unvisited" style="top:25.37%"></span>
-      <span class="unvisited" style="top:29.85%"></span>
+      <span class="unvisited" style="top:9.23%"></span>
+      <span class="unvisited" style="top:13.85%"></span>
+      <span class="unvisited" style="top:15.38%"></span>
+      <span class="unvisited" style="top:24.62%"></span>
+      <span class="unvisited" style="top:26.15%"></span>
+      <span class="unvisited" style="top:30.77%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -50,13 +50,13 @@
 <a id="L24"></a><span > </span>
 <a id="L25"></a><span > </span>
 <a id="L26"></a><span class="visited"> </span>
-<a id="L27"></a><span > </span>
-<a id="L28"></a><span class="visited"> </span>
-<a id="L29"></a><span class="visited"> </span>
+<a id="L27"></a><span class="visited"> </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
 <a id="L30"></a><span > </span>
-<a id="L31"></a><span > </span>
+<a id="L31"></a><span class="visited"> </span>
 <a id="L32"></a><span > </span>
-<a id="L33"></a><span class="visited"> </span>
+<a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span > </span>
 <a id="L36"></a><span > </span>
@@ -89,8 +89,6 @@
 <a id="L63"></a><span > </span>
 <a id="L64"></a><span > </span>
 <a id="L65"></a><span > </span>
-<a id="L66"></a><span > </span>
-<a id="L67"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -160,8 +158,6 @@
 <a href="#L63">63</a>
 <a href="#L64">64</a>
 <a href="#L65">65</a>
-<a href="#L66">66</a>
-<a href="#L67">67</a>
 </pre>
         <pre id="code">
 open Asetmap
@@ -186,14 +182,12 @@ let find_all = <span data-count="2">f</span>unction
   | <span data-count="0">_</span> -&gt; []
 ;;
 
-let remove jid = <span data-count="5">t</span> := Jid_map.remove jid !t
+let remove jid = <span data-count="3">t</span> := Jid_map.remove jid !t
 
 let to_string () =
-  <span data-count="10">"</span>["
-  ^ ( Jid_map.to_list !t
-    |&gt; <span data-count="10">L</span>ist.map (fun (jid, _) -&gt; <span data-count="4">J</span>id.to_string jid)
-    |&gt; <span data-count="10">S</span>tring.concat "\n" )
-  ^ "]"
+  <span data-count="4">S</span>explib.Sexp.to_string_hum
+  @@ Sexplib.Conv.sexp_of_list (fun (jid, _) -&gt; <span data-count="4">J</span>id.sexp_of_t jid)
+  @@ Jid_map.to_list !t
 ;;
 
 let clear () = <span data-count="10">t</span> := Jid_map.empty
@@ -201,14 +195,14 @@ let clear () = <span data-count="10">t</span> := Jid_map.empty
 let%expect_test "empty initially" =
   clear ();
   print_endline (to_string ());
-  [%expect {| [] |}]
+  [%expect {| () |}]
 ;;
 
 let%expect_test "add one connection" =
   clear ();
   add (Jid.of_string "juliet@im.example.com") (fun _ -&gt; ());
   print_endline (to_string ());
-  [%expect {| [juliet@im.example.com] |}]
+  [%expect {| ((Bare_JID (juliet im.example.com))) |}]
 ;;
 
 let%expect_test "add two connection" =
@@ -216,16 +210,16 @@ let%expect_test "add two connection" =
   add (Jid.of_string "juliet@im.example.com") (fun _ -&gt; ());
   add (Jid.of_string "romeo@home.elsewhere.com") (fun _ -&gt; ());
   print_endline (to_string ());
-  [%expect {|
-      [romeo@home.elsewhere.com
-      juliet@im.example.com] |}]
+  [%expect
+    {|
+      ((Bare_JID (romeo home.elsewhere.com)) (Bare_JID (juliet im.example.com))) |}]
 ;;
 
 let%expect_test "find all matches bare jid" =
   clear ();
   add (Jid.of_string "juliet@im.example.com/balcony") (fun _ -&gt; ());
   print_endline (to_string ());
-  [%expect {| [juliet@im.example.com/balcony] |}];
+  [%expect {| ((Full_JID ((juliet im.example.com) balcony))) |}];
   find_all (Jid.of_string "juliet@im.example.com")
   |&gt; List.iter (fun (target_jid, _actions_push) -&gt;
          print_endline (Jid.to_string target_jid) );
@@ -234,7 +228,7 @@ let%expect_test "find all matches bare jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-23 11:15:48 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

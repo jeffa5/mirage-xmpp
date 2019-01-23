@@ -643,7 +643,7 @@ let start_unikernel () =
   <span data-count="5">p</span>rint_endline "Starting unikernel";
   <span data-count="5">l</span>et command =
     <span data-count="5">L</span>wt_process.shell
-      "cd ../../../../; mirage/xmpp --hostname=\"im.example.com\" -l \"*:debug\" &gt; \
+      "cd ../../../../; mirage/xmpp --hostname=\"im.example.com\" -l \"debug\" &gt; \
        unikernel.log 2&gt;&amp;1"
   in
   <span data-count="5">l</span>et _process = <span data-count="5">L</span>wt_process.open_process_none command in
@@ -858,7 +858,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-23 11:15:48 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../../coverage.js"></script>
   </body>
 </html>

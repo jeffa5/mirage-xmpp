@@ -11,17 +11,15 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>82.61%</h2>
+      <h2>83.33%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:17.95%"></span>
-      <span class="unvisited" style="top:24.36%"></span>
-      <span class="unvisited" style="top:46.15%"></span>
-      <span class="unvisited" style="top:47.44%"></span>
-      <span class="unvisited" style="top:55.13%"></span>
-      <span class="unvisited" style="top:56.41%"></span>
-      <span class="unvisited" style="top:66.67%"></span>
-      <span class="unvisited" style="top:70.51%"></span>
+      <span class="some-visited" style="top:18.92%"></span>
+      <span class="unvisited" style="top:25.68%"></span>
+      <span class="unvisited" style="top:48.65%"></span>
+      <span class="unvisited" style="top:56.76%"></span>
+      <span class="unvisited" style="top:67.57%"></span>
+      <span class="unvisited" style="top:71.62%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -38,7 +36,7 @@
 <a id="L10"></a><span > </span>
 <a id="L11"></a><span > </span>
 <a id="L12"></a><span > </span>
-<a id="L13"></a><span class="visited"> </span>
+<a id="L13"></a><span > </span>
 <a id="L14"></a><span class="some-visited"> </span>
 <a id="L15"></a><span > </span>
 <a id="L16"></a><span class="visited"> </span>
@@ -62,35 +60,35 @@
 <a id="L34"></a><span class="visited"> </span>
 <a id="L35"></a><span class="visited"> </span>
 <a id="L36"></a><span class="unvisited"> </span>
-<a id="L37"></a><span class="unvisited"> </span>
-<a id="L38"></a><span > </span>
+<a id="L37"></a><span > </span>
+<a id="L38"></a><span class="visited"> </span>
 <a id="L39"></a><span class="visited"> </span>
 <a id="L40"></a><span class="visited"> </span>
 <a id="L41"></a><span class="visited"> </span>
-<a id="L42"></a><span class="visited"> </span>
-<a id="L43"></a><span class="unvisited"> </span>
-<a id="L44"></a><span class="unvisited"> </span>
-<a id="L45"></a><span > </span>
+<a id="L42"></a><span class="unvisited"> </span>
+<a id="L43"></a><span > </span>
+<a id="L44"></a><span class="visited"> </span>
+<a id="L45"></a><span class="visited"> </span>
 <a id="L46"></a><span class="visited"> </span>
 <a id="L47"></a><span class="visited"> </span>
-<a id="L48"></a><span class="visited"> </span>
-<a id="L49"></a><span class="visited"> </span>
-<a id="L50"></a><span > </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span class="unvisited"> </span>
 <a id="L51"></a><span > </span>
-<a id="L52"></a><span class="unvisited"> </span>
-<a id="L53"></a><span > </span>
+<a id="L52"></a><span class="visited"> </span>
+<a id="L53"></a><span class="unvisited"> </span>
 <a id="L54"></a><span class="visited"> </span>
-<a id="L55"></a><span class="unvisited"> </span>
-<a id="L56"></a><span class="visited"> </span>
+<a id="L55"></a><span > </span>
+<a id="L56"></a><span > </span>
 <a id="L57"></a><span > </span>
-<a id="L58"></a><span > </span>
-<a id="L59"></a><span > </span>
-<a id="L60"></a><span > </span>
+<a id="L58"></a><span class="visited"> </span>
+<a id="L59"></a><span class="visited"> </span>
+<a id="L60"></a><span class="visited"> </span>
 <a id="L61"></a><span class="visited"> </span>
-<a id="L62"></a><span class="visited"> </span>
-<a id="L63"></a><span class="visited"> </span>
-<a id="L64"></a><span class="visited"> </span>
-<a id="L65"></a><span class="visited"> </span>
+<a id="L62"></a><span > </span>
+<a id="L63"></a><span > </span>
+<a id="L64"></a><span > </span>
+<a id="L65"></a><span > </span>
 <a id="L66"></a><span > </span>
 <a id="L67"></a><span > </span>
 <a id="L68"></a><span > </span>
@@ -100,10 +98,6 @@
 <a id="L72"></a><span > </span>
 <a id="L73"></a><span > </span>
 <a id="L74"></a><span > </span>
-<a id="L75"></a><span > </span>
-<a id="L76"></a><span > </span>
-<a id="L77"></a><span > </span>
-<a id="L78"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -182,26 +176,22 @@
 <a href="#L72">72</a>
 <a href="#L73">73</a>
 <a href="#L74">74</a>
-<a href="#L75">75</a>
-<a href="#L76">76</a>
-<a href="#L77">77</a>
-<a href="#L78">78</a>
 </pre>
         <pre id="code">
 open Astring
+open Sexplib.Std
 
 (* a JID is of the form user@domain/resource *)
-type bare_jid = string * string
-type full_jid = bare_jid * string
+type bare_jid = string * string [@@deriving sexp]
+type full_jid = bare_jid * string [@@deriving sexp]
 
 type t =
   | Full_JID of full_jid
   | Bare_JID of bare_jid
   | Domain of string
-  | Empty
+[@@deriving sexp]
 
-let empty = <span data-count="2">E</span>mpty
-let at_least_bare = <span data-count="2">f</span>unction <span data-count="3">F</span>ull_JID _ | <span data-count="0">B</span>are_JID _ -&gt; true | <span data-count="2">_</span> -&gt; false
+let at_least_bare = <span data-count="2">f</span>unction <span data-count="3">F</span>ull_JID _ | <span data-count="0">B</span>are_JID _ -&gt; true | <span data-count="0">_</span> -&gt; false
 
 let to_bare = <span data-count="2">f</span>unction
   | <span data-count="20">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
@@ -210,12 +200,12 @@ let to_bare = <span data-count="2">f</span>unction
 ;;
 
 let of_string str =
-  <span data-count="189">m</span>atch String.cut ~sep:"@" str with
+  <span data-count="181">m</span>atch String.cut ~sep:"@" str with
   | <span data-count="155">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
     | <span data-count="11">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
     | <span data-count="144">N</span>one -&gt; Bare_JID (user, domres))
-  | <span data-count="34">N</span>one -&gt; Domain str
+  | <span data-count="26">N</span>one -&gt; Domain str
 ;;
 
 let compare jid1 jid2 =
@@ -224,14 +214,12 @@ let compare jid1 jid2 =
     | <span data-count="2">F</span>ull_JID ((u1, d1), r1) -&gt; u1, d1, r1
     | <span data-count="104">B</span>are_JID (u1, d1) -&gt; u1, d1, ""
     | <span data-count="0">D</span>omain d1 -&gt; "", d1, ""
-    | <span data-count="0">E</span>mpty -&gt; "", "", ""
   in
   <span data-count="106">l</span>et user2, domain2, resource2 =
     <span data-count="106">m</span>atch jid2 with
     | <span data-count="2">F</span>ull_JID ((u2, d2), r2) -&gt; u2, d2, r2
     | <span data-count="104">B</span>are_JID (u2, d2) -&gt; u2, d2, ""
     | <span data-count="0">D</span>omain d2 -&gt; "", d2, ""
-    | <span data-count="0">E</span>mpty -&gt; "", "", ""
   in
   <span data-count="106">l</span>et d = <span data-count="106">S</span>tring.compare domain1 domain2 in
   <span data-count="106">l</span>et u = <span data-count="106">S</span>tring.compare user1 user2 in
@@ -245,14 +233,12 @@ let set_resource new_resource = <span data-count="3">f</span>unction
   | <span data-count="0">F</span>ull_JID ((user, domain), _resource) -&gt; Full_JID ((user, domain), new_resource)
   | <span data-count="3">B</span>are_JID (user, domain) -&gt; Full_JID ((user, domain), new_resource)
   | Domain _domain -&gt; assert false
-  | Empty -&gt; assert false
 ;;
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="20">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
-  | <span data-count="104">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
+  | <span data-count="16">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
+  | <span data-count="94">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
   | <span data-count="18">D</span>omain domain -&gt; domain
-  | <span data-count="3">E</span>mpty -&gt; "empty"
 ;;
 
 let%expect_test "make jid" =
@@ -269,7 +255,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-15 23:44:34 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-23 11:15:48 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
