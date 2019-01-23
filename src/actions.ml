@@ -30,7 +30,7 @@ type t =
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t; from : Jid.t option}
-  | UPDATE_PRESENCE of {status : Rosters.presence; xml : Xml.t option}
+  | UPDATE_PRESENCE of {status : Rosters.Presence.t; xml : Xml.t option}
   | SEND_PRESENCE_UPDATE of {from : Jid.t; xml : Xml.t option}
   | SEND_CURRENT_PRESENCE of Jid.t
   | IQ_ERROR of {error_type : error_type; error_tag : string; id : string}

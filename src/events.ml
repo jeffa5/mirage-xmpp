@@ -12,7 +12,7 @@ type t =
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
-  | PRESENCE_UPDATE of {status : Rosters.presence; xml : Xml.t option}
+  | PRESENCE_UPDATE of {status : Rosters.Presence.t; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
@@ -106,7 +106,7 @@ let lift_presence = function
         {ato; xml = Xml.Element (((namespace, name), modify_to attributes), children)}
     | Some "unavailable" ->
       PRESENCE_UPDATE
-        { status = Rosters.Offline
+        { status = Offline
         ; xml = Some (Xml.Element (((namespace, name), attributes), children)) }
     | Some "unsubscribed" ->
       SUBSCRIPTION_CANCELLATION {user = Stanza.get_to attributes |> Jid.to_bare}
@@ -114,7 +114,7 @@ let lift_presence = function
       SUBSCRIPTION_REMOVAL {contact = Stanza.get_to attributes |> Jid.to_bare}
     | None ->
       PRESENCE_UPDATE
-        { status = Rosters.Online
+        { status = Online
         ; xml = Some (Xml.Element (((namespace, name), attributes), children)) }
     | _ -> not_implemented)
   | Xml.Text _t -> ERROR "Expected a presence stanza, not text"

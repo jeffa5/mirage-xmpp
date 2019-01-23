@@ -68,14 +68,13 @@ let create_roster_get_result ~id ~ato items =
     ~ato
     [ create_query
         (List.map
-           (* (fun (jid, {handle; subscription; ask; groups}) -> *)
-             (fun (jid, item) ->
-             let handle, subscription, _ask, groups = Rosters.item_to_tuple item in
+           (fun (jid, item) ->
+             let handle, subscription, _ask, groups = Rosters.Item.to_tuple item in
              Xml.create
                ( ("", "item")
                , [ "", Xml.Jid jid
                  ; "", Xml.Name handle
-                 ; "", Xml.Subscription (Rosters.subscription_to_string subscription) ]
+                 ; "", Xml.Subscription (Rosters.Subscription.to_string subscription) ]
                )
                ~children:
                  (List.map
@@ -88,13 +87,13 @@ let create_roster_get_result ~id ~ato items =
 let create_roster_set_result ~id ~ato = create_iq ~id ~atype:"result" ~ato []
 
 let create_roster_push ~id ~ato (jid, item) =
-  let handle, subscription, _ask, groups = Rosters.item_to_tuple item in
+  let handle, subscription, _ask, groups = Rosters.Item.to_tuple item in
   let attributes = [] in
   let attributes =
     match handle with "" -> attributes | h -> ("", Xml.Name h) :: attributes
   in
   let attributes =
-    ("", Xml.Subscription (Rosters.subscription_to_string subscription)) :: attributes
+    ("", Xml.Subscription (Rosters.Subscription.to_string subscription)) :: attributes
   in
   create_iq
     ~id

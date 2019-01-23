@@ -45,9 +45,12 @@ val create_bind : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 val create_resource : ?attributes:Xml.attribute list -> Xml.t list -> Xml.t
 
 val create_bind_result : id:string -> jid:Jid.t -> unit -> t
-val create_roster_get_result : id:string -> ato:Jid.t -> (Jid.t * Rosters.item) list -> t
+
+val create_roster_get_result :
+  id:string -> ato:Jid.t -> (Jid.t * Rosters.Item.t) list -> t
+
 val create_roster_set_result : id:string -> ato:Jid.t -> t
-val create_roster_push : id:string -> ato:Jid.t -> Jid.t * Rosters.item -> t
+val create_roster_push : id:string -> ato:Jid.t -> Jid.t * Rosters.Item.t -> t
 
 (** [to_string t] takes a stanza [t] and returns the string representation of it *)
 val to_string : t -> string

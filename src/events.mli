@@ -12,7 +12,7 @@ type t =
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
   | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
-  | PRESENCE_UPDATE of {status : Rosters.presence; xml : Xml.t option}
+  | PRESENCE_UPDATE of {status : Rosters.Presence.t; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT

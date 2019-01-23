@@ -16,7 +16,7 @@ let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t
 
 let closed =
   ( {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Presence.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.CLOSE ]
   , [Actions.EXIT] )
@@ -24,7 +24,7 @@ let closed =
 
 let closed_with_error e =
   ( {state = CLOSED}
-  , [ Actions.UPDATE_PRESENCE {status = Rosters.Offline; xml = None}
+  , [ Actions.UPDATE_PRESENCE {status = Rosters.Presence.Offline; xml = None}
     ; Actions.REMOVE_FROM_CONNECTIONS
     ; Actions.ERROR e ]
   , [Actions.EXIT] )

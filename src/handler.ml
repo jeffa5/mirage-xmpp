@@ -97,8 +97,12 @@ let handle_action t stream =
                        ~id:(Stanza.gen_id ())
                        ~ato:full_jid
                        ( contact
-                       , {handle = ""; subscription = Remove; ask = false; groups = []}
-                       )))))
+                       , Rosters.Item.create
+                           ~handle:""
+                           ~subscription:Rosters.Subscription.Remove
+                           ~ask:false
+                           ~groups:[]
+                           () )))))
         | None ->
           (match t.jid with
           | Some jid ->
@@ -116,7 +120,7 @@ let handle_action t stream =
         (match t.jid with
         | Some jid ->
           (match Rosters.get_subscription jid ato with
-          | Some Rosters.To | Some Rosters.Both ->
+          | Some To | Some Both ->
             let xml =
               Xml.create
                 ( ("", "presence")
@@ -183,9 +187,9 @@ let handle_action t stream =
             | Some (Xml.Text _) -> assert false
             | None ->
               (match Rosters.get_presence from with
-              | Rosters.Online ->
+              | Online ->
                 Stanza.create_presence ~id:(Some (Stanza.gen_id ())) ~from ~ato:jid []
-              | Rosters.Offline ->
+              | Offline ->
                 Stanza.create_presence
                   ~id:(Some (Stanza.gen_id ()))
                   ~from
@@ -246,12 +250,12 @@ let handle_action t stream =
               (Some (SUBSCRIPTION_CANCELLATION {user = Jid.to_bare target; force = true}))
           in
           (match Rosters.get_subscription jid target with
-          | Some Rosters.Both ->
+          | Some Both ->
             unsubscribe ();
             unsubscribed ()
-          | Some Rosters.To -> unsubscribe ()
-          | Some Rosters.From -> unsubscribed ()
-          | Some Rosters.None | Some Rosters.Remove -> ()
+          | Some To -> unsubscribe ()
+          | Some From -> unsubscribed ()
+          | Some None | Some Remove -> ()
           | None -> ());
           Rosters.remove_item jid target;
           t.callback
@@ -278,7 +282,7 @@ let handle_action t stream =
           then t.callback (Some (Xml.to_string xml))
           else (
             match Rosters.get_subscription ato jid with
-            | Some Rosters.None | Some Rosters.From ->
+            | Some None | Some From ->
               (match Rosters.get_ask ato jid with
               | Some _ ->
                 Rosters.upgrade_subscription_to ato jid;
@@ -370,7 +374,7 @@ let handle_action t stream =
         | Some jid ->
           let user = Jid.to_bare jid in
           (match Rosters.get_subscription contact user with
-          | Some Rosters.From | Some Rosters.Both ->
+          | Some From | Some Both ->
             (* deliver unsubscribe stanza to all contacts resources *)
             Connections.find_all contact
             |> List.iter (fun (jid, handler) ->
