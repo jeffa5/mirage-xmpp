@@ -62,7 +62,7 @@ let start_unikernel () =
   print_endline "Starting unikernel";
   let command =
     Lwt_process.shell
-      "cd ../../../../; mirage/xmpp --hostname=\"im.example.com\" -l \"*:debug\" > \
+      "cd ../../../../; mirage/xmpp --hostname=\"im.example.com\" -l \"debug\" > \
        unikernel.log 2>&1"
   in
   let _process = Lwt_process.open_process_none command in
