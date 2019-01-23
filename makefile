@@ -1,29 +1,21 @@
 .PHONY: all
 all: mirage
 
-#
-# XMLPARSER
-#
-
-# run unit tests for the xmlparser package
+# run unit tests
 .PHONY: unit
 unit: clean
 	dune build @src/runtest
 
-# build the xmlparser package
+# build the
 .PHONY: build
 build: unit
 	dune build @install
 
-# install the xmlparser package to opam
+# install to opam
 .PHONY: install
 install: build
 	dune install
 	opam pin -y .
-
-#
-# MIRAGE
-#
 
 # build the mirage unikernel
 .PHONY: mirage
@@ -39,11 +31,7 @@ integration: mirage
 # run the unikernel built by mirage
 .PHONY: run
 run: mirage
-	mirage/xmpp --hostname="mirage-xmpp.dev" -l "*:debug" 2>&1 | tee unikernel.log
-
-.PHONY: demo
-demo:
-	./demo-stanzas.py
+	mirage/xmpp --hostname="mirage-xmpp.dev" -l "debug" 2>&1 | tee unikernel.log
 
 # promote the files, typically for expect tests
 .PHONY: promote
@@ -108,3 +96,12 @@ docker-prune:
 .PHONY: ejabberd
 ejabberd:
 	docker run --name ejabberd -d --rm -p 5222:5222 ejabberd/ecs
+
+.PHONY: prosody
+prosody:
+	docker run --name prosody -d --rm -p 5222:5222 prosody/prosody
+
+.PHONY: performance
+performance:
+	dune build test/performance/performance.exe
+	cp _build/default/test/performance/performance.exe test/performance/performance
