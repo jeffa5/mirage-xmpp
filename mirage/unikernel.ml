@@ -57,7 +57,6 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     let%lwt () = Mirage_xmpp.Handler.handle handler in
     let%lwt _ = Lwt_mvar.take mvar in
     Logs.info (fun f -> f "Closing the connection");
-    let%lwt () = write_string flow "Closing the connection" in
     S.TCPV4.close flow
   ;;
 
