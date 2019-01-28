@@ -93,13 +93,9 @@ docker-ci: docker-build
 docker-prune:
 	docker system prune
 
-.PHONY: ejabberd
-ejabberd:
-	docker run --name ejabberd -d --rm -p 5222:5222 ejabberd/ecs
-
-.PHONY: prosody
-prosody:
-	docker run --name prosody -d --rm -p 5222:5222 prosody/prosody
+.PHONY: docker-xmpp
+docker-xmpp:
+	docker build -f docker/mirage-xmpp/Dockerfile -t jeffas/mirage-xmpp .
 
 .PHONY: performance
 performance:
