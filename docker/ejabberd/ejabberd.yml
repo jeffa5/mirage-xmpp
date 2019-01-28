@@ -1,0 +1,4 @@
+listen:
+    - port: 5222
+      module: ejabberd_c2s
+      starttls_required: false
