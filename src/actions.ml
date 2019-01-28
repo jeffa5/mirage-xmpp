@@ -18,14 +18,17 @@ type t =
   | SEND_STREAM_FEATURES_SASL
   | SEND_SASL_SUCCESS
   | SEND_STREAM_FEATURES
-  | SERVER_GEN_RESOURCE_IDENTIFIER of string
   | SESSION_START_SUCCESS of string
   | CLOSE
   | ERROR of string
-  | SET_JID of string
-  | SET_JID_RESOURCE of {id : string; resource : string}
+  | SET_USER of string
+  | SET_JID_RESOURCE of {id : string; resource : string option}
   | GET_ROSTER of string
-  | SET_ROSTER of {id : string; target : Jid.t; handle : string; groups : string list}
+  | SET_ROSTER of
+      { id : string
+      ; target : Jid.Bare.t
+      ; handle : string
+      ; groups : string list }
   | PUSH_ROSTER of {ato : Jid.t option; contact : Jid.t}
   | ADD_TO_CONNECTIONS
   | REMOVE_FROM_CONNECTIONS

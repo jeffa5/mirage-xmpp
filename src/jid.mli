@@ -1,15 +1,32 @@
 (** The type of a Jabber ID *)
-type bare_jid = string * string
 
-type full_jid = bare_jid * string
+module Bare : sig
+  type t [@@deriving sexp, ord]
+
+  val of_string : string -> t
+end
+
+module Full : sig
+  type t [@@deriving sexp, ord]
+
+  val to_bare : t -> Bare.t
+  val of_string : string -> t
+  val to_string : t -> string
+  val set_resource : string -> t -> t
+end
+
+module Domain : sig
+  type t [@@deriving sexp]
+end
 
 type t =
-  | Full_JID of full_jid
-  | Bare_JID of bare_jid
-  | Domain of string
+  | Full_JID of Full.t
+  | Bare_JID of Bare.t
+  | Domain of Domain.t
 [@@deriving sexp]
 
-val at_least_bare : t -> bool
+val set_resource : string -> t -> t
+val to_bare_raw : t -> Bare.t
 val to_bare : t -> t
 
 (** [of_string s] creates a new jid from the string, splitting it appropriately *)
@@ -18,6 +35,4 @@ val of_string : string -> t
 (** [to_string t] returns the string representation of t *)
 val to_string : t -> string
 
-val compare : t -> t -> int
 val create_resource : unit -> string
-val set_resource : string -> t -> t

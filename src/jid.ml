@@ -1,22 +1,67 @@
 open Astring
 open Sexplib.Std
 
-(* a JID is of the form user@domain/resource *)
-type bare_jid = string * string [@@deriving sexp]
-type full_jid = bare_jid * string [@@deriving sexp]
+exception MalformedJID of string
+
+module Bare = struct
+  type t = string * string [@@deriving sexp, ord]
+
+  let set_resource resource bare_jid = bare_jid, resource
+
+  exception MalformedBareJID of string
+
+  let of_string str =
+    match String.cut ~sep:"@" str with
+    | Some (user, domres) ->
+      (match String.cut ~sep:"/" domres with
+      | Some _ -> raise @@ MalformedBareJID str
+      | None -> user, domres)
+    | None -> raise @@ MalformedJID str
+  ;;
+end
+
+module Full = struct
+  type t = (string * string) * string [@@deriving sexp, ord]
+
+  let to_bare (bare_jid, _) = bare_jid
+  let set_resource resource (bare_jid, _) = bare_jid, resource
+
+  exception MalformedFullJID of string
+
+  let of_string str =
+    match String.cut ~sep:"@" str with
+    | Some (user, domres) ->
+      (match String.cut ~sep:"/" domres with
+      | Some (domain, resource) -> (user, domain), resource
+      | None -> raise @@ MalformedFullJID str)
+    | None -> raise @@ MalformedJID str
+  ;;
+
+  let to_string ((user, domain), resource) = user ^ "@" ^ domain ^ "/" ^ resource
+end
+
+module Domain = struct
+  type t = string [@@deriving sexp]
+end
 
 type t =
-  | Full_JID of full_jid
-  | Bare_JID of bare_jid
-  | Domain of string
+  | Full_JID of Full.t
+  | Bare_JID of Bare.t
+  | Domain of Domain.t
 [@@deriving sexp]
 
-let at_least_bare = function Full_JID _ | Bare_JID _ -> true | _ -> false
+exception NotAtLeastBare of string
+
+let to_bare_raw = function
+  | Full_JID (bare_jid, _) -> bare_jid
+  | Bare_JID bare_jid -> bare_jid
+  | Domain dom -> raise (NotAtLeastBare dom)
+;;
 
 let to_bare = function
   | Full_JID (bare_jid, _) -> Bare_JID bare_jid
   | Bare_JID bare_jid -> Bare_JID bare_jid
-  | _ -> raise Not_found
+  | Domain dom -> raise (NotAtLeastBare dom)
 ;;
 
 let of_string str =
@@ -28,37 +73,18 @@ let of_string str =
   | None -> Domain str
 ;;
 
-let compare jid1 jid2 =
-  let user1, domain1, resource1 =
-    match jid1 with
-    | Full_JID ((u1, d1), r1) -> u1, d1, r1
-    | Bare_JID (u1, d1) -> u1, d1, ""
-    | Domain d1 -> "", d1, ""
-  in
-  let user2, domain2, resource2 =
-    match jid2 with
-    | Full_JID ((u2, d2), r2) -> u2, d2, r2
-    | Bare_JID (u2, d2) -> u2, d2, ""
-    | Domain d2 -> "", d2, ""
-  in
-  let d = String.compare domain1 domain2 in
-  let u = String.compare user1 user2 in
-  let r = String.compare resource1 resource2 in
-  if d = 0 then if u = 0 then r else u else d
-;;
-
 let create_resource () = Uuidm.(to_string (create `V4))
 
-let set_resource new_resource = function
-  | Full_JID ((user, domain), _resource) -> Full_JID ((user, domain), new_resource)
-  | Bare_JID (user, domain) -> Full_JID ((user, domain), new_resource)
-  | Domain _domain -> assert false
+let set_resource resource = function
+  | Full_JID fjid -> Full_JID (Full.set_resource resource fjid)
+  | Bare_JID bjid -> Full_JID (Bare.set_resource resource bjid)
+  | Domain dom -> raise (NotAtLeastBare dom)
 ;;
 
 let to_string = function
   | Full_JID ((user, domain), resource) -> user ^ "@" ^ domain ^ "/" ^ resource
   | Bare_JID (user, domain) -> user ^ "@" ^ domain
-  | Domain domain -> domain
+  | Domain dom -> dom
 ;;
 
 let%expect_test "make jid" =

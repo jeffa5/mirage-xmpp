@@ -63,7 +63,7 @@ let handle_sasl_negotiation t = function
     closed_with_error "Unexpected stream header during sasl negotiation"
   | SASL_AUTH {user; _} ->
     ( {state = NEGOTIATING}
-    , [Actions.SET_JID user; Actions.SEND_SASL_SUCCESS]
+    , [Actions.SET_USER user; Actions.SEND_SASL_SUCCESS]
     , [Actions.RESET_PARSER] )
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Not finished SASL"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Not finished SASL"
@@ -106,10 +106,10 @@ let handle_negotiating t = function
       , [] )
     else closed_with_error "Must use version >= 1.0"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
-  | RESOURCE_BIND_SERVER_GEN id ->
-    {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id], []
+  | RESOURCE_BIND_SERVER_GEN {id} ->
+    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource = None}], []
   | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
-    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource}], []
+    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource = Some resource}], []
   | SESSION_START id -> just_connected [Actions.SESSION_START_SUCCESS id]
   | STREAM_CLOSE ->
     (* the stream can close during negotiation so close our direction too *)
@@ -118,7 +118,7 @@ let handle_negotiating t = function
   | ROSTER_GET id -> just_connected [Actions.GET_ROSTER id]
   | ROSTER_SET {id; target; handle; groups} ->
     just_connected
-      [ Actions.SET_ROSTER {id; target; handle; groups}
+      [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
   | ROSTER_REMOVE {id; target} ->
     just_connected
@@ -158,7 +158,7 @@ let handle_connected t = function
   | ROSTER_GET id -> {state = CONNECTED}, [Actions.GET_ROSTER id], []
   | ROSTER_SET {id; target; handle; groups} ->
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER {id; target; handle; groups}
+    , [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
     , [] )
   | ROSTER_REMOVE {id; target} ->
@@ -302,17 +302,17 @@ let%expect_test "sasl negotiation" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
-    handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
+    handle fsm (Events.RESOURCE_BIND_SERVER_GEN {id = "id"})
   in
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
+    (SET_JID_RESOURCE (id id) (resource ())) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -345,17 +345,17 @@ let%expect_test "bind resource" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
-    handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
+    handle fsm (Events.RESOURCE_BIND_SERVER_GEN {id = "id"})
   in
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
+    (SET_JID_RESOURCE (id id) (resource ())) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -388,7 +388,7 @@ let%expect_test "bind resource client" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -398,7 +398,7 @@ let%expect_test "bind resource client" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (fun s -> print_endline s) strings;
   [%expect {|
-    (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+    (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -430,7 +430,7 @@ let%expect_test "roster get" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -438,7 +438,7 @@ let%expect_test "roster get" =
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
   [%expect {| ((state CONNECTED)) |}];
@@ -477,7 +477,7 @@ let%expect_test "roster set" =
   let strings = List.map (fun a -> Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -485,7 +485,7 @@ let%expect_test "roster set" =
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
-  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
   [%expect {| ((state CONNECTED)) |}];
@@ -508,8 +508,8 @@ let%expect_test "roster set" =
   List.map (fun a -> Actions.to_string a) actions |> List.iter (fun s -> print_endline s);
   [%expect
     {|
-    (SET_ROSTER (id some_id) (target (Bare_JID (nurse example.com)))
-     (handle Nurse) (groups (Servants)))
+    (SET_ROSTER (id some_id) (target (nurse example.com)) (handle Nurse)
+     (groups (Servants)))
     (PUSH_ROSTER (ato ()) (contact (Bare_JID (nurse example.com)))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);

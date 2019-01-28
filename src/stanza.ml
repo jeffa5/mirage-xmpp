@@ -27,11 +27,12 @@ let create_iq ?(attributes = []) ?ato ~atype ~id children =
   Iq (Element ((("", "iq"), ["", Xml.Id id; "", Xml.Type atype] @ attributes), children))
 ;;
 
-let create_iq_error ~from ~ato ~id ~error_type ~error_tag =
+let create_iq_error ~from ?ato ~id ~error_type ~error_tag () =
+  let attributes = match ato with Some target -> ["", Xml.To target] | None -> [] in
   Iq
     (Element
        ( ( ("", "iq")
-         , ["", Xml.From from; "", Xml.Id id; "", Xml.To ato; "", Xml.Type "error"] )
+         , ["", Xml.From from; "", Xml.Id id; "", Xml.Type "error"] @ attributes )
        , [ Element
              ( (("", "error"), ["", Xml.Type (Actions.error_type_to_string error_type)])
              , [ Element
@@ -72,7 +73,7 @@ let create_roster_get_result ~id ~ato items =
              let handle, subscription, _ask, groups = Rosters.Item.to_tuple item in
              Xml.create
                ( ("", "item")
-               , [ "", Xml.Jid jid
+               , [ "", Xml.Jid (Bare_JID jid)
                  ; "", Xml.Name handle
                  ; "", Xml.Subscription (Rosters.Subscription.to_string subscription) ]
                )

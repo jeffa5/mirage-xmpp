@@ -4,7 +4,7 @@
 type t =
   | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
-  | RESOURCE_BIND_SERVER_GEN of string
+  | RESOURCE_BIND_SERVER_GEN of {id : string}
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
   | SESSION_START of string
   | STREAM_CLOSE

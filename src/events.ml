@@ -4,7 +4,7 @@ open Sexplib.Std
 type t =
   | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
-  | RESOURCE_BIND_SERVER_GEN of string
+  | RESOURCE_BIND_SERVER_GEN of {id : string}
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
   | SESSION_START of string
   | STREAM_CLOSE
@@ -33,7 +33,7 @@ let lift_iq = function
       (match children with
       | [Xml.Element (((_p, "bind"), _attrs), [])] ->
         (* resource bind with server-generated resource identifier (7.6) *)
-        RESOURCE_BIND_SERVER_GEN (Stanza.get_id_exn attributes)
+        RESOURCE_BIND_SERVER_GEN {id = Stanza.get_id_exn attributes}
       | [Xml.Element (((_p, "bind"), _attrs), [child])] ->
         (match child with
         | Xml.Element (((_, "resource"), []), [Xml.Text resource]) ->
@@ -59,6 +59,9 @@ let lift_iq = function
             match Stanza.get_name attrs with Some name -> name | None -> ""
           in
           ROSTER_SET {id = Stanza.get_id_exn attributes; target = jid; handle; groups})
+      | [Xml.Element (((_, "query"), [(_, Xml.Xmlns "jabber:iq:register")]), _)] ->
+        let id = Stanza.get_id_exn attributes in
+        IQ_ERROR {error_type = Actions.Cancel; error_tag = "feature-not-implemented"; id}
       | [Xml.Element (((_, "session"), _), [])] ->
         SESSION_START (Stanza.get_id_exn attributes)
       | _ ->
@@ -209,7 +212,7 @@ let%expect_test "iq set" =
                , [Xml.Element ((("", "bind"), []), [])] ))))
   in
   print_endline (to_string event);
-  [%expect {| (RESOURCE_BIND_SERVER_GEN l3b1vs75) |}]
+  [%expect {| (RESOURCE_BIND_SERVER_GEN (id l3b1vs75)) |}]
 ;;
 
 let%expect_test "roster get" =

@@ -3,4 +3,4 @@
  (public_name mirage-xmpp)
  (libraries lwt lwt.unix markup-lwt astring asetmap uuidm base64 sexplib)
  (inline_tests (flags -show-counts -strict))
- (preprocess (pps ppx_expect lwt_ppx ppx_sexp_conv bisect_ppx -conditional)))
+ (preprocess (pps ppx_expect lwt_ppx ppx_deriving.std ppx_sexp_conv bisect_ppx -conditional)))
