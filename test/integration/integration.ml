@@ -109,8 +109,6 @@ let%expect_test "open and close stream" =
     </stream:stream>
     Receive:
     Unexpected stream close during sasl negotiation
-    Receive:
-    Closing the connection
     Didn't close the stream before exiting
     Stopping unikernel
     Success |}]
