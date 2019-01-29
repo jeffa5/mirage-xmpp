@@ -1222,7 +1222,7 @@ let handle_sasl_negotiation t = <span data-count="11">f</span>unction
     closed_with_error "Unexpected stream header during sasl negotiation"
   | <span data-count="8">S</span>ASL_AUTH {user; _} -&gt;
     ( {state = NEGOTIATING}
-    , [Actions.SET_JID user; Actions.SEND_SASL_SUCCESS]
+    , [Actions.SET_USER user; Actions.SEND_SASL_SUCCESS]
     , [Actions.RESET_PARSER] )
   | <span data-count="0">R</span>ESOURCE_BIND_SERVER_GEN _ -&gt; closed_with_error "Not finished SASL"
   | <span data-count="0">R</span>ESOURCE_BIND_CLIENT_GEN _ -&gt; closed_with_error "Not finished SASL"
@@ -1265,10 +1265,10 @@ let handle_negotiating t = <span data-count="19">f</span>unction
       , [] )
     else <span data-count="0">c</span>losed_with_error "Must use version &gt;= 1.0"
   | <span data-count="0">S</span>ASL_AUTH _ -&gt; closed_with_error "Already negotiated sasl"
-  | <span data-count="2">R</span>ESOURCE_BIND_SERVER_GEN id -&gt;
-    {state = NEGOTIATING}, [Actions.SERVER_GEN_RESOURCE_IDENTIFIER id], []
+  | <span data-count="2">R</span>ESOURCE_BIND_SERVER_GEN {id} -&gt;
+    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource = None}], []
   | <span data-count="6">R</span>ESOURCE_BIND_CLIENT_GEN {id; resource} -&gt;
-    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource}], []
+    {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource = Some resource}], []
   | <span data-count="0">S</span>ESSION_START id -&gt; just_connected [Actions.SESSION_START_SUCCESS id]
   | <span data-count="4">S</span>TREAM_CLOSE -&gt;
     (* the stream can close during negotiation so close our direction too *)
@@ -1277,7 +1277,7 @@ let handle_negotiating t = <span data-count="19">f</span>unction
   | <span data-count="3">R</span>OSTER_GET id -&gt; just_connected [Actions.GET_ROSTER id]
   | <span data-count="1">R</span>OSTER_SET {id; target; handle; groups} -&gt;
     just_connected
-      [ Actions.SET_ROSTER {id; target; handle; groups}
+      [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
   | <span data-count="0">R</span>OSTER_REMOVE {id; target} -&gt;
     just_connected
@@ -1317,7 +1317,7 @@ let handle_connected t = <span data-count="6">f</span>unction
   | <span data-count="1">R</span>OSTER_GET id -&gt; {state = CONNECTED}, [Actions.GET_ROSTER id], []
   | <span data-count="1">R</span>OSTER_SET {id; target; handle; groups} -&gt;
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER {id; target; handle; groups}
+    , [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
       ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
     , [] )
   | <span data-count="0">R</span>OSTER_REMOVE {id; target} -&gt;
@@ -1461,17 +1461,17 @@ let%expect_test "sasl negotiation" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
-    handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
+    handle fsm (Events.RESOURCE_BIND_SERVER_GEN {id = "id"})
   in
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (fun s -&gt; print_endline s) strings;
   [%expect {|
-    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
+    (SET_JID_RESOURCE (id id) (resource ())) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -1504,17 +1504,17 @@ let%expect_test "bind resource" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
-    handle fsm (Events.RESOURCE_BIND_SERVER_GEN "id")
+    handle fsm (Events.RESOURCE_BIND_SERVER_GEN {id = "id"})
   in
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (fun s -&gt; print_endline s) strings;
   [%expect {|
-    (SERVER_GEN_RESOURCE_IDENTIFIER id) |}];
+    (SET_JID_RESOURCE (id id) (resource ())) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -1547,7 +1547,7 @@ let%expect_test "bind resource client" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -1557,7 +1557,7 @@ let%expect_test "bind resource client" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (fun s -&gt; print_endline s) strings;
   [%expect {|
-    (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+    (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];
@@ -1589,7 +1589,7 @@ let%expect_test "roster get" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -1597,7 +1597,7 @@ let%expect_test "roster get" =
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -&gt; Actions.to_string a) actions |&gt; List.iter (fun s -&gt; print_endline s);
-  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
   [%expect {| ((state CONNECTED)) |}];
@@ -1636,7 +1636,7 @@ let%expect_test "roster set" =
   let strings = List.map (fun a -&gt; Actions.to_string a) actions in
   List.iter (Printf.printf "%s\n") strings;
   [%expect {|
-    (SET_JID juliet)
+    (SET_USER juliet)
     SEND_SASL_SUCCESS |}];
   let fsm, actions, _handler_actions =
     handle fsm (Events.RESOURCE_BIND_CLIENT_GEN {id = "id"; resource = "client-res"})
@@ -1644,7 +1644,7 @@ let%expect_test "roster set" =
   print_endline (to_string fsm);
   [%expect {| ((state NEGOTIATING)) |}];
   List.map (fun a -&gt; Actions.to_string a) actions |&gt; List.iter (fun s -&gt; print_endline s);
-  [%expect {| (SET_JID_RESOURCE (id id) (resource client-res)) |}];
+  [%expect {| (SET_JID_RESOURCE (id id) (resource (client-res))) |}];
   let fsm, actions, _handler_actions = handle fsm (Events.ROSTER_GET "some_id") in
   print_endline (to_string fsm);
   [%expect {| ((state CONNECTED)) |}];
@@ -1667,8 +1667,8 @@ let%expect_test "roster set" =
   List.map (fun a -&gt; Actions.to_string a) actions |&gt; List.iter (fun s -&gt; print_endline s);
   [%expect
     {|
-    (SET_ROSTER (id some_id) (target (Bare_JID (nurse example.com)))
-     (handle Nurse) (groups (Servants)))
+    (SET_ROSTER (id some_id) (target (nurse example.com)) (handle Nurse)
+     (groups (Servants)))
     (PUSH_ROSTER (ato ()) (contact (Bare_JID (nurse example.com)))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
@@ -1683,7 +1683,7 @@ let%expect_test "roster set" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-23 15:20:46 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

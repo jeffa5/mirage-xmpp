@@ -15,8 +15,8 @@
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:0.36%"></span>
-      <span class="unvisited" style="top:1.45%"></span>
-      <span class="unvisited" style="top:7.25%"></span>
+      <span class="unvisited" style="top:1.46%"></span>
+      <span class="unvisited" style="top:7.30%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -295,8 +295,6 @@
 <a id="L272"></a><span > </span>
 <a id="L273"></a><span > </span>
 <a id="L274"></a><span > </span>
-<a id="L275"></a><span > </span>
-<a id="L276"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -575,8 +573,6 @@
 <a href="#L272">272</a>
 <a href="#L273">273</a>
 <a href="#L274">274</a>
-<a href="#L275">275</a>
-<a href="#L276">276</a>
 </pre>
         <pre id="code">
 let send ?(timeout = <span data-count="5">1</span>0.) ?(host = <span data-count="5">"</span>127.0.0.1") ?(port = <span data-count="0">5</span>222) str =
@@ -602,7 +598,7 @@ let send_recv ?(timeout = <span data-count="4">1</span>0.) ?(host = <span data-c
   in
   <span data-count="4">l</span>et request =
     <span data-count="4">l</span>et mask_id s =
-      <span data-count="29">m</span>atch Astring.String.find_sub ~sub:"id='" s with
+      <span data-count="28">m</span>atch Astring.String.find_sub ~sub:"id='" s with
       | <span data-count="14">S</span>ome i -&gt;
         (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
         | <span data-count="14">S</span>ome j -&gt;
@@ -610,17 +606,17 @@ let send_recv ?(timeout = <span data-count="4">1</span>0.) ?(host = <span data-c
           ^ "redacted_for_testing"
           ^ Astring.String.with_index_range ~first:j s
         | None -&gt; assert false)
-      | <span data-count="15">N</span>one -&gt; s
+      | <span data-count="14">N</span>one -&gt; s
     in
     <span data-count="4">l</span>et addr = <span data-count="4">U</span>nix.ADDR_INET (Unix.inet_addr_of_string host, port) in
     <span data-count="4">L</span>wt_io.(
       with_connection addr (fun (i, o) -&gt;
           <span data-count="4">l</span>et rec reader () =
             (* Repeatedly read data from the connection and print it *)
-            <span data-count="30">t</span>ry%lwt
-                  <span data-count="62">l</span>et%lwt s = <span data-count="30">r</span>ead_line i in
-                  <span data-count="29">p</span>rint_endline ("Receive:\n" ^ mask_id s);
-                  <span data-count="29">i</span>f s = "&lt;/stream:stream&gt;" then <span data-count="3">L</span>wt.return "Finished" else <span data-count="26">r</span>eader ()
+            <span data-count="29">t</span>ry%lwt
+                  <span data-count="60">l</span>et%lwt s = <span data-count="29">r</span>ead_line i in
+                  <span data-count="28">p</span>rint_endline ("Receive:\n" ^ mask_id s);
+                  <span data-count="28">i</span>f s = "&lt;/stream:stream&gt;" then <span data-count="3">L</span>wt.return "Finished" else <span data-count="25">r</span>eader ()
             with <span data-count="1">E</span>nd_of_file -&gt; Lwt.return "Didn't close the stream before exiting"
           in
           <span data-count="4">l</span>et rec writer = <span data-count="4">f</span>unction
@@ -690,8 +686,6 @@ let%expect_test "open and close stream" =
     &lt;/stream:stream&gt;
     Receive:
     Unexpected stream close during sasl negotiation
-    Receive:
-    Closing the connection
     Didn't close the stream before exiting
     Stopping unikernel
     Success |}]
@@ -858,7 +852,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-23 15:20:46 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../../coverage.js"></script>
   </body>
 </html>
