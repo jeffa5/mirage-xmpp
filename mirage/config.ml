@@ -9,7 +9,7 @@ let port =
 
 let hostname =
   let doc = Key.Arg.info ~doc:"The hostname for the server." ["hostname"] in
-  Key.(create "hostname" Arg.(opt string "mirage-xmpp.dev" doc))
+  Key.(create "hostname" Arg.(opt string "localhost" doc))
 ;;
 
 let packages = [package "lwt_ppx"; package "mirage-xmpp"]

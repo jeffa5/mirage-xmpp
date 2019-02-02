@@ -16,464 +16,581 @@ let handle_action t stream =
     match%lwt Lwt_stream.get stream with
     | Some action ->
       let open Actions in
-      (match action with
-      | SEND_STREAM_HEADER ->
-        t.callback
-          (Some
-             (Stream.to_string
-                (Header (Stream.create_header ~from:(Jid.of_string t.hostname) ()))))
-      | SEND_STREAM_FEATURES_SASL ->
-        t.callback (Some (Xml.to_string Stream.features_sasl_mechanisms))
-      | SEND_SASL_SUCCESS ->
-        t.callback
-          (Some
-             (Xml.to_string
-                (Xml.create
-                   (("", "success"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]))))
-      | SEND_STREAM_FEATURES -> t.callback (Some (Xml.to_string Stream.features))
-      | SESSION_START_SUCCESS id ->
-        t.callback (Some (Stanza.to_string (Stanza.create_iq ~atype:"result" ~id [])))
-      | CLOSE ->
-        (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
-        t.callback (Some "</stream:stream>");
-        t.closed <- true
-      | ERROR e ->
-        t.callback (Some e);
-        t.closed <- true
-      | SET_USER user -> t.user <- Some user
-      | SET_JID_RESOURCE {id; resource} ->
-        (match t.user with
-        | Some user ->
-          let res = match resource with Some r -> r | None -> Jid.create_resource () in
-          let jid_with_resource =
-            Jid.Full.of_string (user ^ "@" ^ t.hostname ^ "/" ^ res)
+      let%lwt () =
+        match action with
+        | SEND_STREAM_HEADER ->
+          let header =
+            Stream.Header (Stream.create_header ~from:(Jid.of_string t.hostname) ())
           in
-          t.jid <- Some jid_with_resource;
-          t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_bind_result ~id ~jid:(Full_JID jid_with_resource) ())))
-        | None -> ())
-      | GET_ROSTER id ->
-        (match t.jid with
-        | Some jid ->
-          let items = Rosters.get_roster_items (Jid.Full.to_bare jid) in
-          t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_roster_get_result ~id ~ato:(Full_JID jid) items)))
-        | None -> ())
-      | SET_ROSTER {id; target; handle; groups} ->
-        (match t.jid with
-        | Some jid ->
-          Rosters.set_item ~handle ~groups (Jid.Full.to_bare jid) target;
-          t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_roster_set_result ~id ~ato:(Full_JID jid))))
-        | None -> ())
-      | PUSH_ROSTER {ato; contact} ->
-        let contact = Jid.to_bare contact in
-        (match ato with
-        | Some (Full_JID _fjid as full_jid) ->
-          (match
-             Rosters.get_roster_item (Jid.to_bare_raw full_jid) (Jid.to_bare_raw contact)
-           with
-          | Some item ->
-            t.callback
-              (Some
-                 (Stanza.to_string
-                    (Stanza.create_roster_push
-                       ~id:(Stanza.gen_id ())
-                       ~ato:full_jid
-                       (contact, item))))
-          | None ->
-            t.callback
-              (Some
-                 (Stanza.to_string
-                    (Stanza.create_roster_push
-                       ~id:(Stanza.gen_id ())
-                       ~ato:full_jid
-                       ( contact
-                       , Rosters.Item.make
-                           ~handle:""
-                           ~subscription:Rosters.Subscription.Remove
-                           () )))))
-        | None ->
+          let xml_string = Stream.to_string header in
+          t.callback (Some xml_string) |> Lwt.return
+        | SEND_STREAM_FEATURES_SASL ->
+          let features = Stream.features_sasl_mechanisms in
+          let xml_string = Xml.to_string features in
+          t.callback (Some xml_string) |> Lwt.return
+        | SEND_STREAM_FEATURES ->
+          let features = Stream.features in
+          let xml_string = Xml.to_string features in
+          t.callback (Some xml_string) |> Lwt.return
+        | SEND_SASL_SUCCESS ->
+          let success =
+            Xml.create
+              (("", "success"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"])
+          in
+          let xml_string = Xml.to_string success in
+          t.callback (Some xml_string) |> Lwt.return
+        | SESSION_START_SUCCESS id ->
+          let iq = Stanza.create_iq ~atype:"result" ~id [] in
+          let xml_string = Stanza.to_string iq in
+          t.callback (Some xml_string) |> Lwt.return
+        | SET_USER user -> (t.user <- Some user) |> Lwt.return
+        | SET_JID_RESOURCE {id; resource} ->
+          (match t.user with
+          | Some user ->
+            let resource =
+              match resource with Some r -> r | None -> Jid.create_resource ()
+            in
+            let jid_with_resource =
+              Jid.Full.of_string (user ^ "@" ^ t.hostname ^ "/" ^ resource)
+            in
+            t.jid <- Some jid_with_resource;
+            let bind_result =
+              Stanza.create_bind_result ~id ~jid:(Full_JID jid_with_resource) ()
+            in
+            let xml_string = Stanza.to_string bind_result in
+            t.callback (Some xml_string) |> Lwt.return
+          | None -> Lwt.return_unit)
+        | GET_ROSTER id ->
           (match t.jid with
           | Some jid ->
-            Connections.find_all (Jid.to_bare (Full_JID jid))
-            |> List.iter (fun (full_jid, actions_push) ->
-                   actions_push
-                     (Some (PUSH_ROSTER {ato = Some (Full_JID full_jid); contact})) )
-          | None -> ())
-        | _ -> assert false)
-      | ADD_TO_CONNECTIONS ->
-        (match t.jid with Some jid -> Connections.add jid t.actions_push | None -> ())
-      | REMOVE_FROM_CONNECTIONS ->
-        (match t.jid with Some jid -> Connections.remove jid | None -> ())
-      | SUBSCRIPTION_REQUEST
-          {ato; xml = Xml.Element (((namespace, name), attributes), children); from} ->
-        (match t.jid with
-        | Some jid ->
-          (match
-             Rosters.get_subscription (Jid.Full.to_bare jid) (Jid.to_bare_raw ato)
-           with
-          | Some To | Some Both ->
-            let xml =
-              Xml.create
-                ( ("", "presence")
-                , ["", Xml.From ato; "", Xml.To (Full_JID jid); "", Xml.Type "subscribed"]
-                )
+            let%lwt items = Rosters.get_items (Jid.Full.to_bare jid) in
+            let roster_get_result =
+              Stanza.create_roster_get_result ~id ~ato:(Full_JID jid) items
             in
-            t.callback (Some (Xml.to_string xml))
-          | _ ->
-            Rosters.set_ask (Jid.Full.to_bare jid) (Jid.to_bare_raw ato);
-            let xml =
-              Xml.remove_prefixes
-                (match from with
-                | None ->
-                  let rec modify_from = function
-                    | [] -> ["", Xml.From (Jid.Full_JID jid |> Jid.to_bare)]
-                    | (ns, Xml.From _) :: attrs ->
-                      (ns, Xml.From (Jid.Full_JID jid |> Jid.to_bare)) :: attrs
-                    | a :: attrs -> a :: modify_from attrs
-                  in
-                  Xml.Element (((namespace, name), modify_from attributes), children)
-                | Some _ -> Xml.Element (((namespace, name), attributes), children))
+            let xml_string = Stanza.to_string roster_get_result in
+            t.callback (Some xml_string) |> Lwt.return
+          | None -> Lwt.return_unit)
+        | SET_ROSTER {id; target; handle; groups} ->
+          (match t.jid with
+          | Some jid ->
+            let%lwt () =
+              Rosters.set_item ~handle ~groups (Jid.Full.to_bare jid) target
             in
-            if ato = Jid.to_bare (Full_JID jid)
-            then t.callback (Some (Xml.to_string xml))
-            else
-              Connections.find_all ato
-              |> List.iter (fun (_jid, handler) ->
-                     handler
-                       (Some
-                          (SUBSCRIPTION_REQUEST
-                             {ato; xml; from = Some (Jid.Full_JID jid |> Jid.to_bare)}))
-                 ))
-        | None -> ())
-      | SUBSCRIPTION_REQUEST {xml = Xml.Text _; _} -> assert false
-      | UPDATE_PRESENCE {status; xml} ->
-        (match t.jid with
-        | Some jid ->
-          Rosters.set_presence (Jid.Full.to_bare jid) status;
-          [Jid.to_bare @@ Full_JID jid]
-          @ ( Rosters.get_subscribers (Jid.Full.to_bare jid)
-            |> List.map (fun bjid -> Jid.Bare_JID bjid) )
-          |> List.iter (fun user ->
-                 Connections.find_all user
-                 |> List.iter (fun (_, handler) ->
-                        handler (Some (SEND_PRESENCE_UPDATE {from = Full_JID jid; xml}))
-                    ) )
-        | None -> ())
-      | SEND_PRESENCE_UPDATE {from; xml} ->
-        (match t.jid with
-        | Some jid ->
-          let rec modify_from = function
-            | [] -> ["", Xml.From from]
-            | (ns, Xml.From _) :: attrs -> (ns, Xml.From from) :: attrs
-            | a :: attrs -> a :: modify_from attrs
-          in
-          let rec modify_to = function
-            | [] -> ["", Xml.To (Jid.Full_JID jid |> Jid.to_bare)]
-            | (ns, Xml.To _) :: attrs ->
-              (ns, Xml.To (Jid.Full_JID jid |> Jid.to_bare)) :: attrs
-            | a :: attrs -> a :: modify_to attrs
-          in
-          let stanza =
-            match xml with
-            | Some (Xml.Element (((ns, n), attributes), c)) ->
-              Stanza.Presence
-                ( Xml.remove_prefixes
-                @@ Xml.Element (((ns, n), modify_to @@ modify_from attributes), c) )
-            | Some (Xml.Text _) -> assert false
-            | None ->
-              (match Rosters.get_presence (Jid.to_bare_raw from) with
-              | Online ->
-                Stanza.create_presence
-                  ~id:(Some (Stanza.gen_id ()))
-                  ~from
-                  ~ato:(Full_JID jid)
-                  []
-              | Offline ->
-                Stanza.create_presence
-                  ~id:(Some (Stanza.gen_id ()))
-                  ~from
-                  ~ato:(Full_JID jid)
-                  ~atype:"unavailable"
-                  [])
-          in
-          t.callback (Some (Stanza.to_string stanza))
-        | None -> ())
-      | SEND_CURRENT_PRESENCE ato ->
-        (match t.jid with
-        | Some jid ->
-          Connections.find_all ato
-          |> List.iter (fun (_, handler) ->
-                 Connections.find_all (Jid.to_bare (Full_JID jid))
-                 |> List.iter (fun (full_jid, _) ->
-                        handler
-                          (Some
-                             (SEND_PRESENCE_UPDATE {from = Full_JID full_jid; xml = None}))
-                    ) )
-        | None -> ())
-      | IQ_ERROR {error_type; error_tag; id} ->
-        (match t.jid with
-        | Some jid ->
-          t.callback
-            (Some
-               ( Stanza.to_string
-               @@ Stanza.create_iq_error
-                    ~from:(Jid.of_string t.hostname)
-                    ~ato:(Full_JID jid)
-                    ~id
-                    ~error_type
-                    ~error_tag
-                    () ))
-        | None ->
-          t.callback
-            (Some
-               ( Stanza.to_string
-               @@ Stanza.create_iq_error
-                    ~from:(Jid.of_string t.hostname)
-                    ~id
-                    ~error_type
-                    ~error_tag
-                    () )))
-      | MESSAGE
-          { ato
-          ; message = Xml.Element (((namespace, name), attributes), children) as message
-          } ->
-        (match t.jid with
-        | Some jid ->
-          if Jid.to_bare ato = Jid.to_bare (Full_JID jid)
-          then t.callback (Some (Xml.to_string message))
-          else
-            let message =
-              Xml.Element
-                ( ((namespace, name), ("", Xml.From (Full_JID jid)) :: attributes)
-                , children )
+            let roster_set_result =
+              Stanza.create_roster_set_result ~id ~ato:(Full_JID jid)
             in
-            Connections.find_all ato
-            |> List.iter (fun (_, handler) -> handler (Some (MESSAGE {ato; message})))
-        | None -> ())
-      | MESSAGE {message = Xml.Text _; _} -> assert false
-      | ROSTER_REMOVE {id; target} ->
-        (match t.jid with
-        | Some jid ->
-          let unsubscribe () =
-            t.actions_push (Some (SUBSCRIPTION_REMOVAL {contact = Jid.to_bare target}))
-          in
-          let unsubscribed () =
-            t.actions_push
-              (Some (SUBSCRIPTION_CANCELLATION {user = Jid.to_bare target; force = true}))
-          in
-          (match
-             Rosters.get_subscription (Jid.Full.to_bare jid) (Jid.to_bare_raw target)
-           with
-          | Some Both ->
-            unsubscribe ();
-            unsubscribed ()
-          | Some To -> unsubscribe ()
-          | Some From -> unsubscribed ()
-          | Some None | Some Remove -> ()
-          | None -> ());
-          Rosters.remove_item (Jid.Full.to_bare jid) (Jid.to_bare_raw target);
-          t.callback
-            (Some
-               (Stanza.to_string
-                  (Stanza.create_roster_set_result ~id ~ato:(Full_JID jid))))
-        | None -> ())
-      | SUBSCRIPTION_APPROVAL
-          {ato; xml = Xml.Element (((namespace, name), attributes), children); from} ->
-        (match t.jid with
-        | Some jid ->
-          let xml =
-            Xml.remove_prefixes
-              (match from with
-              | None ->
-                let rec modify_from = function
-                  | [] -> ["", Xml.From (Jid.Full_JID jid |> Jid.to_bare)]
-                  | (ns, Xml.From _) :: attrs ->
-                    (ns, Xml.From (Jid.Full_JID jid |> Jid.to_bare)) :: attrs
-                  | a :: attrs -> a :: modify_from attrs
-                in
-                Xml.Element (((namespace, name), modify_from attributes), children)
-              | Some _ -> Xml.Element (((namespace, name), attributes), children))
-          in
-          if ato = Jid.to_bare (Full_JID jid)
-          then t.callback (Some (Xml.to_string xml))
-          else (
-            match
-              Rosters.get_subscription (Jid.to_bare_raw ato) (Jid.Full.to_bare jid)
-            with
-            | Some None | Some From ->
-              (match Rosters.get_ask (Jid.to_bare_raw ato) (Jid.Full.to_bare jid) with
-              | Some _ ->
-                Rosters.upgrade_subscription_to
-                  (Jid.to_bare_raw ato)
-                  (Jid.Full.to_bare jid);
-                Rosters.unset_ask (Jid.to_bare_raw ato) (Jid.Full.to_bare jid);
-                Connections.find_all ato
-                |> List.iter (fun (full_jid, handler) ->
-                       handler
-                         (Some
-                            (SUBSCRIPTION_APPROVAL
-                               { ato
-                               ; xml
-                               ; from =
-                                   Some (Jid.Bare_JID (full_jid |> Jid.Full.to_bare)) }));
-                       handler
-                         (Some
-                            (PUSH_ROSTER
-                               { ato = Some (Full_JID jid)
-                               ; contact = Jid.to_bare (Full_JID jid) })) )
-              | None -> ())
-            | _ -> () )
-        | None -> ())
-      | SUBSCRIPTION_APPROVAL {xml = Xml.Text _; _} -> assert false
-      | ROSTER_SET_FROM from ->
-        (match t.jid with
-        | Some jid ->
-          Rosters.upgrade_subscription_from (Jid.Full.to_bare jid) (Jid.to_bare_raw from)
-        | None -> ())
-      | PROBE_PRESENCE ->
-        (match t.jid with
-        | Some jid ->
-          ( Connections.find_all (Jid.to_bare (Full_JID jid))
-          |> List.map (fun (jid, _) -> jid) )
-          @ List.fold_left
-              (fun l jid ->
-                l @ List.map (fun (j, _) -> j) @@ Connections.find_all @@ Bare_JID jid )
-              []
-              (Rosters.get_subscriptions (Jid.Full.to_bare jid))
-          |> List.iter (fun full_jid ->
-                 t.actions_push
-                   (Some (SEND_PRESENCE_UPDATE {from = Full_JID full_jid; xml = None}))
-             )
-        | None -> ())
-      | SUBSCRIPTION_CANCELLATION {user; force} ->
-        (match t.jid with
-        | Some jid ->
-          let contact = jid in
-          let aux () =
-            (match
-               Rosters.get_roster_item (Jid.to_bare_raw user) (Jid.Full.to_bare contact)
+            let xml_string = Stanza.to_string roster_set_result in
+            t.callback (Some xml_string) |> Lwt.return
+          | None -> Lwt.return_unit)
+        | PUSH_ROSTER {ato; contact} ->
+          let contact = Jid.to_bare contact in
+          (match ato with
+          | Some (Full_JID _ as full_jid) ->
+            (match%lwt
+               Rosters.get_item (Jid.to_bare_raw full_jid) (Jid.to_bare_raw contact)
              with
-            | Some _ ->
-              Connections.find_all (Full_JID contact)
-              |> List.iter (fun (full_jid, _) ->
-                     Connections.find_all user
-                     |> List.iter (fun (_, handler) ->
-                            handler
-                              (Some
-                                 (SEND_PRESENCE_UPDATE
-                                    { from = Full_JID full_jid
-                                    ; xml =
-                                        Some
-                                          ( Stanza.to_xml
-                                          @@ Stanza.create_presence
-                                               ~id:(Some (Stanza.gen_id ()))
-                                               ~from:(Full_JID full_jid)
-                                               ~atype:"unavailable"
-                                               [] ) })) ) );
-              Connections.find_all user
-              |> List.iter (fun (full_jid, handler) ->
-                     handler
-                       (Some
-                          (SEND_PRESENCE_UPDATE
-                             { from = Bare_JID (Jid.Full.to_bare full_jid)
-                             ; xml =
-                                 Some
-                                   ( Stanza.to_xml
-                                   @@ Stanza.create_presence
-                                        ~id:(Some (Stanza.gen_id ()))
-                                        ~from:(Bare_JID (Jid.Full.to_bare full_jid))
-                                        ~ato:(Bare_JID (Jid.Full.to_bare full_jid))
-                                        ~atype:"unsubscribed"
-                                        [] ) })) );
-              Rosters.downgrade_subscription_to
-                (Jid.to_bare_raw user)
-                (Jid.Full.to_bare contact);
-              Connections.find_all user
-              |> List.iter (fun (full_jid, handler) ->
-                     handler
-                       (Some
-                          (PUSH_ROSTER
-                             {ato = Some (Full_JID full_jid); contact = Full_JID contact}))
-                 )
-            | None -> ());
-            Rosters.downgrade_subscription_from
-              (Jid.Full.to_bare contact)
-              (Jid.to_bare_raw user);
-            t.actions_push (Some (PUSH_ROSTER {ato = None; contact = user}))
-          in
-          if force
-          then aux ()
-          else (
-            match
-              Rosters.get_subscription (Jid.Full.to_bare contact) (Jid.to_bare_raw user)
-            with
-            | Some From | Some Both -> aux ()
-            | _ -> () )
-        | None -> ())
-      | SUBSCRIPTION_REMOVAL {contact} ->
-        (match t.jid with
-        | Some jid ->
-          let user = Jid.Full.to_bare jid in
-          (match Rosters.get_subscription (Jid.to_bare_raw contact) user with
-          | Some From | Some Both ->
-            (* deliver unsubscribe stanza to all contacts resources *)
-            Connections.find_all contact
-            |> List.iter (fun (full_jid, handler) ->
-                   handler
-                     (Some
-                        (SEND_PRESENCE_UPDATE
-                           { from = Bare_JID user
-                           ; xml =
-                               Some
-                                 ( Stanza.to_xml
-                                 @@ Stanza.create_presence
-                                      ~id:(Some (Stanza.gen_id ()))
-                                      ~from:(Bare_JID user)
-                                      ~ato:(Full_JID full_jid)
-                                      ~atype:"unsubscribe"
-                                      [] ) })) );
-            (* roster push to contacts resources with sub=none / to *)
-            Rosters.downgrade_subscription_from (Jid.to_bare_raw contact) user;
-            Connections.find_all contact
-            |> List.iter (fun (full_jid, handler) ->
-                   handler
-                     (Some
-                        (PUSH_ROSTER
-                           {ato = Some (Full_JID full_jid); contact = Bare_JID user})) );
-            (* unavailable from contacts resources to bare user *)
-            Connections.find_all contact
-            |> List.iter (fun (full_jid, _) ->
-                   Connections.find_all (Bare_JID user)
-                   |> List.iter (fun (_, handler) ->
+            | Some item ->
+              let roster_push =
+                Stanza.create_roster_push
+                  ~id:(Stanza.gen_id ())
+                  ~ato:full_jid
+                  (contact, item)
+              in
+              let xml_string = Stanza.to_string roster_push in
+              t.callback (Some xml_string) |> Lwt.return
+            | None ->
+              let roster_push =
+                Stanza.create_roster_push
+                  ~id:(Stanza.gen_id ())
+                  ~ato:full_jid
+                  ( contact
+                  , Rosters.Item.make
+                      ~handle:""
+                      ~subscription:Rosters.Subscription.Remove
+                      () )
+              in
+              let xml_string = Stanza.to_string roster_push in
+              t.callback (Some xml_string) |> Lwt.return)
+          | None ->
+            (match t.jid with
+            | Some jid ->
+              let%lwt connected_resources =
+                Connections.find_all (Jid.Full.to_bare jid)
+              in
+              Lwt_list.iter_s
+                (fun (full_jid, actions_push) ->
+                  actions_push
+                    (Some (PUSH_ROSTER {ato = Some (Full_JID full_jid); contact}));
+                  Lwt.return_unit )
+                connected_resources
+            | None -> Lwt.return_unit)
+          | _ -> assert false)
+        | ROSTER_REMOVE {id; target} ->
+          (match t.jid with
+          | Some jid ->
+            let unsubscribe () =
+              t.actions_push (Some (SUBSCRIPTION_REMOVAL {contact = Jid.to_bare target}))
+            in
+            let unsubscribed () =
+              t.actions_push
+                (Some
+                   (SUBSCRIPTION_CANCELLATION {user = Jid.to_bare target; force = true}))
+            in
+            let%lwt subscription =
+              Rosters.get_subscription (Jid.Full.to_bare jid) (Jid.to_bare_raw target)
+            in
+            (match subscription with
+            | Some Both ->
+              unsubscribe ();
+              unsubscribed ()
+            | Some To -> unsubscribe ()
+            | Some From -> unsubscribed ()
+            | Some None | Some Remove | None -> ());
+            let%lwt () =
+              Rosters.remove_item (Jid.Full.to_bare jid) (Jid.to_bare_raw target)
+            in
+            let roster_set_result =
+              Stanza.create_roster_set_result ~id ~ato:(Full_JID jid)
+            in
+            let xml_string = Stanza.to_string roster_set_result in
+            t.callback (Some xml_string) |> Lwt.return
+          | None -> Lwt.return_unit)
+        | ROSTER_SET_FROM from ->
+          (match t.jid with
+          | Some jid ->
+            Rosters.upgrade_subscription_from
+              (Jid.Full.to_bare jid)
+              (Jid.to_bare_raw from)
+          | None -> Lwt.return_unit)
+        | ADD_TO_CONNECTIONS ->
+          (match t.jid with
+          | Some jid -> Connections.add jid t.actions_push
+          | None -> Lwt.return_unit)
+        | REMOVE_FROM_CONNECTIONS ->
+          (match t.jid with
+          | Some jid -> Connections.remove jid
+          | None -> Lwt.return_unit)
+        | SUBSCRIPTION_REQUEST {ato; xml; from} ->
+          (match xml with
+          | Xml.Element (((namespace, name), attributes), children) ->
+            (match t.jid with
+            | Some jid ->
+              (match%lwt
+                 Rosters.get_subscription (Jid.Full.to_bare jid) (Jid.to_bare_raw ato)
+               with
+              | Some To | Some Both ->
+                let presence_subscribed =
+                  Xml.create
+                    ( ("", "presence")
+                    , [ "", Xml.From ato
+                      ; "", Xml.To (Full_JID jid)
+                      ; "", Xml.Type "subscribed" ] )
+                in
+                let xml_string = Xml.to_string presence_subscribed in
+                t.callback (Some xml_string) |> Lwt.return
+              | _ ->
+                let%lwt () =
+                  Rosters.set_ask (Jid.Full.to_bare jid) (Jid.to_bare_raw ato)
+                in
+                let xml =
+                  Xml.remove_prefixes
+                    (match from with
+                    | None ->
+                      let rec modify_from = function
+                        | [] -> ["", Xml.From (Bare_JID (Jid.Full.to_bare jid))]
+                        | (ns, Xml.From _) :: attrs ->
+                          (ns, Xml.From (Bare_JID (Jid.Full.to_bare jid))) :: attrs
+                        | a :: attrs -> a :: modify_from attrs
+                      in
+                      Xml.Element (((namespace, name), modify_from attributes), children)
+                    | Some _ -> Xml.Element (((namespace, name), attributes), children))
+                in
+                if ato = Bare_JID (Jid.Full.to_bare jid)
+                then t.callback (Some (Xml.to_string xml)) |> Lwt.return
+                else
+                  let%lwt connected_resources =
+                    Connections.find_all (Jid.to_bare_raw ato)
+                  in
+                  Lwt_list.iter_s
+                    (fun (_jid, handler) ->
+                      handler
+                        (Some
+                           (SUBSCRIPTION_REQUEST
+                              {ato; xml; from = Some (Bare_JID (Jid.Full.to_bare jid))}))
+                      |> Lwt.return )
+                    connected_resources)
+            | None -> Lwt.return_unit)
+          | Xml.Text _ -> assert false)
+        | SUBSCRIPTION_APPROVAL {ato; xml; from} ->
+          (match xml with
+          | Xml.Element ((name, attributes), children) ->
+            (match t.jid with
+            | Some jid ->
+              let xml =
+                Xml.remove_prefixes
+                  (match from with
+                  | None ->
+                    let rec modify_from = function
+                      | [] -> ["", Xml.From (Bare_JID (Jid.Full.to_bare jid))]
+                      | (ns, Xml.From _) :: attrs ->
+                        (ns, Xml.From (Bare_JID (Jid.Full.to_bare jid))) :: attrs
+                      | a :: attrs -> a :: modify_from attrs
+                    in
+                    Xml.Element ((name, modify_from attributes), children)
+                  | Some _ -> Xml.Element ((name, attributes), children))
+              in
+              if ato = Bare_JID (Jid.Full.to_bare jid)
+              then t.callback (Some (Xml.to_string xml)) |> Lwt.return
+              else (
+                match%lwt
+                  Rosters.get_subscription (Jid.to_bare_raw ato) (Jid.Full.to_bare jid)
+                with
+                | Some None | Some From ->
+                  (match%lwt
+                     Rosters.get_ask (Jid.to_bare_raw ato) (Jid.Full.to_bare jid)
+                   with
+                  | Some _ ->
+                    let%lwt () =
+                      Rosters.upgrade_subscription_to
+                        (Jid.to_bare_raw ato)
+                        (Jid.Full.to_bare jid)
+                    in
+                    let%lwt () =
+                      Rosters.unset_ask (Jid.to_bare_raw ato) (Jid.Full.to_bare jid)
+                    in
+                    let%lwt connected_resources =
+                      Connections.find_all (Jid.to_bare_raw ato)
+                    in
+                    connected_resources
+                    |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                           handler
+                             (Some
+                                (SUBSCRIPTION_APPROVAL
+                                   { ato
+                                   ; xml
+                                   ; from = Some (Bare_JID (Jid.Full.to_bare full_jid))
+                                   }));
+                           handler
+                             (Some
+                                (PUSH_ROSTER
+                                   { ato = Some (Full_JID jid)
+                                   ; contact = Bare_JID (Jid.Full.to_bare jid) }))
+                           |> Lwt.return )
+                  | None -> Lwt.return_unit)
+                | _ -> Lwt.return_unit )
+            | None -> Lwt.return_unit)
+          | Xml.Text _ -> assert false)
+        | SUBSCRIPTION_CANCELLATION {user; force} ->
+          (match t.jid with
+          | Some contact ->
+            let aux () =
+              let%lwt () =
+                match%lwt
+                  Rosters.get_item (Jid.to_bare_raw user) (Jid.Full.to_bare contact)
+                with
+                | Some _ ->
+                  let%lwt connected_contact_resources =
+                    Connections.find_all (Jid.Full.to_bare contact)
+                  in
+                  let%lwt connected_user_resources =
+                    Connections.find_all (Jid.to_bare_raw user)
+                  in
+                  let%lwt () =
+                    connected_contact_resources
+                    |> Lwt_list.iter_s (fun (full_jid, _) ->
+                           connected_user_resources
+                           |> Lwt_list.iter_s (fun (_, handler) ->
+                                  handler
+                                    (Some
+                                       (SEND_PRESENCE_UPDATE
+                                          { from = Full_JID full_jid
+                                          ; xml =
+                                              Some
+                                                ( Stanza.to_xml
+                                                @@ Stanza.create_presence
+                                                     ~id:(Some (Stanza.gen_id ()))
+                                                     ~from:(Full_JID full_jid)
+                                                     ~atype:"unavailable"
+                                                     [] ) }))
+                                  |> Lwt.return ) )
+                  in
+                  let%lwt () =
+                    connected_user_resources
+                    |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                           handler
+                             (Some
+                                (SEND_PRESENCE_UPDATE
+                                   { from = Bare_JID (Jid.Full.to_bare full_jid)
+                                   ; xml =
+                                       Some
+                                         ( Stanza.to_xml
+                                         @@ Stanza.create_presence
+                                              ~id:(Some (Stanza.gen_id ()))
+                                              ~from:
+                                                (Bare_JID (Jid.Full.to_bare full_jid))
+                                              ~ato:(Bare_JID (Jid.Full.to_bare full_jid))
+                                              ~atype:"unsubscribed"
+                                              [] ) }))
+                           |> Lwt.return )
+                  in
+                  let%lwt () =
+                    Rosters.downgrade_subscription_to
+                      (Jid.to_bare_raw user)
+                      (Jid.Full.to_bare contact)
+                  in
+                  connected_user_resources
+                  |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                         handler
+                           (Some
+                              (PUSH_ROSTER
+                                 { ato = Some (Full_JID full_jid)
+                                 ; contact = Full_JID contact }))
+                         |> Lwt.return )
+                | None -> Lwt.return_unit
+              in
+              let%lwt () =
+                Rosters.downgrade_subscription_from
+                  (Jid.Full.to_bare contact)
+                  (Jid.to_bare_raw user)
+              in
+              t.actions_push (Some (PUSH_ROSTER {ato = None; contact = user}))
+              |> Lwt.return
+            in
+            if force
+            then aux ()
+            else (
+              match%lwt
+                Rosters.get_subscription
+                  (Jid.Full.to_bare contact)
+                  (Jid.to_bare_raw user)
+              with
+              | Some From | Some Both -> aux ()
+              | _ -> Lwt.return_unit )
+          | None -> Lwt.return_unit)
+        | UPDATE_PRESENCE {status; xml} ->
+          (match t.jid with
+          | Some jid ->
+            let%lwt () = Rosters.set_presence (Jid.Full.to_bare jid) status in
+            let%lwt subscribers = Rosters.get_subscribers (Jid.Full.to_bare jid) in
+            (* Send presence updates to our subscribers and our own bare jid to ensure sync between resources *)
+            [Jid.Full.to_bare jid] @ subscribers
+            |> Lwt_list.iter_s (fun user ->
+                   let%lwt connected_resources = Connections.find_all user in
+                   Lwt_list.iter_s
+                     (fun (contact, handler) ->
+                       if contact <> jid
+                       then
+                         handler (Some (SEND_PRESENCE_UPDATE {from = Full_JID jid; xml}))
+                         |> Lwt.return
+                       else Lwt.return_unit )
+                     connected_resources )
+          | None -> Lwt.return_unit)
+        | SEND_PRESENCE_UPDATE {from; xml} ->
+          (match t.jid with
+          | Some jid ->
+            let rec modify_from = function
+              | [] -> ["", Xml.From from]
+              | (ns, Xml.From _) :: attrs -> (ns, Xml.From from) :: attrs
+              | a :: attrs -> a :: modify_from attrs
+            in
+            let rec modify_to = function
+              | [] -> ["", Xml.To (Bare_JID (Jid.Full.to_bare jid))]
+              | (ns, Xml.To _) :: attrs ->
+                (ns, Xml.To (Bare_JID (Jid.Full.to_bare jid))) :: attrs
+              | a :: attrs -> a :: modify_to attrs
+            in
+            let%lwt stanza =
+              match xml with
+              | Some (Xml.Element ((name, attributes), children)) ->
+                Stanza.Presence
+                  ( Xml.Element ((name, modify_to @@ modify_from attributes), children)
+                  |> Xml.remove_prefixes )
+                |> Lwt.return
+              | Some (Xml.Text _) -> assert false
+              | None ->
+                let partial_presence_stanza =
+                  Stanza.create_presence
+                    ~id:(Some (Stanza.gen_id ()))
+                    ~from
+                    ~ato:(Full_JID jid)
+                in
+                (match%lwt Rosters.get_presence (Jid.to_bare_raw from) with
+                | Online -> Lwt.return (partial_presence_stanza [])
+                | Offline -> Lwt.return (partial_presence_stanza ~atype:"unavailable" []))
+            in
+            t.callback (Some (Stanza.to_string stanza)) |> Lwt.return
+          | None -> Lwt.return_unit)
+        | SEND_CURRENT_PRESENCE ato ->
+          (match t.jid with
+          | Some jid ->
+            let%lwt connected_user_resources =
+              Connections.find_all (Jid.Full.to_bare jid)
+            in
+            let%lwt connected_contact_resources =
+              Connections.find_all (Jid.to_bare_raw ato)
+            in
+            connected_contact_resources
+            |> Lwt_list.iter_s (fun (_, handler) ->
+                   connected_user_resources
+                   |> Lwt_list.iter_s (fun (full_jid, _) ->
                           handler
                             (Some
                                (SEND_PRESENCE_UPDATE
-                                  { from = Full_JID full_jid
-                                  ; xml =
-                                      Some
-                                        ( Stanza.to_xml
-                                        @@ Stanza.create_presence
-                                             ~id:(Some (Stanza.gen_id ()))
-                                             ~from:(Full_JID full_jid)
-                                             ~ato:(Bare_JID user)
-                                             ~atype:"unavailable"
-                                             [] ) })) ) )
-          | _ -> ());
-          (* Roster push to users resources with none/from *)
-          Rosters.downgrade_subscription_to user (Jid.to_bare_raw contact);
-          Connections.find_all (Bare_JID user)
-          |> List.iter (fun (full_jid, handler) ->
-                 handler (Some (PUSH_ROSTER {ato = Some (Full_JID full_jid); contact}))
-             )
-        | None -> ()));
+                                  {from = Full_JID full_jid; xml = None}))
+                          |> Lwt.return ) )
+          | None -> Lwt.return_unit)
+        | PROBE_PRESENCE ->
+          (match t.jid with
+          | Some jid ->
+            let%lwt connected_resources_jids =
+              let%lwt connected_resources =
+                Connections.find_all (Jid.Full.to_bare jid)
+              in
+              connected_resources |> Lwt_list.map_s (fun (jid, _) -> Lwt.return jid)
+            in
+            let%lwt connected_subscriptions =
+              let%lwt subscriptions = Rosters.get_subscriptions (Jid.Full.to_bare jid) in
+              subscriptions
+              |> Lwt_list.fold_left_s
+                   (fun l contact ->
+                     let%lwt connected_contact_resources =
+                       Connections.find_all contact
+                     in
+                     let%lwt connected_contact_jids =
+                       connected_contact_resources
+                       |> Lwt_list.map_s (fun (j, _) -> Lwt.return j)
+                     in
+                     l @ connected_contact_jids |> Lwt.return )
+                   []
+            in
+            connected_resources_jids @ connected_subscriptions
+            |> Lwt_list.iter_s (fun full_jid ->
+                   if full_jid <> jid
+                   then
+                     t.actions_push
+                       (Some
+                          (SEND_PRESENCE_UPDATE {from = Full_JID full_jid; xml = None}))
+                     |> Lwt.return
+                   else Lwt.return_unit )
+          | None -> Lwt.return_unit)
+        | IQ_ERROR {error_type; error_tag; id} ->
+          let partial_iq_error =
+            Stanza.create_iq_error
+              ~from:(Jid.of_string t.hostname)
+              ~id
+              ~error_type
+              ~error_tag
+          in
+          (match t.jid with
+          | Some jid ->
+            let iq_error = partial_iq_error ~ato:(Full_JID jid) () in
+            let xml_string = Stanza.to_string iq_error in
+            t.callback (Some xml_string) |> Lwt.return
+          | None ->
+            let iq_error = partial_iq_error () in
+            let xml_string = Stanza.to_string iq_error in
+            t.callback (Some xml_string) |> Lwt.return)
+        | MESSAGE {ato; message} ->
+          (match message with
+          | Xml.Element ((name, attributes), children) as message ->
+            (match t.jid with
+            | Some jid ->
+              if Jid.to_bare_raw ato = Jid.Full.to_bare jid
+              then t.callback (Some (Xml.to_string message)) |> Lwt.return
+              else
+                let message =
+                  Xml.Element
+                    ((name, ("", Xml.From (Full_JID jid)) :: attributes), children)
+                in
+                let%lwt connected_resources =
+                  Connections.find_all (Jid.to_bare_raw ato)
+                in
+                connected_resources
+                |> Lwt_list.iter_s (fun (_, handler) ->
+                       handler (Some (MESSAGE {ato; message})) |> Lwt.return )
+            | None -> Lwt.return_unit)
+          | Xml.Text _ -> assert false)
+        | SUBSCRIPTION_REMOVAL {contact} ->
+          (match t.jid with
+          | Some jid ->
+            let user = Jid.Full.to_bare jid in
+            let%lwt connected_user_resources = Connections.find_all user in
+            let%lwt () =
+              match%lwt Rosters.get_subscription (Jid.to_bare_raw contact) user with
+              | Some From | Some Both ->
+                (* deliver unsubscribe stanza to all contacts resources *)
+                let%lwt connected_contact_resources =
+                  Connections.find_all (Jid.to_bare_raw contact)
+                in
+                let%lwt () =
+                  connected_contact_resources
+                  |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                         handler
+                           (Some
+                              (SEND_PRESENCE_UPDATE
+                                 { from = Bare_JID user
+                                 ; xml =
+                                     Some
+                                       ( Stanza.to_xml
+                                       @@ Stanza.create_presence
+                                            ~id:(Some (Stanza.gen_id ()))
+                                            ~from:(Bare_JID user)
+                                            ~ato:(Full_JID full_jid)
+                                            ~atype:"unsubscribe"
+                                            [] ) }))
+                         |> Lwt.return )
+                in
+                (* roster push to contacts resources with sub=none / to *)
+                let%lwt () =
+                  Rosters.downgrade_subscription_from (Jid.to_bare_raw contact) user
+                in
+                let%lwt () =
+                  connected_contact_resources
+                  |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                         handler
+                           (Some
+                              (PUSH_ROSTER
+                                 {ato = Some (Full_JID full_jid); contact = Bare_JID user}))
+                         |> Lwt.return )
+                in
+                (* unavailable from contacts resources to bare user *)
+                connected_contact_resources
+                |> Lwt_list.iter_s (fun (full_jid, _) ->
+                       connected_user_resources
+                       |> Lwt_list.iter_s (fun (_, handler) ->
+                              handler
+                                (Some
+                                   (SEND_PRESENCE_UPDATE
+                                      { from = Full_JID full_jid
+                                      ; xml =
+                                          Some
+                                            ( Stanza.to_xml
+                                            @@ Stanza.create_presence
+                                                 ~id:(Some (Stanza.gen_id ()))
+                                                 ~from:(Full_JID full_jid)
+                                                 ~ato:(Bare_JID user)
+                                                 ~atype:"unavailable"
+                                                 [] ) }))
+                              |> Lwt.return ) )
+              | _ -> Lwt.return_unit
+            in
+            (* Roster push to users resources with none/from *)
+            let%lwt () =
+              Rosters.downgrade_subscription_to user (Jid.to_bare_raw contact)
+            in
+            connected_user_resources
+            |> Lwt_list.iter_s (fun (full_jid, handler) ->
+                   handler (Some (PUSH_ROSTER {ato = Some (Full_JID full_jid); contact}))
+                   |> Lwt.return )
+          | None -> Lwt.return_unit)
+        | CLOSE ->
+          (* After closing the stream we aren't allowed to send anything more so stop handling any more actions *)
+          t.callback (Some "</stream:stream>");
+          (t.closed <- true) |> Lwt.return
+        | ERROR e ->
+          t.callback (Some e);
+          (t.closed <- true) |> Lwt.return
+      in
       if t.closed
       then (
         t.callback None;
@@ -518,37 +635,27 @@ let handle t =
 let to_string t = Sexplib.Sexp.to_string_hum @@ sexp_of_t t
 
 let make_test_handler s =
+  let%lwt () = Rosters.clear () in
+  let%lwt () = Connections.clear () in
   let stream = Lwt_stream.of_string s in
   let callback so =
     match so with
     | Some s -> print_endline (Utils.mask_id s)
     | None -> print_endline "Out stream closed"
   in
-  create ~stream ~callback ~hostname:"im.example.com"
+  create ~stream ~callback ~hostname:"im.example.com" |> Lwt.return
 ;;
 
 let test_stanza stanza =
-  let handler = make_test_handler stanza in
-  let run = handle handler in
-  Lwt_main.run run;
-  handler
-;;
-
-let%expect_test "creation of handler" =
-  Rosters.clear ();
-  Connections.clear ();
-  let handler = make_test_handler "<stream></stream>" in
-  print_endline (to_string handler);
-  [%expect
-    {|
-    ((parser ((raw_stream <opaque>) (stream <opaque>) (depth 0)))
-     (callback <fun>) (user ()) (hostname im.example.com) (jid ())
-     (fsm ((state IDLE))) (actions_push <fun>) (closed false)) |}]
+  let run =
+    let%lwt handler = make_test_handler stanza in
+    let%lwt () = handle handler in
+    Lwt.return handler
+  in
+  Lwt_main.run run
 ;;
 
 let%expect_test "initial stanza with version" =
-  Rosters.clear ();
-  Connections.clear ();
   let stanza =
     Stream.to_string
       (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
@@ -571,8 +678,6 @@ let%expect_test "initial stanza with version" =
 ;;
 
 let%expect_test "error in initial stanza" =
-  Rosters.clear ();
-  Connections.clear ();
   let stanza =
     Stream.to_string
       (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
@@ -594,8 +699,6 @@ let%expect_test "error in initial stanza" =
 ;;
 
 let%expect_test "bind resource" =
-  Rosters.clear ();
-  Connections.clear ();
   let stanza =
     Stream.to_string
       (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
@@ -635,8 +738,6 @@ let%expect_test "bind resource" =
 ;;
 
 let%expect_test "roster get" =
-  Rosters.clear ();
-  Connections.clear ();
   let stanza =
     Stream.to_string
       (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
@@ -676,7 +777,6 @@ let%expect_test "roster get" =
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
       <iq id='<redacted_for_testing>' type='result'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>juliet@im.example.com/balcony</jid></bind></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'/></iq>
-      <presence from='juliet@im.example.com/balcony' to='juliet@im.example.com/balcony' id='<redacted_for_testing>' type='unavailable'/>
       </stream:stream>
       Out stream closed
     |}];
@@ -691,8 +791,6 @@ let%expect_test "roster get" =
 ;;
 
 let%expect_test "roster set" =
-  Rosters.clear ();
-  Connections.clear ();
   let stanza =
     Stream.to_string
       (Header (Stream.create_header ~ato:(Jid.of_string "im.example.com") ()))
@@ -751,7 +849,6 @@ let%expect_test "roster set" =
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'/>
       <iq id='<redacted_for_testing>' type='set' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' subscription='none' name='Nurse'><group>Servants</group></item></query></iq>
       <iq id='<redacted_for_testing>' type='result' to='juliet@im.example.com/balcony'><query xmlns='jabber:iq:roster'><item jid='nurse@example.com' name='Nurse' subscription='none'><group>Servants</group></item></query></iq>
-      <presence from='juliet@im.example.com/balcony' to='juliet@im.example.com/balcony' id='<redacted_for_testing>' type='unavailable'/>
       </stream:stream>
       Out stream closed
     |}];

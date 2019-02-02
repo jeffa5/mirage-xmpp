@@ -38,7 +38,6 @@ module Main (S : Mirage_stack_lwt.V4) = struct
         aux ()
       | None ->
         let%lwt () = Lwt_mvar.put mvar true in
-        Logs.info (fun f -> f "Out stream closed");
         Lwt.return_unit
     in
     aux ()
@@ -56,21 +55,25 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     let handler = Mirage_xmpp.Handler.create ~stream ~callback:outfun ~hostname in
     let%lwt () = Mirage_xmpp.Handler.handle handler in
     let%lwt _ = Lwt_mvar.take mvar in
-    Logs.info (fun f -> f "Closing the connection");
+    Logs.info (fun f ->
+        f
+          "Closing tcp connection from IP %s on port %d"
+          (Ipaddr.V4.to_string dst)
+          dst_port );
     S.TCPV4.close flow
   ;;
 
-  let start s =
+  let start stack =
     Logs.info (fun f -> f "Started Unikernel");
     let port = Key_gen.port () in
     let hostname = Key_gen.hostname () in
     Logs.info (fun f -> f "Port is: %d" port);
     Logs.info (fun f -> f "Hostname is: %s" hostname);
-    S.listen_tcpv4 s ~port (on_connect hostname);
-    S.listen_tcpv4 s ~port:8081 (fun _flow ->
+    S.listen_tcpv4 stack ~port (on_connect hostname);
+    S.listen_tcpv4 stack ~port:8081 (fun _flow ->
         Logs.info (fun f -> f "Received exit signal");
         exit 0 );
     Logs.info (fun f -> f "Started listening");
-    S.listen s
+    S.listen stack
   ;;
 end
