@@ -11,7 +11,7 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>63.89%</h2>
+      <h2>61.11%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:9.00%"></span>
@@ -21,6 +21,7 @@
       <span class="unvisited" style="top:36.00%"></span>
       <span class="unvisited" style="top:37.00%"></span>
       <span class="unvisited" style="top:58.00%"></span>
+      <span class="unvisited" style="top:62.00%"></span>
       <span class="unvisited" style="top:64.00%"></span>
       <span class="unvisited" style="top:76.00%"></span>
       <span class="unvisited" style="top:78.00%"></span>
@@ -92,7 +93,7 @@
 <a id="L59"></a><span > </span>
 <a id="L60"></a><span > </span>
 <a id="L61"></a><span class="visited"> </span>
-<a id="L62"></a><span class="visited"> </span>
+<a id="L62"></a><span class="unvisited"> </span>
 <a id="L63"></a><span class="visited"> </span>
 <a id="L64"></a><span class="unvisited"> </span>
 <a id="L65"></a><span > </span>
@@ -250,11 +251,11 @@ module Bare = struct
   exception MalformedBareJID of string
 
   let of_string str =
-    <span data-count="130">m</span>atch String.cut ~sep:"@" str with
-    | <span data-count="130">S</span>ome (user, domres) -&gt;
+    <span data-count="131">m</span>atch String.cut ~sep:"@" str with
+    | <span data-count="131">S</span>ome (user, domres) -&gt;
       (match String.cut ~sep:"/" domres with
       | <span data-count="0">S</span>ome _ -&gt; raise @@ MalformedBareJID str
-      | <span data-count="130">N</span>one -&gt; user, domres)
+      | <span data-count="131">N</span>one -&gt; user, domres)
     | <span data-count="0">N</span>one -&gt; raise @@ MalformedJID str
   ;;
 end
@@ -262,7 +263,7 @@ end
 module Full = struct
   type t = (string * string) * string [@@deriving sexp, ord]
 
-  let to_bare (bare_jid, _) = <span data-count="15">b</span>are_jid
+  let to_bare (bare_jid, _) = <span data-count="21">b</span>are_jid
   let set_resource resource (bare_jid, _) = <span data-count="0">b</span>are_jid, resource
 
   exception MalformedFullJID of string
@@ -292,23 +293,23 @@ type t =
 exception NotAtLeastBare of string
 
 let to_bare_raw = <span data-count="2">f</span>unction
-  | <span data-count="3">F</span>ull_JID (bare_jid, _) -&gt; bare_jid
+  | <span data-count="1">F</span>ull_JID (bare_jid, _) -&gt; bare_jid
   | <span data-count="3">B</span>are_JID bare_jid -&gt; bare_jid
   | <span data-count="0">D</span>omain dom -&gt; raise (NotAtLeastBare dom)
 ;;
 
 let to_bare = <span data-count="2">f</span>unction
-  | <span data-count="6">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
+  | <span data-count="0">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
   | <span data-count="2">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
   | <span data-count="0">D</span>omain dom -&gt; raise (NotAtLeastBare dom)
 ;;
 
 let of_string str =
-  <span data-count="44">m</span>atch String.cut ~sep:"@" str with
-  | <span data-count="18">S</span>ome (user, domres) -&gt;
+  <span data-count="43">m</span>atch String.cut ~sep:"@" str with
+  | <span data-count="17">S</span>ome (user, domres) -&gt;
     (match String.cut ~sep:"/" domres with
     | <span data-count="10">S</span>ome (domain, resource) -&gt; Full_JID ((user, domain), resource)
-    | <span data-count="8">N</span>one -&gt; Bare_JID (user, domres))
+    | <span data-count="7">N</span>one -&gt; Bare_JID (user, domres))
   | <span data-count="26">N</span>one -&gt; Domain str
 ;;
 
@@ -321,7 +322,7 @@ let set_resource resource = <span data-count="0">f</span>unction
 ;;
 
 let to_string = <span data-count="2">f</span>unction
-  | <span data-count="15">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
+  | <span data-count="11">F</span>ull_JID ((user, domain), resource) -&gt; user ^ "@" ^ domain ^ "/" ^ resource
   | <span data-count="6">B</span>are_JID (user, domain) -&gt; user ^ "@" ^ domain
   | <span data-count="18">D</span>omain dom -&gt; dom
 ;;
@@ -340,7 +341,7 @@ let%expect_test "no resource in jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

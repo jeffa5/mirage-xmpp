@@ -242,18 +242,18 @@ let rec remove_prefixes = <span data-count="2">f</span>unction
   | <span data-count="0">T</span>ext _t as text -&gt; text
 ;;
 
-let name_to_string (prefix, name) = <span data-count="158">i</span>f prefix &lt;&gt; "" then <span data-count="44">p</span>refix ^ ":" ^ name else <span data-count="114">n</span>ame
+let name_to_string (prefix, name) = <span data-count="156">i</span>f prefix &lt;&gt; "" then <span data-count="44">p</span>refix ^ ":" ^ name else <span data-count="112">n</span>ame
 
 let attribute_to_string (namespace, nameval) =
-  <span data-count="189">(</span>if namespace &lt;&gt; "" then <span data-count="39">n</span>amespace ^ ":" else <span data-count="150">"</span>")
+  <span data-count="181">(</span>if namespace &lt;&gt; "" then <span data-count="39">n</span>amespace ^ ":" else <span data-count="142">"</span>")
   ^
   match nameval with
-  | <span data-count="15">F</span>rom jid -&gt; "from='" ^ Jid.to_string jid ^ "'"
-  | <span data-count="16">T</span>o jid -&gt; "to='" ^ Jid.to_string jid ^ "'"
-  | <span data-count="32">I</span>d s -&gt; "id='" ^ s ^ "'"
+  | <span data-count="13">F</span>rom jid -&gt; "from='" ^ Jid.to_string jid ^ "'"
+  | <span data-count="14">T</span>o jid -&gt; "to='" ^ Jid.to_string jid ^ "'"
+  | <span data-count="30">I</span>d s -&gt; "id='" ^ s ^ "'"
   | <span data-count="3">J</span>id jid -&gt; "jid='" ^ Jid.to_string jid ^ "'"
   | <span data-count="45">X</span>mlns s -&gt; "xmlns='" ^ s ^ "'"
-  | <span data-count="16">T</span>ype s -&gt; "type='" ^ s ^ "'"
+  | <span data-count="14">T</span>ype s -&gt; "type='" ^ s ^ "'"
   | <span data-count="0">V</span>er s -&gt; "ver='" ^ s ^ "'"
   | <span data-count="18">V</span>ersion s -&gt; "version='" ^ s ^ "'"
   | <span data-count="18">L</span>ang s -&gt; "lang='" ^ s ^ "'"
@@ -265,22 +265,22 @@ let attribute_to_string (namespace, nameval) =
 ;;
 
 let tag_to_string ~empty (name, attributes) =
-  <span data-count="97">l</span>et sep = <span data-count="97">"</span> " in
-  <span data-count="97">l</span>et attr_string =
-    <span data-count="97">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="189">a</span>ttribute_to_string a) attributes)
+  <span data-count="95">l</span>et sep = <span data-count="95">"</span> " in
+  <span data-count="95">l</span>et attr_string =
+    <span data-count="95">S</span>tring.concat sep (List.map (fun a -&gt; <span data-count="181">a</span>ttribute_to_string a) attributes)
   in
-  <span data-count="97">l</span>et name_string = <span data-count="97">n</span>ame_to_string name in
-  <span data-count="97">"</span>&lt;"
+  <span data-count="95">l</span>et name_string = <span data-count="95">n</span>ame_to_string name in
+  <span data-count="95">"</span>&lt;"
   ^ name_string
-  ^ (if attr_string &lt;&gt; "" then <span data-count="64">s</span>ep ^ attr_string else <span data-count="33">"</span>")
-  ^ if empty then <span data-count="13">"</span>/&gt;" else <span data-count="84">"</span>&gt;"
+  ^ (if attr_string &lt;&gt; "" then <span data-count="62">s</span>ep ^ attr_string else <span data-count="33">"</span>")
+  ^ if empty then <span data-count="11">"</span>/&gt;" else <span data-count="84">"</span>&gt;"
 ;;
 
 let rec to_string = <span data-count="2">f</span>unction
   | <span data-count="20">T</span>ext s -&gt; s
-  | <span data-count="74">E</span>lement (((name, _attributes) as tag), children) -&gt;
+  | <span data-count="72">E</span>lement (((name, _attributes) as tag), children) -&gt;
     (match children with
-    | <span data-count="13">[</span>] -&gt; tag_to_string ~empty:true tag
+    | <span data-count="11">[</span>] -&gt; tag_to_string ~empty:true tag
     | <span data-count="61">c</span>s -&gt;
       tag_to_string ~empty:false tag
       ^ String.concat "" (List.map (fun c -&gt; <span data-count="61">t</span>o_string c) cs)
@@ -293,7 +293,7 @@ let create ?(children = <span data-count="5">[</span>]) tag = <span data-count="
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

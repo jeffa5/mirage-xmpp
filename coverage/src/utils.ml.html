@@ -57,10 +57,10 @@
 </pre>
         <pre id="code">
 let mask_id s =
-  <span data-count="39">m</span>atch Astring.String.find_sub ~sub:"id='" s with
-  | <span data-count="17">S</span>ome i -&gt;
+  <span data-count="37">m</span>atch Astring.String.find_sub ~sub:"id='" s with
+  | <span data-count="15">S</span>ome i -&gt;
     (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
-    | <span data-count="17">S</span>ome j -&gt;
+    | <span data-count="15">S</span>ome j -&gt;
       Astring.String.with_index_range ~first:0 ~last:(i + 3) s
       ^ "&lt;redacted_for_testing&gt;"
       ^ Astring.String.with_index_range ~first:j s
@@ -75,7 +75,7 @@ let option_to_string string_func = <span data-count="6">f</span>unction
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

@@ -11,13 +11,18 @@
           <span class="dirname">src/</span>stanza.ml
         </a>
       </h1>
-      <h2>70.21%</h2>
+      <h2>57.45%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:4.12%"></span>
-      <span class="some-visited" style="top:7.06%"></span>
-      <span class="some-visited" style="top:8.82%"></span>
-      <span class="some-visited" style="top:10.59%"></span>
+      <span class="unvisited" style="top:5.88%"></span>
+      <span class="unvisited" style="top:6.47%"></span>
+      <span class="unvisited" style="top:7.06%"></span>
+      <span class="unvisited" style="top:8.24%"></span>
+      <span class="unvisited" style="top:8.82%"></span>
+      <span class="unvisited" style="top:10.00%"></span>
+      <span class="unvisited" style="top:10.59%"></span>
+      <span class="unvisited" style="top:11.76%"></span>
       <span class="unvisited" style="top:18.24%"></span>
       <span class="unvisited" style="top:18.82%"></span>
       <span class="some-visited" style="top:55.29%"></span>
@@ -37,6 +42,7 @@
       <span class="unvisited" style="top:91.18%"></span>
       <span class="unvisited" style="top:92.35%"></span>
       <span class="unvisited" style="top:94.71%"></span>
+      <span class="unvisited" style="top:98.82%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -50,17 +56,17 @@
 <a id="L7"></a><span class="some-visited"> </span>
 <a id="L8"></a><span class="visited"> </span>
 <a id="L9"></a><span > </span>
-<a id="L10"></a><span class="visited"> </span>
-<a id="L11"></a><span class="visited"> </span>
-<a id="L12"></a><span class="some-visited"> </span>
+<a id="L10"></a><span class="unvisited"> </span>
+<a id="L11"></a><span class="unvisited"> </span>
+<a id="L12"></a><span class="unvisited"> </span>
 <a id="L13"></a><span > </span>
-<a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span class="some-visited"> </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span class="unvisited"> </span>
 <a id="L16"></a><span > </span>
-<a id="L17"></a><span class="visited"> </span>
-<a id="L18"></a><span class="some-visited"> </span>
+<a id="L17"></a><span class="unvisited"> </span>
+<a id="L18"></a><span class="unvisited"> </span>
 <a id="L19"></a><span > </span>
-<a id="L20"></a><span class="visited"> </span>
+<a id="L20"></a><span class="unvisited"> </span>
 <a id="L21"></a><span > </span>
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span class="visited"> </span>
@@ -208,7 +214,7 @@
 <a id="L165"></a><span > </span>
 <a id="L166"></a><span class="visited"> </span>
 <a id="L167"></a><span class="visited"> </span>
-<a id="L168"></a><span class="visited"> </span>
+<a id="L168"></a><span class="unvisited"> </span>
 <a id="L169"></a><span class="visited"> </span>
 <a id="L170"></a><span > </span>
 </pre>
@@ -394,19 +400,19 @@ type t =
 [@@deriving sexp]
 
 let to_xml = <span data-count="2">f</span>unction <span data-count="0">M</span>essage xml -&gt; xml | <span data-count="0">P</span>resence xml -&gt; xml | <span data-count="0">I</span>q xml -&gt; xml
-let gen_id () = <span data-count="20">U</span>uidm.(to_string (create `V4))
+let gen_id () = <span data-count="18">U</span>uidm.(to_string (create `V4))
 
-let create_presence ?(attributes = <span data-count="2">[</span>]) ?atype ?ato ~id ~from children =
-  <span data-count="2">l</span>et attributes =
-    <span data-count="2">m</span>atch atype with <span data-count="2">S</span>ome t -&gt; ("", Xml.Type t) :: attributes | <span data-count="0">N</span>one -&gt; attributes
+let create_presence ?(attributes = <span data-count="0">[</span>]) ?atype ?ato ~id ~from children =
+  <span data-count="0">l</span>et attributes =
+    <span data-count="0">m</span>atch atype with <span data-count="0">S</span>ome t -&gt; ("", Xml.Type t) :: attributes | <span data-count="0">N</span>one -&gt; attributes
   in
-  <span data-count="2">l</span>et attributes =
-    <span data-count="2">m</span>atch id with <span data-count="2">S</span>ome i -&gt; ("", Xml.Id i) :: attributes | <span data-count="0">N</span>one -&gt; attributes
+  <span data-count="0">l</span>et attributes =
+    <span data-count="0">m</span>atch id with <span data-count="0">S</span>ome i -&gt; ("", Xml.Id i) :: attributes | <span data-count="0">N</span>one -&gt; attributes
   in
-  <span data-count="2">l</span>et attributes =
-    <span data-count="2">m</span>atch ato with <span data-count="2">S</span>ome ato -&gt; ("", Xml.To ato) :: attributes | <span data-count="0">N</span>one -&gt; attributes
+  <span data-count="0">l</span>et attributes =
+    <span data-count="0">m</span>atch ato with <span data-count="0">S</span>ome ato -&gt; ("", Xml.To ato) :: attributes | <span data-count="0">N</span>one -&gt; attributes
   in
-  <span data-count="2">P</span>resence (Element ((("", "presence"), ["", Xml.From from] @ attributes), children))
+  <span data-count="0">P</span>resence (Element ((("", "presence"), ["", Xml.From from] @ attributes), children))
 ;;
 
 let create_iq ?(attributes = <span data-count="8">[</span>]) ?ato ~atype ~id children =
@@ -554,13 +560,13 @@ let rec get_name = <span data-count="2">f</span>unction
 
 let to_string = <span data-count="2">f</span>unction
   | <span data-count="2">M</span>essage xml -&gt; Xml.to_string xml
-  | <span data-count="2">P</span>resence xml -&gt; Xml.to_string xml
+  | <span data-count="0">P</span>resence xml -&gt; Xml.to_string xml
   | <span data-count="10">I</span>q xml -&gt; Xml.to_string xml
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

@@ -626,7 +626,7 @@ type parse_result =
 exception ParsingError of string
 
 let make_parser stream =
-  <span data-count="16">M</span>arkup_lwt.parse_xml
+  <span data-count="15">M</span>arkup_lwt.parse_xml
     ~report:(fun _ e -&gt;
       <span data-count="1">l</span>et error_string = <span data-count="1">M</span>arkup.Error.to_string e in
       <span data-count="1">L</span>wt.fail (ParsingError error_string) )
@@ -634,8 +634,8 @@ let make_parser stream =
 ;;
 
 let create raw_stream =
-  <span data-count="13">l</span>et stream = <span data-count="13">M</span>arkup_lwt.lwt_stream raw_stream |&gt; <span data-count="13">m</span>ake_parser |&gt; <span data-count="13">M</span>arkup.signals in
-  <span data-count="13">{</span>raw_stream; stream; depth = 0}
+  <span data-count="12">l</span>et stream = <span data-count="12">M</span>arkup_lwt.lwt_stream raw_stream |&gt; <span data-count="12">m</span>ake_parser |&gt; <span data-count="12">M</span>arkup.signals in
+  <span data-count="12">{</span>raw_stream; stream; depth = 0}
 ;;
 
 let reset parser =
@@ -890,7 +890,7 @@ let%expect_test "non-whitespace between elements" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-01-29 00:07:31 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
