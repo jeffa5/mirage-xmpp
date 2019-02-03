@@ -9,8 +9,9 @@ opam upgrade -y
 
 eval $(opam env)
 
-opam depext --yes --update --install dune
-opam depext --yes --update --install $(./project-deps.sh)
+opam pin add . --no-action
+opam depext --yes --update --install mirage-xmpp
+opam depext --yes --update --install mirage
 echo -en "travis_fold:end:opam_setup\r"
 
 echo -en "travis_fold:start:unit\r"
