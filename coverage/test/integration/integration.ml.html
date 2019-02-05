@@ -681,7 +681,7 @@ let%expect_test "open and close stream" =
     Receive:
     &lt;stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'&gt;
     Receive:
-    &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
+    &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;mechanism&gt;ANONYMOUS&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
     Send:
     &lt;/stream:stream&gt;
     Receive:
@@ -713,7 +713,7 @@ let%expect_test "open stream with iq bind" =
       Receive:
       &lt;stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'&gt;
       Receive:
-      &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
+      &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;mechanism&gt;ANONYMOUS&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
       Send:
       &lt;auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'&gt;AGp1bGlldABwYXNzd29yZA==&lt;/auth&gt;
       Receive:
@@ -761,7 +761,7 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
       Receive:
       &lt;stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'&gt;
       Receive:
-      &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
+      &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;mechanism&gt;ANONYMOUS&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
       Send:
       &lt;auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'&gt;AGp1bGlldABwYXNzd29yZA==&lt;/auth&gt;
       Receive:
@@ -816,7 +816,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
     Receive:
     &lt;stream:stream id='redacted_for_testing' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'&gt;
     Receive:
-    &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
+    &lt;stream:features&gt;&lt;mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'&gt;&lt;mechanism&gt;PLAIN&lt;/mechanism&gt;&lt;mechanism&gt;ANONYMOUS&lt;/mechanism&gt;&lt;/mechanisms&gt;&lt;/stream:features&gt;
     Send:
     &lt;auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'&gt;AGp1bGlldABwYXNzd29yZA==&lt;/auth&gt;
     Receive:
@@ -852,7 +852,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-02-03 11:57:12 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-02-05 16:54:07 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
     <script src="../../coverage.js"></script>
   </body>
 </html>
