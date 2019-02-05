@@ -8,7 +8,7 @@
 -- sections as you like.
 --
 -- Lists are written
-_ = { "like", "this", "one" }
+-- _ = { "like", "this", "one" }
 -- Lists can also be of { 1, 2, 3 } numbers, etc.
 -- Either commas, or semi-colons; may be used
 -- as seperators.
@@ -16,7 +16,7 @@ _ = { "like", "this", "one" }
 -- A table is a list of values, except each value has a name. An
 -- example would be:
 --
-examlpe_ssl = { key = "keyfile.key", certificate = "certificate.crt" }
+-- examlpe_ssl = { key = "keyfile.key", certificate = "certificate.crt" }
 --
 -- Whitespace (that is tabs, spaces, line breaks) is mostly insignificant, so
 -- can
@@ -60,27 +60,27 @@ modules_enabled = {
     -- Generally required
         "roster"; -- Allow users to have a roster. Recommended ;)
         "saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
-        "tls"; -- Add support for secure TLS on c2s/s2s connections
-        "dialback"; -- s2s dialback support
-        "disco"; -- Service discovery
+        -- "tls"; -- Add support for secure TLS on c2s/s2s connections
+        -- "dialback"; -- s2s dialback support
+        -- "disco"; -- Service discovery
 
     -- Not essential, but recommended
-        "carbons"; -- Keep multiple clients in sync
-        "pep"; -- Enables users to publish their mood, activity, playing music and more
-        "private"; -- Private XML storage (for room bookmarks, etc.)
-        "blocklist"; -- Allow users to block communications with other users
-        "vcard"; -- Allow users to set vCards
+        -- "carbons"; -- Keep multiple clients in sync
+        -- "pep"; -- Enables users to publish their mood, activity, playing music and more
+        -- "private"; -- Private XML storage (for room bookmarks, etc.)
+        -- "blocklist"; -- Allow users to block communications with other users
+        -- "vcard"; -- Allow users to set vCards
 
     -- Nice to have
-        "version"; -- Replies to server version requests
-        "uptime"; -- Report how long server has been running
-        "time"; -- Let others know the time here on this server
-        "ping"; -- Replies to XMPP pings with pongs
-        "register"; -- Allow users to register on this server using a client and change passwords
+        -- "version"; -- Replies to server version requests
+        -- "uptime"; -- Report how long server has been running
+        -- "time"; -- Let others know the time here on this server
+        -- "ping"; -- Replies to XMPP pings with pongs
+        -- "register"; -- Allow users to register on this server using a client and change passwords
         --"mam"; -- Store messages in an archive and allow users to access it
 
     -- Admin interfaces
-        "admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
+        -- "admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
         --"admin_telnet"; -- Opens telnet console interface on localhost port 5582
 
     -- HTTP modules
@@ -103,9 +103,9 @@ modules_enabled = {
 -- These modules are auto-loaded, but should you want
 -- to disable them then uncomment them here:
 modules_disabled = {
-    -- "offline"; -- Store offline messages
+    "offline"; -- Store offline messages
     -- "c2s"; -- Handle client connections
-    -- "s2s"; -- Handle server-to-server connections
+    "s2s"; -- Handle server-to-server connections
     -- "posix"; -- POSIX functionality, sends server to background, enables syslog, etc.
 }
 
@@ -116,7 +116,7 @@ allow_registration = false
 -- Force clients to use encrypted connections? This option will
 -- prevent clients from authenticating unless they are using encryption.
 
-c2s_require_encryption = true
+c2s_require_encryption = false
 
 -- Force servers to use encrypted connections? This option will
 -- prevent servers from authenticating unless they are using encryption.
@@ -152,7 +152,7 @@ s2s_secure_auth = false
 -- server please see https://prosody.im/doc/modules/mod_auth_internal_hashed
 -- for information about using the hashed backend.
 
-authentication = "internal_hashed"
+authentication = "anonymous"
 
 -- Select the storage backend to use. By default Prosody uses flat files
 -- in its configured data directory, but it also supports more backends
@@ -178,13 +178,14 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 -- You can also configure messages to be stored in-memory only. For more
 -- archiving options, see https://prosody.im/doc/modules/mod_mam
 
+daemonize = false
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
 log = {
     info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
     error = "prosody.err";
     -- "*syslog"; -- Uncomment this for logging to syslog
-    -- "*console"; -- Log to the console, useful for debugging with daemonize=false
+    "*console"; -- Log to the console, useful for debugging with daemonize=false
 }
 
 -- Uncomment to enable statistics
@@ -199,7 +200,7 @@ log = {
 -- (from e.g. Let's Encrypt) see https://prosody.im/doc/certificates
 
 -- Location of directory to find certificates in (relative to main config file):
-certificates = "certs"
+-- certificates = "certs"
 
 ----------- Virtual hosts -----------
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
