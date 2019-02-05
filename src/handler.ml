@@ -44,6 +44,7 @@ let handle_action t stream =
           let xml_string = Stanza.to_string iq in
           t.callback (Some xml_string) |> Lwt.return
         | SET_USER user -> (t.user <- Some user) |> Lwt.return
+        | SET_USER_ANON -> (t.user <- Some (Jid.anon ())) |> Lwt.return
         | SET_JID_RESOURCE {id; resource} ->
           (match t.user with
           | Some user ->
@@ -665,7 +666,7 @@ let%expect_test "initial stanza with version" =
   [%expect
     {|
     <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
-    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>ANONYMOUS</mechanism></mechanisms></stream:features>
     Unexpected stream close during sasl negotiation
     Out stream closed
     |}];
@@ -687,7 +688,7 @@ let%expect_test "error in initial stanza" =
   [%expect
     {|
     <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
-    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>ANONYMOUS</mechanism></mechanisms></stream:features>
     Unexpected stream close during sasl negotiation
     Out stream closed |}];
   print_endline (to_string handler);
@@ -721,7 +722,7 @@ let%expect_test "bind resource" =
   [%expect
     {|
     <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
-    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+    <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>ANONYMOUS</mechanism></mechanisms></stream:features>
     <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
     <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
     <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
@@ -771,7 +772,7 @@ let%expect_test "roster get" =
   [%expect
     {|
       <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
-      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>ANONYMOUS</mechanism></mechanisms></stream:features>
       <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
       <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>
@@ -841,7 +842,7 @@ let%expect_test "roster set" =
   [%expect
     {|
       <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
-      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism></mechanisms></stream:features>
+      <stream:features><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>ANONYMOUS</mechanism></mechanisms></stream:features>
       <success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>
       <stream:stream id='<redacted_for_testing>' version='1.0' xml:lang='en' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' from='im.example.com'>
       <stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/></stream:features>

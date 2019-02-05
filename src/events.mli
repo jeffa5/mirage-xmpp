@@ -4,6 +4,7 @@
 type t =
   | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
+  | ANONYMOUS_SASL_AUTH
   | RESOURCE_BIND_SERVER_GEN of {id : string}
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
   | SESSION_START of string
@@ -11,13 +12,13 @@ type t =
   | ERROR of string
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
-  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
   | PRESENCE_UPDATE of {status : Rosters.Presence.t; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
   | NOOP
-  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}

@@ -50,19 +50,21 @@ type t =
   | Domain of Domain.t
 [@@deriving sexp]
 
-exception NotAtLeastBare of string
-
 let to_bare_raw = function
   | Full_JID (bare_jid, _) -> bare_jid
   | Bare_JID bare_jid -> bare_jid
-  | Domain dom -> raise (NotAtLeastBare dom)
+  | Domain dom ->
+    raise @@ MalformedJID ("Not allowed to convert a Domain to a raw jid: " ^ dom)
 ;;
 
 let to_bare = function
   | Full_JID (bare_jid, _) -> Bare_JID bare_jid
   | Bare_JID bare_jid -> Bare_JID bare_jid
-  | Domain dom -> raise (NotAtLeastBare dom)
+  | Domain dom ->
+    raise @@ MalformedJID ("Not allowed to convert a Domain to a raw jid: " ^ dom)
 ;;
+
+let anon () = "anon-" ^ Uuidm.(to_string (create `V4))
 
 let of_string str =
   match String.cut ~sep:"@" str with
@@ -78,7 +80,8 @@ let create_resource () = Uuidm.(to_string (create `V4))
 let set_resource resource = function
   | Full_JID fjid -> Full_JID (Full.set_resource resource fjid)
   | Bare_JID bjid -> Full_JID (Bare.set_resource resource bjid)
-  | Domain dom -> raise (NotAtLeastBare dom)
+  | Domain dom ->
+    raise @@ MalformedJID ("Not allowed to set resource on a Domain: " ^ dom)
 ;;
 
 let to_string = function

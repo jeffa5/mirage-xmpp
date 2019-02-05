@@ -18,7 +18,9 @@ let features_sasl_mechanisms =
     ~children:
       [ Xml.create
           (("", "mechanisms"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"])
-          ~children:[Xml.create (("", "mechanism"), []) ~children:[Xml.Text "PLAIN"]] ]
+          ~children:
+            [ Xml.create (("", "mechanism"), []) ~children:[Xml.Text "PLAIN"]
+            ; Xml.create (("", "mechanism"), []) ~children:[Xml.Text "ANONYMOUS"] ] ]
 ;;
 
 let features =

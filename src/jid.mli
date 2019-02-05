@@ -26,6 +26,7 @@ type t =
 [@@deriving sexp]
 
 val set_resource : string -> t -> t
+val anon : unit -> string
 val to_bare_raw : t -> Bare.t
 val to_bare : t -> t
 

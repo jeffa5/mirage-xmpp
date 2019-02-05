@@ -39,6 +39,7 @@ let handle_idle t = function
       , [] )
     else closed_with_error "Must use version >= 1.0"
   | SASL_AUTH _ -> closed_with_error "No stream"
+  | ANONYMOUS_SASL_AUTH -> closed_with_error "No stream"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "No stream"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "No stream"
   | SESSION_START _id -> closed_with_error "No stream"
@@ -64,6 +65,10 @@ let handle_sasl_negotiation t = function
   | SASL_AUTH {user; _} ->
     ( {state = NEGOTIATING}
     , [Actions.SET_USER user; Actions.SEND_SASL_SUCCESS]
+    , [Actions.RESET_PARSER] )
+  | ANONYMOUS_SASL_AUTH ->
+    ( {state = NEGOTIATING}
+    , [Actions.SET_USER_ANON; Actions.SEND_SASL_SUCCESS]
     , [Actions.RESET_PARSER] )
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Not finished SASL"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Not finished SASL"
@@ -106,6 +111,7 @@ let handle_negotiating t = function
       , [] )
     else closed_with_error "Must use version >= 1.0"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
+  | ANONYMOUS_SASL_AUTH -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN {id} ->
     {state = NEGOTIATING}, [Actions.SET_JID_RESOURCE {id; resource = None}], []
   | RESOURCE_BIND_CLIENT_GEN {id; resource} ->
@@ -150,6 +156,7 @@ let handle_negotiating t = function
 let handle_connected t = function
   | STREAM_HEADER _ -> closed_with_error "Not expecting stream header"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
+  | ANONYMOUS_SASL_AUTH -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Already connected"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Already connected"
   | SESSION_START id -> {state = CONNECTED}, [Actions.SESSION_START_SUCCESS id], []
@@ -194,6 +201,7 @@ let handle_connected t = function
 let handle_closed t = function
   | STREAM_HEADER _s -> closed_with_error "Not expecting stream header"
   | SASL_AUTH _ -> closed_with_error "Already negotiated sasl"
+  | ANONYMOUS_SASL_AUTH -> closed_with_error "Already negotiated sasl"
   | RESOURCE_BIND_SERVER_GEN _ -> closed_with_error "Connection closed"
   | RESOURCE_BIND_CLIENT_GEN _ -> closed_with_error "Connection closed"
   | SESSION_START _id -> closed_with_error "Not expecting session start"

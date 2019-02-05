@@ -4,6 +4,7 @@ open Sexplib.Std
 type t =
   | STREAM_HEADER of {version : string}
   | SASL_AUTH of {user : string; password : string}
+  | ANONYMOUS_SASL_AUTH
   | RESOURCE_BIND_SERVER_GEN of {id : string}
   | RESOURCE_BIND_CLIENT_GEN of {id : string; resource : string}
   | SESSION_START of string
@@ -11,13 +12,13 @@ type t =
   | ERROR of string
   | ROSTER_GET of string
   | ROSTER_SET of {id : string; target : Jid.t; handle : string; groups : string list}
-  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
+  | ROSTER_REMOVE of {id : string; target : Jid.t}
   | PRESENCE_UPDATE of {status : Rosters.Presence.t; xml : Xml.t option}
   | IQ_ERROR of {error_type : Actions.error_type; error_tag : string; id : string}
   | MESSAGE of {ato : Jid.t; message : Xml.t}
   | LOG_OUT
   | NOOP
-  | ROSTER_REMOVE of {id : string; target : Jid.t}
+  | SUBSCRIPTION_REQUEST of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_APPROVAL of {ato : Jid.t; xml : Xml.t}
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
@@ -145,6 +146,13 @@ let lift parse_result =
       | (_, Xml.Mechanism mechanism) :: _ -> mechanism
       | _ :: attrs -> get_mechanism attrs
     in
+    let invalid_mechanism () =
+      ERROR
+        ( Xml.to_string
+        @@ Xml.create
+             ~children:[Xml.create (("", "invalid-mechanism"), [])]
+             (("", "failure"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]) )
+    in
     (match xml with
     | Element ((_name, attributes), [Text b64_string]) ->
       if get_mechanism attributes = "PLAIN"
@@ -156,18 +164,12 @@ let lift parse_result =
           | Some (user, pass) -> SASL_AUTH {user; password = pass}
           | None -> ERROR "SASL: couldn't find second 0 byte")
         | _ -> ERROR "SASL: couldn't find first 0 byte"
-      else
-        ERROR
-          ( Xml.to_string
-          @@ Xml.create
-               ~children:[Xml.create (("", "invalid-mechanism"), [])]
-               (("", "failure"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]) )
-    | _ ->
-      ERROR
-        ( Xml.to_string
-        @@ Xml.create
-             ~children:[Xml.create (("", "invalid-mechanism"), [])]
-             (("", "failure"), ["", Xml.Xmlns "urn:ietf:params:xml:ns:xmpp-sasl"]) ))
+      else invalid_mechanism ()
+    | Element ((_, attributes), []) ->
+      if get_mechanism attributes = "ANONYMOUS"
+      then ANONYMOUS_SASL_AUTH
+      else invalid_mechanism ()
+    | _ -> invalid_mechanism ())
   | Stream_Element stream_element ->
     (match stream_element with
     | Header (_name, attributes) ->

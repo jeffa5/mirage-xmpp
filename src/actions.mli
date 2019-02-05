@@ -25,6 +25,7 @@ type t =
   | CLOSE
   | ERROR of string
   | SET_USER of string
+  | SET_USER_ANON
   | SET_JID_RESOURCE of {id : string; resource : string option}
   | GET_ROSTER of string
   | SET_ROSTER of
