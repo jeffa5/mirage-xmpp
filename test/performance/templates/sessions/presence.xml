@@ -1,0 +1,26 @@
+<!-- Send lots of presence updates -->
+<sessions>
+    <session probability="100" name="xmpp-load" bidi="true"
+    type="ts_jabber">
+        {{ auth }}
+        <request>
+            <jabber type="presence:initial" ack="no_ack" />
+        </request>
+        <thinktime value="2"></thinktime>
+        <for from="0" to="100" var="i">
+            <thinktime value="0.1"></thinktime>
+            <request>
+                <jabber type="iq:roster:get" ack="local" />
+            </request>
+            <thinktime value="0.1" />
+        </for>
+        <request>
+            <jabber type="presence:final" ack="no_ack" />
+        </request>
+        <transaction name="close">
+            <request>
+                <jabber type="close" ack="local"></jabber>
+            </request>
+        </transaction>
+    </session>
+</sessions>

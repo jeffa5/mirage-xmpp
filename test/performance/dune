@@ -1,0 +1,4 @@
+(executable
+ (name performance)
+ (libraries lwt lwt.unix cmdliner astring jingoo re)
+ (preprocess (pps lwt_ppx)))

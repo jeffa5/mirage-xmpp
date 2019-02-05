@@ -1,0 +1,16 @@
+<!-- Scenario to test the servers response to lots of connections, the aim is lots of currently active connections, not testing load of messages -->
+<sessions>
+    <session probability="100" name="connection-load"
+    type="ts_jabber">
+        {{ auth }}
+        <request>
+            <jabber type="presence:initial" ack="no_ack" />
+        </request>
+        <thinktime value="60"></thinktime>
+        <transaction name="close">
+            <request>
+                <jabber type="close" ack="local"></jabber>
+            </request>
+        </transaction>
+    </session>
+</sessions>

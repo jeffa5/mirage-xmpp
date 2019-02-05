@@ -1,0 +1,18 @@
+<request>
+    <jabber type="connect" ack="local"></jabber>
+</request>
+<thinktime value="2"></thinktime>
+<transaction name="authenticate">
+    <request>
+        <jabber type="auth_sasl_anonymous" ack="local"></jabber>
+    </request>
+    <request>
+        <jabber type="connect" ack="local"></jabber>
+    </request>
+    <request>
+        <jabber type="auth_sasl_bind" ack="local"></jabber>
+    </request>
+    <request>
+        <jabber type="auth_sasl_session" ack="local"></jabber>
+    </request>
+</transaction>

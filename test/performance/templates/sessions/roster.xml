@@ -1,0 +1,47 @@
+<!-- Scenario to test lots of roster actions: gets, add contacts, rename and deletions. -->
+<sessions>
+    <session probability="100" name="rosterload" bidi="true"
+    type="ts_jabber">
+        {{ auth }}
+        <request>
+            <jabber type="presence:initial" ack="no_ack" />
+        </request>
+        <thinktime value="2"></thinktime>
+        <for from="0" to="100" var="i">
+            <transaction name="rosteradd">
+                <request>
+                    <jabber type="iq:roster:add" ack="no_ack"
+                    destination="online"></jabber>
+                </request>
+                <request>
+                    <jabber type="presence:subscribe"
+                    ack="no_ack" />
+                </request>
+            </transaction>
+            <thinktime value="0.1"></thinktime>
+            <transaction name="rosterrename">
+                <request>
+                    <jabber type="iq:roster:rename" ack="no_ack">
+                    </jabber>
+                </request>
+            </transaction>
+            <thinktime value="0.1"></thinktime>
+            <transaction name="rosterdelete">
+                <request>
+                    <jabber type="iq:roster:remove" ack="no_ack">
+                    </jabber>
+                </request>
+            </transaction>
+            <thinktime value="0.1"></thinktime>
+        </for>
+        <thinktime value="2"></thinktime>
+        <request>
+            <jabber type="presence:final" ack="no_ack" />
+        </request>
+        <transaction name="close">
+            <request>
+                <jabber type="close" ack="local"></jabber>
+            </request>
+        </transaction>
+    </session>
+</sessions>

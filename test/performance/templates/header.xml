@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+<!-- General test case to cover lots of users, some sending messages, others performing lots of roster actions. Should effectively sum up other scenarios. -->
+<tsung loglevel="{{ loglevel }}" backend="{{ backend }}"
+dumptraffic="{{ dumptraffic }}" version="1.0">
+<!-- Client setup -->
+<clients>
+    <client host="localhost" use_controller_vm="true"></client>
+</clients>
+<!-- Server side setup -->
+<servers>
+    <server host="127.0.0.1" port="5222" type="tcp"></server>
+</servers>
+<!-- Define the load progression -->
+<load>
+    <!-- Warmup phase? -->
+    <arrivalphase phase="1" duration="{{ load_duration }}"
+    unit="{{ load_duration_unit }}">
+        <users arrivalrate="{{ load_arrivalrate }}"
+        unit="{{ load_arrivalrate_unit }}"></users>
+    </arrivalphase>
+</load>
+<!-- JABBER parameters -->
+<!-- to synchronise users,  use a global acknoledgement -->
+<options>
+    <option type="ts_jabber" name="global_number" value="100">
+    </option>
+    <option type="ts_jabber" name="userid_max" value="10000">
+    </option>
+    <option type="ts_jabber" name="domain" value="localhost">
+    </option>
+    <option type="ts_jabber" name="username" value="user"></option>
+    <option type="ts_jabber" name="passwd" value="pass"></option>
+</options>{{ sessions }}</tsung>
