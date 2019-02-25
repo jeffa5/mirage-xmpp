@@ -157,13 +157,15 @@ let lift parse_result =
     | Element ((_name, attributes), [Text b64_string]) ->
       if get_mechanism attributes = "PLAIN"
       then
-        let decoded_string = B64.decode b64_string in
-        match String.cut ~sep:"\000" (String.trim decoded_string) with
-        | Some (_userdom, userpass) ->
-          (match String.cut ~sep:"\000" userpass with
-          | Some (user, pass) -> SASL_AUTH {user; password = pass}
-          | None -> ERROR "SASL: couldn't find second 0 byte")
-        | _ -> ERROR "SASL: couldn't find first 0 byte"
+        match Base64.decode b64_string with
+        | Ok decoded_string ->
+          (match String.cut ~sep:"\000" (String.trim decoded_string) with
+          | Some (_userdom, userpass) ->
+            (match String.cut ~sep:"\000" userpass with
+            | Some (user, pass) -> SASL_AUTH {user; password = pass}
+            | None -> ERROR "SASL: couldn't find second 0 byte")
+          | _ -> ERROR "SASL: couldn't find first 0 byte")
+        | Error e -> (match e with `Msg e -> ERROR e)
       else invalid_mechanism ()
     | Element ((_, attributes), []) ->
       if get_mechanism attributes = "ANONYMOUS"

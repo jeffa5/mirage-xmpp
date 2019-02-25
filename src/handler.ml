@@ -381,9 +381,8 @@ let handle_action t stream =
                      (fun (contact, handler) ->
                        if contact <> jid
                        then
-                         handler (Some (SEND_PRESENCE_UPDATE {from = Full_JID jid; xml}))
-                         |> Lwt.return
-                       else Lwt.return_unit )
+                         handler (Some (SEND_PRESENCE_UPDATE {from = Full_JID jid; xml}));
+                       Lwt.return_unit )
                      connected_resources )
           | None -> Lwt.return_unit)
         | SEND_PRESENCE_UPDATE {from; xml} ->
