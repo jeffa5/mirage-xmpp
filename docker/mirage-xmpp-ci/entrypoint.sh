@@ -2,8 +2,10 @@
 
 set -e
 
-echo -en "travis_fold:start:opam_setup\r"
+echo -e "travis_fold:start:opam_setup"
 opam switch 4.05
+eval $(opam env)
+opam repository set-url default https://opam.ocaml.org
 opam update
 opam upgrade -y
 
@@ -12,21 +14,21 @@ eval $(opam env)
 opam pin add . --no-action
 opam depext --yes --update --install mirage-xmpp
 opam depext --yes --update --install mirage
-echo -en "travis_fold:end:opam_setup\r"
+echo -e "travis_fold:end:opam_setup"
 
-echo -en "travis_fold:start:unit\r"
+echo -e "travis_fold:start:unit"
 make unit
-echo -en "travis_fold:end:unit\r"
+echo -e "travis_fold:end:unit"
 
-echo -en "travis_fold:start:integration\r"
+echo -e "travis_fold:start:integration"
 make integration
-echo -en "travis_fold:end:integration\r"
+echo -e "travis_fold:end:integration"
 
-echo -en "travis_fold:start:makedocs\r"
+echo -e "travis_fold:start:makedocs"
 opam install --yes odoc
 make doc
-echo -en "travis_fold:end:makedocs\r"
+echo -e "travis_fold:end:makedocs"
 
-echo -en "travis_fold:start:coverage\r"
+echo -e "travis_fold:start:coverage"
 make coverage
-echo -en "travis_fold:end:coverage\r"
+echo -e "travis_fold:end:coverage"
