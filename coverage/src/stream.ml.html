@@ -11,20 +11,24 @@
           <span class="dirname">src/</span>stream.ml
         </a>
       </h1>
-      <h2>90.48%</h2>
+      <h2>77.78%</h2>
     </div>
     <div id="navbar">
+      <span class="unvisited" style="top:3.64%"></span>
+      <span class="unvisited" style="top:5.45%"></span>
+      <span class="unvisited" style="top:7.27%"></span>
+      <span class="unvisited" style="top:9.09%"></span>
       <span class="unvisited" style="top:18.18%"></span>
       <span class="unvisited" style="top:20.00%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
-<a id="L2"></a><span > </span>
-<a id="L3"></a><span > </span>
-<a id="L4"></a><span > </span>
-<a id="L5"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
+<a id="L2"></a><span class="unvisited"> </span>
+<a id="L3"></a><span class="unvisited"> </span>
+<a id="L4"></a><span class="unvisited"> </span>
+<a id="L5"></a><span class="unvisited"> </span>
 <a id="L6"></a><span > </span>
 <a id="L7"></a><span > </span>
 <a id="L8"></a><span class="visited"> </span>
@@ -73,7 +77,7 @@
 <a id="L51"></a><span > </span>
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span > </span>
-<a id="L54"></a><span > </span>
+<a id="L54"></a><span class="visited"> </span>
 <a id="L55"></a><span > </span>
 </pre>
       </div>
@@ -136,11 +140,11 @@
 <a href="#L55">55</a>
 </pre>
         <pre id="code">
-type t =
-  | Header of Xml.tag
-  | Features
-  | Error
-  | Close
+<span data-count="18">t</span>ype t =
+  <span data-count="0">|</span> Header of Xml.tag
+  <span data-count="0">|</span> Features
+  <span data-count="0">|</span> Error
+  <span data-count="0">|</span> Close
 [@@deriving sexp]
 
 let to_string = <span data-count="2">f</span>unction
@@ -194,7 +198,7 @@ let create_header
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

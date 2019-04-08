@@ -11,9 +11,28 @@
           <span class="dirname">src/</span>xml.ml
         </a>
       </h1>
-      <h2>88.64%</h2>
+      <h2>63.89%</h2>
     </div>
     <div id="navbar">
+      <span class="some-visited" style="top:3.45%"></span>
+      <span class="unvisited" style="top:6.90%"></span>
+      <span class="unvisited" style="top:8.05%"></span>
+      <span class="unvisited" style="top:9.20%"></span>
+      <span class="unvisited" style="top:10.34%"></span>
+      <span class="unvisited" style="top:11.49%"></span>
+      <span class="unvisited" style="top:12.64%"></span>
+      <span class="unvisited" style="top:13.79%"></span>
+      <span class="unvisited" style="top:14.94%"></span>
+      <span class="unvisited" style="top:16.09%"></span>
+      <span class="unvisited" style="top:17.24%"></span>
+      <span class="unvisited" style="top:18.39%"></span>
+      <span class="unvisited" style="top:19.54%"></span>
+      <span class="unvisited" style="top:20.69%"></span>
+      <span class="unvisited" style="top:21.84%"></span>
+      <span class="some-visited" style="top:25.29%"></span>
+      <span class="some-visited" style="top:26.44%"></span>
+      <span class="unvisited" style="top:29.89%"></span>
+      <span class="unvisited" style="top:31.03%"></span>
       <span class="unvisited" style="top:34.48%"></span>
       <span class="unvisited" style="top:37.93%"></span>
       <span class="unvisited" style="top:42.53%"></span>
@@ -23,33 +42,33 @@
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
 <a id="L2"></a><span > </span>
-<a id="L3"></a><span > </span>
+<a id="L3"></a><span class="some-visited"> </span>
 <a id="L4"></a><span > </span>
-<a id="L5"></a><span > </span>
-<a id="L6"></a><span > </span>
-<a id="L7"></a><span > </span>
-<a id="L8"></a><span > </span>
-<a id="L9"></a><span > </span>
-<a id="L10"></a><span > </span>
-<a id="L11"></a><span > </span>
-<a id="L12"></a><span > </span>
-<a id="L13"></a><span > </span>
-<a id="L14"></a><span > </span>
-<a id="L15"></a><span > </span>
-<a id="L16"></a><span > </span>
-<a id="L17"></a><span > </span>
-<a id="L18"></a><span > </span>
-<a id="L19"></a><span > </span>
+<a id="L5"></a><span class="visited"> </span>
+<a id="L6"></a><span class="unvisited"> </span>
+<a id="L7"></a><span class="unvisited"> </span>
+<a id="L8"></a><span class="unvisited"> </span>
+<a id="L9"></a><span class="unvisited"> </span>
+<a id="L10"></a><span class="unvisited"> </span>
+<a id="L11"></a><span class="unvisited"> </span>
+<a id="L12"></a><span class="unvisited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span class="unvisited"> </span>
+<a id="L16"></a><span class="unvisited"> </span>
+<a id="L17"></a><span class="unvisited"> </span>
+<a id="L18"></a><span class="unvisited"> </span>
+<a id="L19"></a><span class="unvisited"> </span>
 <a id="L20"></a><span > </span>
 <a id="L21"></a><span > </span>
-<a id="L22"></a><span > </span>
-<a id="L23"></a><span > </span>
+<a id="L22"></a><span class="some-visited"> </span>
+<a id="L23"></a><span class="some-visited"> </span>
 <a id="L24"></a><span > </span>
-<a id="L25"></a><span > </span>
-<a id="L26"></a><span > </span>
-<a id="L27"></a><span > </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span class="unvisited"> </span>
+<a id="L27"></a><span class="unvisited"> </span>
 <a id="L28"></a><span > </span>
 <a id="L29"></a><span > </span>
 <a id="L30"></a><span class="unvisited"> </span>
@@ -203,33 +222,33 @@
 <a href="#L87">87</a>
 </pre>
         <pre id="code">
-open Sexplib.Std
+<span data-count="4">o</span>pen Sexplib.Std
 
-type name = string * string [@@deriving sexp]
+<span data-count="14">t</span>ype name = <span data-count="0">s</span>tring * string [@@deriving sexp]
 
-type attribute_value =
-  | From of Jid.t
-  | To of Jid.t
-  | Id of string
-  | Jid of Jid.t
-  | Xmlns of string
-  | Type of string
-  | Ver of string
-  | Version of string
-  | Lang of string
-  | Stream of string
-  | Name of string
-  | Subscription of string
-  | Mechanism of string
-  | Other of string * string
+<span data-count="14">t</span>ype attribute_value =
+  <span data-count="0">|</span> From of Jid.t
+  <span data-count="0">|</span> To of Jid.t
+  <span data-count="0">|</span> Id of string
+  <span data-count="0">|</span> Jid of Jid.t
+  <span data-count="0">|</span> Xmlns of string
+  <span data-count="0">|</span> Type of string
+  <span data-count="0">|</span> Ver of string
+  <span data-count="0">|</span> Version of string
+  <span data-count="0">|</span> Lang of string
+  <span data-count="0">|</span> Stream of string
+  <span data-count="0">|</span> Name of string
+  <span data-count="0">|</span> Subscription of string
+  <span data-count="0">|</span> Mechanism of string
+  <span data-count="0">|</span> Other of string * string
 [@@deriving sexp]
 
-type attribute = string * attribute_value [@@deriving sexp]
-type tag = name * attribute list [@@deriving sexp]
+<span data-count="14">t</span>ype attribute = <span data-count="0">s</span>tring * attribute_value [@@deriving sexp]
+<span data-count="14">t</span>ype tag = <span data-count="0">n</span>ame * attribute <span data-count="0">l</span>ist [@@deriving sexp]
 
-type t =
-  | Text of string
-  | Element of tag * t list
+<span data-count="14">t</span>ype t =
+  <span data-count="0">|</span> Text of string
+  <span data-count="0">|</span> Element of tag * t <span data-count="0">l</span>ist
 [@@deriving sexp]
 
 let remove_prefixes_attribute (_prefix, value) = <span data-count="0">"</span>", value
@@ -293,7 +312,7 @@ let create ?(children = <span data-count="5">[</span>]) tag = <span data-count="
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

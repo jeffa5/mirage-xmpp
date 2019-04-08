@@ -11,7 +11,7 @@
           <span class="dirname">src/</span>jid.ml
         </a>
       </h1>
-      <h2>59.46%</h2>
+      <h2>66.67%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:8.74%"></span>
@@ -20,8 +20,12 @@
       <span class="unvisited" style="top:26.21%"></span>
       <span class="unvisited" style="top:34.95%"></span>
       <span class="unvisited" style="top:35.92%"></span>
+      <span class="unvisited" style="top:46.60%"></span>
+      <span class="unvisited" style="top:48.54%"></span>
+      <span class="unvisited" style="top:52.43%"></span>
       <span class="unvisited" style="top:54.37%"></span>
       <span class="unvisited" style="top:59.22%"></span>
+      <span class="unvisited" style="top:60.19%"></span>
       <span class="unvisited" style="top:61.17%"></span>
       <span class="unvisited" style="top:65.05%"></span>
       <span class="unvisited" style="top:75.73%"></span>
@@ -33,13 +37,13 @@
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
 <a id="L2"></a><span > </span>
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span > </span>
 <a id="L5"></a><span > </span>
 <a id="L6"></a><span > </span>
-<a id="L7"></a><span > </span>
+<a id="L7"></a><span class="visited"> </span>
 <a id="L8"></a><span > </span>
 <a id="L9"></a><span class="unvisited"> </span>
 <a id="L10"></a><span > </span>
@@ -56,7 +60,7 @@
 <a id="L21"></a><span > </span>
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
-<a id="L24"></a><span > </span>
+<a id="L24"></a><span class="visited"> </span>
 <a id="L25"></a><span > </span>
 <a id="L26"></a><span class="visited"> </span>
 <a id="L27"></a><span class="unvisited"> </span>
@@ -76,17 +80,17 @@
 <a id="L41"></a><span > </span>
 <a id="L42"></a><span > </span>
 <a id="L43"></a><span > </span>
-<a id="L44"></a><span > </span>
+<a id="L44"></a><span class="visited"> </span>
 <a id="L45"></a><span > </span>
 <a id="L46"></a><span > </span>
-<a id="L47"></a><span > </span>
-<a id="L48"></a><span > </span>
-<a id="L49"></a><span > </span>
-<a id="L50"></a><span > </span>
+<a id="L47"></a><span class="visited"> </span>
+<a id="L48"></a><span class="unvisited"> </span>
+<a id="L49"></a><span class="visited"> </span>
+<a id="L50"></a><span class="unvisited"> </span>
 <a id="L51"></a><span > </span>
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span class="visited"> </span>
-<a id="L54"></a><span class="visited"> </span>
+<a id="L54"></a><span class="unvisited"> </span>
 <a id="L55"></a><span class="visited"> </span>
 <a id="L56"></a><span class="unvisited"> </span>
 <a id="L57"></a><span > </span>
@@ -94,7 +98,7 @@
 <a id="L59"></a><span > </span>
 <a id="L60"></a><span class="visited"> </span>
 <a id="L61"></a><span class="unvisited"> </span>
-<a id="L62"></a><span class="visited"> </span>
+<a id="L62"></a><span class="unvisited"> </span>
 <a id="L63"></a><span class="unvisited"> </span>
 <a id="L64"></a><span > </span>
 <a id="L65"></a><span > </span>
@@ -126,15 +130,15 @@
 <a id="L91"></a><span > </span>
 <a id="L92"></a><span > </span>
 <a id="L93"></a><span > </span>
-<a id="L94"></a><span > </span>
-<a id="L95"></a><span > </span>
-<a id="L96"></a><span > </span>
+<a id="L94"></a><span class="visited"> </span>
+<a id="L95"></a><span class="visited"> </span>
+<a id="L96"></a><span class="visited"> </span>
 <a id="L97"></a><span > </span>
 <a id="L98"></a><span > </span>
 <a id="L99"></a><span > </span>
-<a id="L100"></a><span > </span>
-<a id="L101"></a><span > </span>
-<a id="L102"></a><span > </span>
+<a id="L100"></a><span class="visited"> </span>
+<a id="L101"></a><span class="visited"> </span>
+<a id="L102"></a><span class="visited"> </span>
 <a id="L103"></a><span > </span>
 </pre>
       </div>
@@ -245,13 +249,13 @@
 <a href="#L103">103</a>
 </pre>
         <pre id="code">
-open Astring
+<span data-count="4">o</span>pen Astring
 open Sexplib.Std
 
 exception MalformedJID of string
 
 module Bare = struct
-  type t = string * string [@@deriving sexp, ord]
+  <span data-count="919">t</span>ype t = <span data-count="256">s</span>tring * string [@@deriving sexp, ord]
 
   let set_resource resource bare_jid = <span data-count="0">b</span>are_jid, resource
 
@@ -268,9 +272,9 @@ module Bare = struct
 end
 
 module Full = struct
-  type t = (string * string) * string [@@deriving sexp, ord]
+  <span data-count="63">t</span>ype t = <span data-count="35">(</span><span data-count="28">s</span>tring * string) * string [@@deriving sexp, ord]
 
-  let to_bare (bare_jid, _) = <span data-count="21">b</span>are_jid
+  let to_bare (bare_jid, _) = <span data-count="23">b</span>are_jid
   let set_resource resource (bare_jid, _) = <span data-count="0">b</span>are_jid, resource
 
   exception MalformedFullJID of string
@@ -288,25 +292,25 @@ module Full = struct
 end
 
 module Domain = struct
-  type t = string [@@deriving sexp]
+  <span data-count="10">t</span>ype t = string [@@deriving sexp]
 end
 
-type t =
-  | Full_JID of Full.t
-  | Bare_JID of Bare.t
-  | Domain of Domain.t
+<span data-count="14">t</span>ype t =
+  <span data-count="0">|</span> Full_JID of Full.t
+  <span data-count="3">|</span> Bare_JID of Bare.t
+  <span data-count="0">|</span> Domain of Domain.t
 [@@deriving sexp]
 
 let to_bare_raw = <span data-count="2">f</span>unction
-  | <span data-count="1">F</span>ull_JID (bare_jid, _) -&gt; bare_jid
-  | <span data-count="3">B</span>are_JID bare_jid -&gt; bare_jid
+  | <span data-count="0">F</span>ull_JID (bare_jid, _) -&gt; bare_jid
+  | <span data-count="2">B</span>are_JID bare_jid -&gt; bare_jid
   | <span data-count="0">D</span>omain dom -&gt;
     raise @@ MalformedJID ("Not allowed to convert a Domain to a raw jid: " ^ dom)
 ;;
 
 let to_bare = <span data-count="2">f</span>unction
   | <span data-count="0">F</span>ull_JID (bare_jid, _) -&gt; Bare_JID bare_jid
-  | <span data-count="2">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
+  | <span data-count="0">B</span>are_JID bare_jid -&gt; Bare_JID bare_jid
   | <span data-count="0">D</span>omain dom -&gt;
     raise @@ MalformedJID ("Not allowed to convert a Domain to a raw jid: " ^ dom)
 ;;
@@ -338,20 +342,20 @@ let to_string = <span data-count="2">f</span>unction
 ;;
 
 let%expect_test "make jid" =
-  let jid = of_string "user@domain/resource" in
-  print_endline (to_string jid);
-  [%expect {| user@domain/resource |}]
+  <span data-count="1">l</span>et jid = <span data-count="1">o</span>f_string "user@domain/resource" in
+  <span data-count="1">p</span>rint_endline (to_string jid);
+  <span data-count="1">[</span>%expect {| user@domain/resource |}]
 ;;
 
 let%expect_test "no resource in jid" =
-  let jid = of_string "user@domain" in
-  print_endline (to_string jid);
-  [%expect {| user@domain |}]
+  <span data-count="1">l</span>et jid = <span data-count="1">o</span>f_string "user@domain" in
+  <span data-count="1">p</span>rint_endline (to_string jid);
+  <span data-count="1">[</span>%expect {| user@domain |}]
 ;;
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

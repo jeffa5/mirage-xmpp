@@ -11,9 +11,12 @@
           <span class="dirname">src/</span>stanza.ml
         </a>
       </h1>
-      <h2>57.45%</h2>
+      <h2>56.57%</h2>
     </div>
     <div id="navbar">
+      <span class="unvisited" style="top:1.18%"></span>
+      <span class="unvisited" style="top:1.76%"></span>
+      <span class="unvisited" style="top:2.35%"></span>
       <span class="some-visited" style="top:4.12%"></span>
       <span class="unvisited" style="top:5.88%"></span>
       <span class="unvisited" style="top:6.47%"></span>
@@ -47,10 +50,10 @@
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
-<a id="L2"></a><span > </span>
-<a id="L3"></a><span > </span>
-<a id="L4"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
+<a id="L2"></a><span class="unvisited"> </span>
+<a id="L3"></a><span class="unvisited"> </span>
+<a id="L4"></a><span class="unvisited"> </span>
 <a id="L5"></a><span > </span>
 <a id="L6"></a><span > </span>
 <a id="L7"></a><span class="some-visited"> </span>
@@ -393,10 +396,10 @@
 <a href="#L170">170</a>
 </pre>
         <pre id="code">
-type t =
-  | Message of Xml.t
-  | Presence of Xml.t
-  | Iq of Xml.t
+<span data-count="18">t</span>ype t =
+  <span data-count="0">|</span> Message of Xml.t
+  <span data-count="0">|</span> Presence of Xml.t
+  <span data-count="0">|</span> Iq of Xml.t
 [@@deriving sexp]
 
 let to_xml = <span data-count="2">f</span>unction <span data-count="0">M</span>essage xml -&gt; xml | <span data-count="0">P</span>resence xml -&gt; xml | <span data-count="0">I</span>q xml -&gt; xml
@@ -566,7 +569,7 @@ let to_string = <span data-count="2">f</span>unction
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

@@ -18,7 +18,7 @@
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
 <a id="L2"></a><span class="visited"> </span>
 <a id="L3"></a><span class="visited"> </span>
 <a id="L4"></a><span > </span>
@@ -56,7 +56,7 @@
 <a href="#L16">16</a>
 </pre>
         <pre id="code">
-let mask_id s =
+<span data-count="4">l</span>et mask_id s =
   <span data-count="37">m</span>atch Astring.String.find_sub ~sub:"id='" s with
   | <span data-count="15">S</span>ome i -&gt;
     (match Astring.String.find_sub ~start:(i + 4) ~sub:"'" s with
@@ -75,7 +75,7 @@ let option_to_string string_func = <span data-count="6">f</span>unction
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>

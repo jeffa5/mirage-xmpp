@@ -11,7 +11,7 @@
           <span class="dirname">test/integration/</span>integration.ml
         </a>
       </h1>
-      <h2>95.65%</h2>
+      <h2>96.51%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:0.36%"></span>
@@ -105,21 +105,21 @@
 <a id="L82"></a><span > </span>
 <a id="L83"></a><span > </span>
 <a id="L84"></a><span > </span>
-<a id="L85"></a><span > </span>
-<a id="L86"></a><span > </span>
+<a id="L85"></a><span class="visited"> </span>
+<a id="L86"></a><span class="visited"> </span>
 <a id="L87"></a><span > </span>
 <a id="L88"></a><span > </span>
 <a id="L89"></a><span > </span>
 <a id="L90"></a><span > </span>
 <a id="L91"></a><span > </span>
 <a id="L92"></a><span > </span>
-<a id="L93"></a><span > </span>
-<a id="L94"></a><span > </span>
+<a id="L93"></a><span class="visited"> </span>
+<a id="L94"></a><span class="visited"> </span>
 <a id="L95"></a><span > </span>
 <a id="L96"></a><span > </span>
 <a id="L97"></a><span > </span>
 <a id="L98"></a><span > </span>
-<a id="L99"></a><span > </span>
+<a id="L99"></a><span class="visited"> </span>
 <a id="L100"></a><span > </span>
 <a id="L101"></a><span > </span>
 <a id="L102"></a><span > </span>
@@ -138,8 +138,8 @@
 <a id="L115"></a><span > </span>
 <a id="L116"></a><span > </span>
 <a id="L117"></a><span > </span>
-<a id="L118"></a><span > </span>
-<a id="L119"></a><span > </span>
+<a id="L118"></a><span class="visited"> </span>
+<a id="L119"></a><span class="visited"> </span>
 <a id="L120"></a><span > </span>
 <a id="L121"></a><span > </span>
 <a id="L122"></a><span > </span>
@@ -151,7 +151,7 @@
 <a id="L128"></a><span > </span>
 <a id="L129"></a><span > </span>
 <a id="L130"></a><span > </span>
-<a id="L131"></a><span > </span>
+<a id="L131"></a><span class="visited"> </span>
 <a id="L132"></a><span > </span>
 <a id="L133"></a><span > </span>
 <a id="L134"></a><span > </span>
@@ -184,8 +184,8 @@
 <a id="L161"></a><span > </span>
 <a id="L162"></a><span > </span>
 <a id="L163"></a><span > </span>
-<a id="L164"></a><span > </span>
-<a id="L165"></a><span > </span>
+<a id="L164"></a><span class="visited"> </span>
+<a id="L165"></a><span class="visited"> </span>
 <a id="L166"></a><span > </span>
 <a id="L167"></a><span > </span>
 <a id="L168"></a><span > </span>
@@ -199,7 +199,7 @@
 <a id="L176"></a><span > </span>
 <a id="L177"></a><span > </span>
 <a id="L178"></a><span > </span>
-<a id="L179"></a><span > </span>
+<a id="L179"></a><span class="visited"> </span>
 <a id="L180"></a><span > </span>
 <a id="L181"></a><span > </span>
 <a id="L182"></a><span > </span>
@@ -236,8 +236,8 @@
 <a id="L213"></a><span > </span>
 <a id="L214"></a><span > </span>
 <a id="L215"></a><span > </span>
-<a id="L216"></a><span > </span>
-<a id="L217"></a><span > </span>
+<a id="L216"></a><span class="visited"> </span>
+<a id="L217"></a><span class="visited"> </span>
 <a id="L218"></a><span > </span>
 <a id="L219"></a><span > </span>
 <a id="L220"></a><span > </span>
@@ -254,7 +254,7 @@
 <a id="L231"></a><span > </span>
 <a id="L232"></a><span > </span>
 <a id="L233"></a><span > </span>
-<a id="L234"></a><span > </span>
+<a id="L234"></a><span class="visited"> </span>
 <a id="L235"></a><span > </span>
 <a id="L236"></a><span > </span>
 <a id="L237"></a><span > </span>
@@ -293,7 +293,7 @@
 <a id="L270"></a><span > </span>
 <a id="L271"></a><span > </span>
 <a id="L272"></a><span > </span>
-<a id="L273"></a><span > </span>
+<a id="L273"></a><span class="visited"> </span>
 <a id="L274"></a><span > </span>
 </pre>
       </div>
@@ -575,7 +575,7 @@
 <a href="#L274">274</a>
 </pre>
         <pre id="code">
-let send ?(timeout = <span data-count="5">1</span>0.) ?(host = <span data-count="5">"</span>127.0.0.1") ?(port = <span data-count="0">5</span>222) str =
+<span data-count="2">l</span>et send ?(timeout = <span data-count="5">1</span>0.) ?(host = <span data-count="5">"</span>127.0.0.1") ?(port = <span data-count="0">5</span>222) str =
   <span data-count="5">l</span>et timeout_t =
     <span data-count="20">l</span>et%lwt () = <span data-count="5">L</span>wt_unix.sleep timeout in
     <span data-count="0">L</span>wt.return "Timeout"
@@ -659,21 +659,21 @@ let test_unikernel f =
 ;;
 
 let%expect_test "start stop" =
-  test_unikernel (fun () -&gt; ());
-  [%expect {|
+  <span data-count="1">t</span>est_unikernel (fun () -&gt; <span data-count="1">(</span>));
+  <span data-count="1">[</span>%expect {|
     Starting unikernel
     Stopping unikernel
     Success |}]
 ;;
 
 let%expect_test "open and close stream" =
-  test_unikernel (fun () -&gt;
-      send_recv
+  <span data-count="1">t</span>est_unikernel (fun () -&gt;
+      <span data-count="1">s</span>end_recv
         [ "&lt;stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'&gt;"
         ; "&lt;/stream:stream&gt;" ] );
-  [%expect
+  <span data-count="1">[</span>%expect
     {|
     Starting unikernel
     Send:
@@ -692,8 +692,8 @@ let%expect_test "open and close stream" =
 ;;
 
 let%expect_test "open stream with iq bind" =
-  test_unikernel (fun () -&gt;
-      send_recv
+  <span data-count="1">t</span>est_unikernel (fun () -&gt;
+      <span data-count="1">s</span>end_recv
         [ "&lt;stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'&gt;"
@@ -705,7 +705,7 @@ let%expect_test "open stream with iq bind" =
         ; "&lt;iq id='yhc13a95' type='set'&gt;&lt;bind \
            xmlns='urn:ietf:params:xml:ns:xmpp-bind'&gt;&lt;resource&gt;balcony&lt;/resource&gt;&lt;/bind&gt;&lt;/iq&gt;"
         ; "&lt;/stream:stream&gt;" ] );
-  [%expect
+  <span data-count="1">[</span>%expect
     {|
       Starting unikernel
       Send:
@@ -738,8 +738,8 @@ let%expect_test "open stream with iq bind" =
 ;;
 
 let%expect_test "open stream with iq bind and roster get without contacts" =
-  test_unikernel (fun () -&gt;
-      send_recv
+  <span data-count="1">t</span>est_unikernel (fun () -&gt;
+      <span data-count="1">s</span>end_recv
         [ "&lt;stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'&gt;"
@@ -753,7 +753,7 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
         ; "&lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query \
            xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;"
         ; "&lt;/stream:stream&gt;" ] );
-  [%expect
+  <span data-count="1">[</span>%expect
     {|
       Starting unikernel
       Send:
@@ -790,8 +790,8 @@ let%expect_test "open stream with iq bind and roster get without contacts" =
 ;;
 
 let%expect_test "open stream with iq bind and roster get with contacts" =
-  test_unikernel (fun () -&gt;
-      send_recv
+  <span data-count="1">t</span>est_unikernel (fun () -&gt;
+      <span data-count="1">s</span>end_recv
         [ "&lt;stream:stream from='juliet@im.example.com' to='im.example.com' \
            version='1.0' xml:lang='en' xmlns='jabber:client' \
            xmlns:stream='http://etherx.jabber.org/streams'&gt;"
@@ -808,7 +808,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
         ; "&lt;iq from='juliet@example.com/balcony' id='bv1bs71f' type='get'&gt;&lt;query \
            xmlns='jabber:iq:roster'/&gt;&lt;/iq&gt;"
         ; "&lt;/stream:stream&gt;" ] );
-  [%expect
+  <span data-count="1">[</span>%expect
     {|
     Starting unikernel
     Send:
@@ -852,7 +852,7 @@ let%expect_test "open stream with iq bind and roster get with contacts" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../../coverage.js"></script>
   </body>
 </html>

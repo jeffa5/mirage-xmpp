@@ -11,15 +11,19 @@
           <span class="dirname">src/</span>connections.ml
         </a>
       </h1>
-      <h2>91.89%</h2>
+      <h2>88.71%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:15.22%"></span>
+      <span class="some-visited" style="top:70.65%"></span>
+      <span class="some-visited" style="top:78.26%"></span>
+      <span class="some-visited" style="top:79.35%"></span>
+      <span class="some-visited" style="top:90.22%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
         <pre>
-<a id="L1"></a><span > </span>
+<a id="L1"></a><span class="visited"> </span>
 <a id="L2"></a><span > </span>
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span class="visited"> </span>
@@ -77,39 +81,39 @@
 <a id="L56"></a><span > </span>
 <a id="L57"></a><span > </span>
 <a id="L58"></a><span > </span>
-<a id="L59"></a><span > </span>
-<a id="L60"></a><span > </span>
+<a id="L59"></a><span class="visited"> </span>
+<a id="L60"></a><span class="visited"> </span>
 <a id="L61"></a><span > </span>
 <a id="L62"></a><span > </span>
 <a id="L63"></a><span > </span>
-<a id="L64"></a><span > </span>
-<a id="L65"></a><span > </span>
-<a id="L66"></a><span > </span>
+<a id="L64"></a><span class="visited"> </span>
+<a id="L65"></a><span class="some-visited"> </span>
+<a id="L66"></a><span class="visited"> </span>
 <a id="L67"></a><span > </span>
 <a id="L68"></a><span > </span>
 <a id="L69"></a><span > </span>
-<a id="L70"></a><span > </span>
+<a id="L70"></a><span class="visited"> </span>
 <a id="L71"></a><span > </span>
-<a id="L72"></a><span > </span>
-<a id="L73"></a><span > </span>
-<a id="L74"></a><span > </span>
+<a id="L72"></a><span class="some-visited"> </span>
+<a id="L73"></a><span class="some-visited"> </span>
+<a id="L74"></a><span class="visited"> </span>
 <a id="L75"></a><span > </span>
 <a id="L76"></a><span > </span>
 <a id="L77"></a><span > </span>
 <a id="L78"></a><span > </span>
 <a id="L79"></a><span > </span>
 <a id="L80"></a><span > </span>
-<a id="L81"></a><span > </span>
+<a id="L81"></a><span class="visited"> </span>
 <a id="L82"></a><span > </span>
-<a id="L83"></a><span > </span>
-<a id="L84"></a><span > </span>
-<a id="L85"></a><span > </span>
-<a id="L86"></a><span > </span>
+<a id="L83"></a><span class="some-visited"> </span>
+<a id="L84"></a><span class="visited"> </span>
+<a id="L85"></a><span class="visited"> </span>
+<a id="L86"></a><span class="visited"> </span>
 <a id="L87"></a><span > </span>
-<a id="L88"></a><span > </span>
+<a id="L88"></a><span class="visited"> </span>
 <a id="L89"></a><span > </span>
 <a id="L90"></a><span > </span>
-<a id="L91"></a><span > </span>
+<a id="L91"></a><span class="visited"> </span>
 <a id="L92"></a><span > </span>
 </pre>
       </div>
@@ -209,7 +213,7 @@
 <a href="#L92">92</a>
 </pre>
         <pre id="code">
-open Asetmap
+<span data-count="4">o</span>pen Asetmap
 module Jid_map = Map.Make (Jid.Full)
 
 let mutex = <span data-count="2">L</span>wt_mutex.create ()
@@ -267,36 +271,36 @@ let test_connections actions =
 ;;
 
 let%expect_test "empty initially" =
-  test_connections (fun () -&gt; Lwt.return_unit);
-  [%expect {| () |}]
+  <span data-count="1">t</span>est_connections (fun () -&gt; <span data-count="1">L</span>wt.return_unit);
+  <span data-count="1">[</span>%expect {| () |}]
 ;;
 
 let%expect_test "add one connection" =
-  ( test_connections
-  @@ fun () -&gt; add (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; ()) );
-  [%expect {| ((((juliet im.example.com) balcony) &lt;fun&gt;)) |}]
+  <span data-count="1">(</span> test_connections
+  @@ fun () -&gt; <span data-count="1">a</span>dd (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; <span data-count="0">(</span>)) );
+  <span data-count="1">[</span>%expect {| ((((juliet im.example.com) balcony) &lt;fun&gt;)) |}]
 ;;
 
 let%expect_test "add two connection" =
-  ( test_connections
+  <span data-count="1">(</span> test_connections
   @@ fun () -&gt;
-  let%lwt () = add (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; ()) in
-  add (Jid.Full.of_string "romeo@home.elsewhere.com/ground") (fun _ -&gt; ()) );
-  [%expect
+  <span data-count="2">l</span>et%lwt () = <span data-count="1">a</span>dd (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; <span data-count="0">(</span>)) in
+  <span data-count="1">a</span>dd (Jid.Full.of_string "romeo@home.elsewhere.com/ground") (fun _ -&gt; <span data-count="0">(</span>)) );
+  <span data-count="1">[</span>%expect
     {|
       ((((juliet im.example.com) balcony) &lt;fun&gt;)
        (((romeo home.elsewhere.com) ground) &lt;fun&gt;)) |}]
 ;;
 
 let%expect_test "find all matches bare jid" =
-  ( test_connections
+  <span data-count="1">(</span> test_connections
   @@ fun () -&gt;
-  let%lwt () = add (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; ()) in
-  let%lwt connected_resources = find_all (Jid.Bare.of_string "juliet@im.example.com") in
-  Lwt_list.iter_s
-    (fun (target_jid, _) -&gt; Lwt_io.printl (Jid.Full.to_string target_jid))
+  <span data-count="2">l</span>et%lwt () = <span data-count="1">a</span>dd (Jid.Full.of_string "juliet@im.example.com/balcony") (fun _ -&gt; <span data-count="0">(</span>)) in
+  <span data-count="2">l</span>et%lwt connected_resources = <span data-count="1">f</span>ind_all (Jid.Bare.of_string "juliet@im.example.com") in
+  <span data-count="1">L</span>wt_list.iter_s
+    (fun (target_jid, _) -&gt; <span data-count="1">L</span>wt_io.printl (Jid.Full.to_string target_jid))
     connected_resources );
-  [%expect
+  <span data-count="1">[</span>%expect
     {|
     juliet@im.example.com/balcony
     ((((juliet im.example.com) balcony) &lt;fun&gt;)) |}]
@@ -304,7 +308,7 @@ let%expect_test "find all matches bare jid" =
 </pre>
       </div>
     </div>
-    <div id="footer">Generated on 2019-03-08 13:05:05 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.0</div>
+    <div id="footer">Generated on 2019-04-08 16:49:43 by <a href="https://github.com/aantron/bisect_ppx">Bisect_ppx</a> 1.4.1</div>
     <script src="../coverage.js"></script>
   </body>
 </html>
