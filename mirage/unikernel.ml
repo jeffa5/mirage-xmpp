@@ -48,11 +48,13 @@ module Main (S : Mirage_stack_lwt.V4) = struct
     Logs.info (fun f ->
         f "New tcp connection from IP %s on port %d" (Ipaddr.V4.to_string dst) dst_port
     );
-    let stream, pushf = Lwt_stream.create () in
-    Lwt.async (fun () -> read flow pushf);
+    let instream, infun = Lwt_stream.create () in
+    Lwt.async (fun () -> read flow infun);
     let outstream, outfun = Lwt_stream.create () in
     Lwt.async (fun () -> write flow outstream);
-    let handler = Mirage_xmpp.Handler.create ~stream ~callback:outfun ~hostname in
+    let handler =
+      Mirage_xmpp.Handler.create ~stream:instream ~callback:outfun ~hostname
+    in
     let%lwt () = Mirage_xmpp.Handler.handle handler in
     let%lwt _ = Lwt_mvar.take mvar in
     Logs.info (fun f ->
