@@ -48,6 +48,7 @@ type t =
   | PROBE_PRESENCE
   | SUBSCRIPTION_CANCELLATION of {user : Jid.t; force : bool}
   | SUBSCRIPTION_REMOVAL of {contact : Jid.t}
+  | SEND_DATA of string
 [@@deriving sexp]
 
 (** [to_string t] takes an action and returns its string representation *)

@@ -29,6 +29,12 @@ module Item : sig
   val to_tuple : t -> string * Subscription.t * bool * string list
 end
 
+(** [lock_user user] attempts to acquire a basic lock on the bare user to prevent others from using it. It returns [true] if it is successful in acquiring the lock and [false] otherwise. *)
+val lock_user : Jid.Bare.t -> bool Lwt.t
+
+(** [unlock_user user] unlocks the lock set by [lock_user]. *)
+val unlock_user : Jid.Bare.t -> unit Lwt.t
+
 (** [remove_item user contact] removes the [contact] from the [user]'s roster. *)
 val remove_item : Jid.Bare.t -> Jid.Bare.t -> unit Lwt.t
 
@@ -57,7 +63,7 @@ val set_item :
   -> ?groups:string list
   -> Jid.Bare.t
   -> Jid.Bare.t
-  -> unit Lwt.t
+  -> Item.t Lwt.t
 
 (** [get_presence user] gets the current presence status for the [user]. *)
 val get_presence : Jid.Bare.t -> Presence.t Lwt.t

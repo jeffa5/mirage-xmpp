@@ -61,16 +61,43 @@ end
 
 module User = struct
   type t =
-    { presence : Presence.t
-    ; roster : Roster.t }
+    { presence : Presence.t [@default Presence.Offline]
+    ; roster : Roster.t [@default Roster.empty]
+    ; free : bool [@default true] }
   [@@deriving sexp, make]
 
   let set_presence presence t = {t with presence}
+  let set_free free t = {t with free}
+  let get_free t = t.free
 end
 
 let t = ref Jid_map.empty
 let mutex = Lwt_mutex.create ()
 let with_mutex f = Lwt_mutex.with_lock mutex f
+
+let lock_user user =
+  with_mutex (fun () ->
+      match Jid_map.find user !t with
+      | Some user_t ->
+        if User.get_free user_t
+        then (
+          t := Jid_map.add user (User.set_free false user_t) !t;
+          Lwt.return_true )
+        else Lwt.return_false
+      | None ->
+        let new_user = User.make ~free:false () in
+        t := Jid_map.add user new_user !t;
+        Lwt.return_true )
+;;
+
+let unlock_user user =
+  with_mutex (fun () ->
+      match Jid_map.find user !t with
+      | Some user_t ->
+        t := Jid_map.add user (User.set_free true user_t) !t;
+        Lwt.return_unit
+      | None -> Lwt.return_unit )
+;;
 
 let sexp_of_t t =
   Jid_map.to_list t
@@ -90,7 +117,7 @@ let set_presence user presence =
         t := Jid_map.add user new_user_t !t;
         Lwt.return_unit
       | None ->
-        let new_user_t = User.make ~presence ~roster:Roster.empty in
+        let new_user_t = User.make ~presence () in
         t := Jid_map.add user new_user_t !t;
         Lwt.return_unit )
 ;;
@@ -126,13 +153,12 @@ let set_item
         let new_roster = Jid_map.add contact new_item roster in
         let new_user_t = {user_t with roster = new_roster} in
         t := Jid_map.add user new_user_t !t;
-        Lwt.return_unit
+        Lwt.return new_item
       | None ->
-        let new_roster =
-          Jid_map.add contact (Item.make ~handle ~subscription ~groups ()) Jid_map.empty
-        in
-        t := Jid_map.add user (User.make ~presence:Offline ~roster:new_roster) !t;
-        Lwt.return_unit )
+        let new_item = Item.make ~handle ~subscription ~groups () in
+        let new_roster = Jid_map.add contact new_item Jid_map.empty in
+        t := Jid_map.add user (User.make ~roster:new_roster ()) !t;
+        Lwt.return new_item )
 ;;
 
 let get_item user contact =
@@ -272,7 +298,8 @@ let%expect_test "add one jid" =
         ((presence Offline)
          (roster
           (((romeo im.example.com)
-            ((handle "my romeo") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "my romeo") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "add one jid with groups" =
@@ -289,12 +316,13 @@ let%expect_test "add one jid with groups" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "add same jid multiple times" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -313,12 +341,13 @@ let%expect_test "add same jid multiple times" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "add same jid multiple times with different groups" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -337,18 +366,20 @@ let%expect_test "add same jid multiple times with different groups" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))
+             (groups (Group1 Group2))))))
+         (free true)))
        ((lord im.example.com)
         ((presence Offline)
          (roster
           (((king im.example.com)
             ((handle king1) (subscription None) (ask false)
-             (groups (Kings1 Rulers Others))))))))) |}]
+             (groups (Kings1 Rulers Others))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "add two different jids to the roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "romeo@im.example.com")
@@ -364,12 +395,13 @@ let%expect_test "add two different jids to the roster" =
           (((other im.example.com)
             ((handle "") (subscription None) (ask false) (groups ())))
            ((romeo im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "removing an item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -379,8 +411,9 @@ let%expect_test "removing an item" =
       remove_item
         (Jid.Bare.of_string "juliet@im.example.com")
         (Jid.Bare.of_string "romeo@im.example.com") );
-  [%expect {|
-    (((juliet im.example.com) ((presence Offline) (roster ())))) |}]
+  [%expect
+    {|
+    (((juliet im.example.com) ((presence Offline) (roster ()) (free true)))) |}]
 ;;
 
 let%expect_test "removing a non-existant item" =
@@ -401,7 +434,7 @@ let%expect_test "downgrade subscription from when no items in roster" =
 
 let%expect_test "downgrade subscription from when no valid item in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "other@im.example.com")
@@ -415,12 +448,13 @@ let%expect_test "downgrade subscription from when no valid item in roster" =
         ((presence Offline)
          (roster
           (((other im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription from with None item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -437,12 +471,13 @@ let%expect_test "downgrade subscription from with None item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription from with To item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:To
           ~handle:"my romeo"
@@ -460,12 +495,13 @@ let%expect_test "downgrade subscription from with To item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription To) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription from with From item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:From
           ~handle:"my romeo"
@@ -483,12 +519,13 @@ let%expect_test "downgrade subscription from with From item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription from with Both item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:Both
           ~handle:"my romeo"
@@ -506,7 +543,8 @@ let%expect_test "downgrade subscription from with Both item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription To) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription to when no items in roster" =
@@ -519,7 +557,7 @@ let%expect_test "downgrade subscription to when no items in roster" =
 
 let%expect_test "downgrade subscription to when no valid item in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "other@im.example.com")
@@ -533,12 +571,13 @@ let%expect_test "downgrade subscription to when no valid item in roster" =
         ((presence Offline)
          (roster
           (((other im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription to with None item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -555,12 +594,13 @@ let%expect_test "downgrade subscription to with None item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription to with To item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:To
           ~handle:"my romeo"
@@ -578,12 +618,13 @@ let%expect_test "downgrade subscription to with To item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription None) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription to with From item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:From
           ~handle:"my romeo"
@@ -601,12 +642,13 @@ let%expect_test "downgrade subscription to with From item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription From) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "downgrade subscription to with Both item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:Both
           ~handle:"my romeo"
@@ -624,7 +666,8 @@ let%expect_test "downgrade subscription to with Both item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription From) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription to when no items in roster" =
@@ -637,7 +680,7 @@ let%expect_test "upgrade subscription to when no items in roster" =
 
 let%expect_test "upgrade subscription to when no valid item in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "other@im.example.com")
@@ -651,12 +694,13 @@ let%expect_test "upgrade subscription to when no valid item in roster" =
         ((presence Offline)
          (roster
           (((other im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription to with None item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -673,12 +717,13 @@ let%expect_test "upgrade subscription to with None item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription To) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription to with To item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:To
           ~handle:"my romeo"
@@ -696,12 +741,13 @@ let%expect_test "upgrade subscription to with To item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription To) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription to with From item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:From
           ~handle:"my romeo"
@@ -719,12 +765,13 @@ let%expect_test "upgrade subscription to with From item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription Both) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription to with Both item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:Both
           ~handle:"my romeo"
@@ -742,7 +789,8 @@ let%expect_test "upgrade subscription to with Both item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription Both) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription from when no items in roster" =
@@ -755,7 +803,7 @@ let%expect_test "upgrade subscription from when no items in roster" =
 
 let%expect_test "upgrade subscription from when no valid item in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "other@im.example.com")
@@ -769,12 +817,13 @@ let%expect_test "upgrade subscription from when no valid item in roster" =
         ((presence Offline)
          (roster
           (((other im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription from with None item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~handle:"my romeo"
           ~groups:["Group1"; "Group2"]
@@ -791,12 +840,13 @@ let%expect_test "upgrade subscription from with None item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription From) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription from with To item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:To
           ~handle:"my romeo"
@@ -814,12 +864,13 @@ let%expect_test "upgrade subscription from with To item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription Both) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription from with From item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:From
           ~handle:"my romeo"
@@ -837,12 +888,13 @@ let%expect_test "upgrade subscription from with From item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription From) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "upgrade subscription from with Both item" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           ~subscription:Both
           ~handle:"my romeo"
@@ -860,7 +912,8 @@ let%expect_test "upgrade subscription from with Both item" =
          (roster
           (((romeo im.example.com)
             ((handle "my romeo") (subscription Both) (ask false)
-             (groups (Group1 Group2))))))))) |}]
+             (groups (Group1 Group2))))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "get ask on empty roster" =
@@ -878,7 +931,7 @@ let%expect_test "get ask on empty roster" =
 
 let%expect_test "get ask with user in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "romeo@im.example.com")
@@ -896,12 +949,13 @@ let%expect_test "get ask with user in roster" =
         ((presence Offline)
          (roster
           (((romeo im.example.com)
-            ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+            ((handle "") (subscription None) (ask false) (groups ())))))
+         (free true)))) |}]
 ;;
 
 let%expect_test "get ask with user not in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "romeo@im.example.com")
@@ -919,7 +973,8 @@ let%expect_test "get ask with user not in roster" =
       ((presence Offline)
        (roster
         (((romeo im.example.com)
-          ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+          ((handle "") (subscription None) (ask false) (groups ())))))
+       (free true)))) |}]
 ;;
 
 let%expect_test "get subscription with empty roster" =
@@ -937,7 +992,7 @@ let%expect_test "get subscription with empty roster" =
 
 let%expect_test "get subscription with user in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "romeo@im.example.com")
@@ -955,12 +1010,13 @@ let%expect_test "get subscription with user in roster" =
       ((presence Offline)
        (roster
         (((romeo im.example.com)
-          ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+          ((handle "") (subscription None) (ask false) (groups ())))))
+       (free true)))) |}]
 ;;
 
 let%expect_test "get subscription with user not in roster" =
   test_rosters (fun () ->
-      let%lwt () =
+      let%lwt _ =
         set_item
           (Jid.Bare.of_string "juliet@im.example.com")
           (Jid.Bare.of_string "romeo@im.example.com")
@@ -978,5 +1034,6 @@ let%expect_test "get subscription with user not in roster" =
       ((presence Offline)
        (roster
         (((romeo im.example.com)
-          ((handle "") (subscription None) (ask false) (groups ())))))))) |}]
+          ((handle "") (subscription None) (ask false) (groups ())))))
+       (free true)))) |}]
 ;;

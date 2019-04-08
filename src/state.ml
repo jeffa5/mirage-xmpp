@@ -124,8 +124,7 @@ let handle_negotiating t = function
   | ROSTER_GET id -> just_connected [Actions.GET_ROSTER id]
   | ROSTER_SET {id; target; handle; groups} ->
     just_connected
-      [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
-      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
+      [Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}]
   | ROSTER_REMOVE {id; target} ->
     just_connected
       [ Actions.ROSTER_REMOVE {id; target}
@@ -165,8 +164,7 @@ let handle_connected t = function
   | ROSTER_GET id -> {state = CONNECTED}, [Actions.GET_ROSTER id], []
   | ROSTER_SET {id; target; handle; groups} ->
     ( {state = CONNECTED}
-    , [ Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}
-      ; Actions.PUSH_ROSTER {ato = None; contact = target} ]
+    , [Actions.SET_ROSTER {id; target = Jid.to_bare_raw target; handle; groups}]
     , [] )
   | ROSTER_REMOVE {id; target} ->
     ( {state = CONNECTED}
@@ -517,8 +515,7 @@ let%expect_test "roster set" =
   [%expect
     {|
     (SET_ROSTER (id some_id) (target (nurse example.com)) (handle Nurse)
-     (groups (Servants)))
-    (PUSH_ROSTER (ato ()) (contact (Bare_JID (nurse example.com)))) |}];
+     (groups (Servants))) |}];
   let fsm, actions, _handler_actions = handle fsm Events.STREAM_CLOSE in
   print_endline (to_string fsm);
   [%expect {| ((state CLOSED)) |}];

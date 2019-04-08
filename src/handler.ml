@@ -74,14 +74,34 @@ let handle_action t stream =
         | SET_ROSTER {id; target; handle; groups} ->
           (match t.jid with
           | Some jid ->
-            let%lwt () =
+            let rec acquire_user_lock () =
+              let%lwt successful = Rosters.lock_user (Jid.Full.to_bare jid) in
+              if successful then Lwt.return_unit else acquire_user_lock ()
+            in
+            let%lwt () = acquire_user_lock () in
+            let%lwt item =
               Rosters.set_item ~handle ~groups (Jid.Full.to_bare jid) target
             in
             let roster_set_result =
               Stanza.create_roster_set_result ~id ~ato:(Full_JID jid)
             in
             let xml_string = Stanza.to_string roster_set_result in
-            t.callback (Some xml_string) |> Lwt.return
+            t.callback (Some xml_string);
+            (* roster push *)
+            let%lwt connected_resources = Connections.find_all (Jid.Full.to_bare jid) in
+            let%lwt () =
+              connected_resources
+              |> Lwt_list.iter_s (fun (full_jid, actions_push) ->
+                     let roster_push_data =
+                       Stanza.create_roster_push
+                         ~id:(Stanza.gen_id ())
+                         ~ato:(Full_JID full_jid)
+                         (Bare_JID target, item)
+                     in
+                     actions_push (Some (SEND_DATA (Stanza.to_string roster_push_data)));
+                     Lwt.return_unit )
+            in
+            Rosters.unlock_user (Jid.Full.to_bare jid)
           | None -> Lwt.return_unit)
         | PUSH_ROSTER {ato; contact} ->
           let contact = Jid.to_bare contact in
@@ -590,6 +610,9 @@ let handle_action t stream =
         | ERROR e ->
           t.callback (Some e);
           (t.closed <- true) |> Lwt.return
+        | SEND_DATA s ->
+          t.callback (Some s);
+          Lwt.return_unit
       in
       if t.closed
       then (
